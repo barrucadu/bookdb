@@ -23,13 +23,13 @@ def list_view(request):
     # The template takes a page title, list of books, the number of
     # unique authors and the number of books which are read.
     books = booklist()
-    return {'title':   'BookDB',
-            'books':   books,
-            'authors': count_authors(books),
-            'read':    count_read(books)}
+    return {'pagetitle': 'BookDB',
+            'books':     books,
+            'authors':   count_authors(books),
+            'read':      count_read(books)}
 
 
-@view_config(route_name='search', renderer='booklist.mako')
+@view_config(route_name='search', renderer='search.mako')
 def search_view(request):
     """Display a list of all books matching the criteria.
 
@@ -37,12 +37,49 @@ def search_view(request):
     """
 
     # The search criteria are encoded in the GET parameters, where
-    # every key is a search field.
-    books = booklist(request.GET.items())
-    return {'title':   'BookDB :: Search',
-            'books':   books,
-            'authors': count_authors(books),
-            'read':    count_read(books)}
+    # every key is a search field. The read field is matched by matchread
+    # and matchunread.
+    criteria = request.GET
+    books = None
+
+    matchread   = criteria.get("matchread",   "")
+    matchunread = criteria.get("matchunread", "")
+    if "matchread" in criteria.keys() \
+        and "matchunread" in criteria.keys():
+        # All books are either read or unread, so don't add any
+        # constraints.
+        criteria.pop("matchread")
+        criteria.pop("matchunread")
+
+    elif "matchread" in criteria.keys():
+        # Only want read books
+        criteria.pop("matchread")
+        criteria["read"] = "yes"
+
+    elif "matchunread" in criteria.keys():
+        # Only want unread books
+        criteria.pop("matchunread")
+        criteria["read"] = "no"
+
+    else:
+        # There are no books which are both read and unread, so take a
+        # shortcut.
+        books = []
+
+    books = booklist(criteria.items()) if books is None else books
+    return {'pagetitle': 'BookDB :: Search',
+            'books':     books,
+            'authors':   count_authors(books),
+            'read':      count_read(books),
+            # Search-specific template vars
+            'isbn':        criteria.get("isbn",     ""),
+            'title':       criteria.get("title",    ""),
+            'author':      criteria.get("author",   ""),
+            'matchread':   matchread,
+            'matchunread': matchunread,
+            'location':    criteria.get("location", ""),
+            'borrower':    criteria.get("borrower", "")
+            }
 
 
 @view_config(route_name='filter', renderer='booklist.mako')
@@ -58,10 +95,10 @@ def filter_view(request):
     value = request.matchdict['value']
 
     books = booklist([(field, value)])
-    return {'title':   'BookDB :: Filter',
-            'books':   books,
-            'authors': count_authors(books),
-            'read':    count_read(books)}
+    return {'pagetitle': 'BookDB :: Filter',
+            'books':     books,
+            'authors':   count_authors(books),
+            'read':      count_read(books)}
 
 
 def booklist(filter=[]):
