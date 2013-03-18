@@ -10,6 +10,10 @@ Options:
   --port=<port>  Port to listen on [default: 3000]
 """
 
+# Import views
+import views
+
+# Import everything else
 import os
 from docopt import docopt
 from pyramid.config import Configurator
@@ -28,7 +32,20 @@ if __name__ == '__main__':
         'mako.directories': os.path.join(here, 'templates')
     })
 
+    config.add_route('list',    '/',                request_method='GET')
+    config.add_route('search',  '/search',          request_method='GET')
+    config.add_route('filter',  '/{field}/{value}', request_method='GET')
+    config.add_route('info',    '/{isbn}',          request_method='GET')
+    config.add_route('add',     '/add',             request_method='GET')
+    config.add_route('edit',    '/{isbn}/edit',     request_method='GET')
+    config.add_route('delete',  '/{isbn}/delete',   request_method='GET')
+    config.add_route('addp',    '/add',             request_method='POST')
+    config.add_route('editp',   '/{isbn}/edit',     request_method='POST')
+    config.add_route('deletep', '/{isbn}/delete',   request_method='POST')
+
     config.add_static_view(name='static', path=os.path.join(here, 'static'))
+
+    config.scan(views)
 
     app = config.make_wsgi_app()
 
