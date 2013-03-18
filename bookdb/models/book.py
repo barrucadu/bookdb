@@ -48,7 +48,8 @@ class Book(Base):
         self.location = location
         self.borrower = borrower
 
-    def unstring(self, field):
+    @staticmethod
+    def unstring(field):
         """Take the name of a field and return the field. Return None
         if the name is bad.
 

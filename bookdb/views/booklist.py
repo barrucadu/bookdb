@@ -20,10 +20,11 @@ def list_view(request):
     :param request: The request object.
     """
 
-    # The template takes a list of books, the number of unique
-    # authors and the number of books which are read.
+    # The template takes a page title, list of books, the number of
+    # unique authors and the number of books which are read.
     books = booklist()
-    return {'books':   books,
+    return {'title':   'BookDB',
+            'books':   books,
             'authors': count_authors(books),
             'read':    count_read(books)}
 
@@ -38,7 +39,8 @@ def search_view(request):
     # The search criteria are encoded in the GET parameters, where
     # every key is a search field.
     books = booklist(request.GET.items())
-    return {'books':   books,
+    return {'title':   'BookDB :: Search',
+            'books':   books,
             'authors': count_authors(books),
             'read':    count_read(books)}
 
@@ -56,7 +58,8 @@ def filter_view(request):
     value = request.matchdict['value']
 
     books = booklist([(field, value)])
-    return {'books':   books,
+    return {'title':   'BookDB :: Filter',
+            'books':   books,
             'authors': count_authors(books),
             'read':    count_read(books)}
 
@@ -78,12 +81,18 @@ def booklist(filter=[]):
 
     # Then apply every valid filter
     for field, val in filter:
+        # We have a bit of sugar on the read attribute, using "yes"
+        # and "no" in the URL rather than True or False.
+        if field == "read":
+            val = val == "yes"
+
+        # Now get the actual field object and filter by it.
         dbfield = Book.unstring(field)
         if dbfield is not None:
             books = books.filter(dbfield.like('%{}%'.format(val)))
 
     # And return them
-    return books.order_by(Book.authors, Book.title)
+    return books.order_by(Book.authors, Book.title).all()
 
 
 def count_authors(books):
@@ -103,4 +112,5 @@ def count_read(books):
     :param books: A (possibly empty) list of books.
     """
 
-    return len(filter(lambda b: b.read, books))
+    return len([book
+                for book in books if book.read])
