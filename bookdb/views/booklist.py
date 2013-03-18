@@ -8,7 +8,6 @@ filter: Display all books matching the filter.
 Book lists are ordered by author name and then by title.
 """
 
-from pyramid.response import Response
 from pyramid.view import view_config
 
 
@@ -19,7 +18,12 @@ def list_view(request):
     :param request: The request object.
     """
 
-    pass
+    # The template takes a list of books, the number of unique
+    # authors and the number of books which are read.
+    books = booklist()
+    return {'books':   books,
+            'authors': count_authors(books),
+            'read':    count_read(books)}
 
 
 @view_config(route_name='search', renderer='booklist.mako')
@@ -29,7 +33,12 @@ def search_view(request):
     :param request: The request object.
     """
 
-    pass
+    # The search criteria are encoded in the GET parameters, where
+    # every key is a search field.
+    books = booklist(request.GET.items())
+    return {'books':   books,
+            'authors': count_authors(books),
+            'read':    count_read(books)}
 
 
 @view_config(route_name='filter', renderer='booklist.mako')
@@ -37,6 +46,47 @@ def filter_view(request):
     """Display a list of all books matching the filter.
 
     :param request: The request object.
+    """
+
+    # We need to extract the single field and value, and pass those in
+    # as the one filter criteria.
+    field = request.matchdict['field']
+    value = request.matchdict['value']
+
+    books = booklist([(field, value)])
+    return {'books':   books,
+            'authors': count_authors(books),
+            'read':    count_read(books)}
+
+
+def booklist(filter=[]):
+    """All of the views on this page are the same, they only differ in
+    which criteria are used to filter the list, from none, to only a
+    single field, to potentially all the fields. However, these
+    operations are basically all the same: retrieve the books which
+    match some criteria.
+
+    :param filter: A list of (field, value) pairs. Only books for
+        which the given field contains the given value will be
+        returned, and this must be the case for all pairs.
+    """
+
+    pass
+
+
+def count_authors(books):
+    """Count the number of unique authors in a list of books.
+
+    :param books: A (possibly empty) list of books.
+    """
+
+    pass
+
+
+def count_read(books):
+    """Count the number of read books in a list of books.
+
+    :param books: A (possibly empty) list of books.
     """
 
     pass
