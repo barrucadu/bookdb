@@ -37,7 +37,7 @@ if __name__ == '__main__':
     config.add_route('list',    '/',                request_method='GET')
     config.add_route('search',  '/search',          request_method='GET')
     config.add_route('filter',  '/{field}/{value}', request_method='GET')
-    config.add_route('info',    '/{isbn}',          request_method='GET')
+    config.add_route('info',    '/{isbn:[0-9]+X?}', request_method='GET')
     config.add_route('add',     '/add',             request_method='GET')
     config.add_route('edit',    '/{isbn}/edit',     request_method='GET')
     config.add_route('delete',  '/{isbn}/delete',   request_method='GET')
