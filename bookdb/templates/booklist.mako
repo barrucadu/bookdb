@@ -36,7 +36,7 @@ percentread = round((read / len(books)) * 100) if len(books) > 0 else 0
             </ol>
           <td>
             % if book.read:
-              % if book.lastread != datetime.date.min:
+              % if book.lastread == datetime.date.min:
                 <a href="/read/yes">✔</a>
               % else:
                 <a href="/read/yes">✔ (${book.lastread})</a>
