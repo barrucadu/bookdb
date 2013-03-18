@@ -69,7 +69,7 @@ def delete_view(request):
     return {'pagetitle': 'Confirm Delete',
             'isbn': isbn,
             'title': book.title,
-            'author': ' & '.join(book.authors)}
+            'author': ' & '.join(book.authors())}
 
 
 @view_config(route_name='addp', renderer='information.mako')
@@ -137,4 +137,17 @@ def delete_post_view(request):
     :param request: The request object.
     """
 
-    pass
+    try:
+        isbn = request.matchdict['isbn']
+        book = DBSession.query(Book).filter(Book.isbn == isbn).one()
+        DBSession.delete(book)
+        DBSession.commit()
+
+        return {'pagetitle': 'Delete Successful',
+                'redirect':  '/',
+                'message':   'The book has been deleted from the database.'}
+    except:
+        DBSession.rollback()
+        return {'pagetitle': 'Delete Failed',
+                'redirect':  '/',
+                'message':   'An error occurred whilst deleting the book.'}
