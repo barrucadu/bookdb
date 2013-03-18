@@ -1,5 +1,5 @@
 from models import Base
-from sqlalchemy import BigInteger, Boolean, Column, Date, PickleType, String
+from sqlalchemy import Boolean, Column, Date, Integer, PickleType, String
 
 
 class Book(Base):
@@ -15,7 +15,7 @@ class Book(Base):
     # PEP8 doesn't like having multiple spaces after the operator, but
     # I don't care. It is so much more readible when aligned like
     # this.
-    id       = Column(BigInteger, primary_key=True)
+    id       = Column(Integer, primary_key=True)
     isbn     = Column(String, unique=True)
     title    = Column(String)
     authors  = Column(PickleType)
