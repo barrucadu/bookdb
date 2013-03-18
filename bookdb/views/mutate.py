@@ -79,7 +79,42 @@ def add_post_view(request):
     :param request: The request object.
     """
 
-    pass
+    # Wrap the whole thing up in a try/catch block to catch ALL the
+    # errors!
+    # TODO: Catch specific errors and give more helpful error
+    # messages.
+    try:
+        # Authors are sepaarted by ampersands
+        authors = [author.strip()
+                   for author in request.POST['author'].split('&')]
+
+        # Last read date is mandatory in the database, but may not
+        # have been given. If it has, we use what was
+        # given. Unfortunately, it's given as a string.
+        lastread = date.min
+        if 'read' in request.POST:
+            datetime = list(map(int, request.POST['lastread'].split('-')))
+            lastread = date(datetime[0], datetime[1], datetime[2])
+
+        newbook = Book(request.POST['isbn'],
+                       request.POST['title'],
+                       authors,
+                       'read' in request.POST,
+                       lastread,
+                       request.POST['location'],
+                       request.POST['borrower'])
+
+        DBSession.add(newbook)
+        DBSession.commit()
+
+        return {'pagetitle': 'Add Successful',
+                'redirect':  '/',
+                'message':   'The book has been added to the database.'}
+    except:
+        DBSession.rollback()
+        return {'pagetitle': 'Add Failed',
+                'redirect':  '/',
+                'message':   'An error occurred whilst adding the book.'}
 
 
 @view_config(route_name='editp', renderer='information.mako')
