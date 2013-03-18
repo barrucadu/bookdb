@@ -80,7 +80,9 @@ def count_authors(books):
     :param books: A (possibly empty) list of books.
     """
 
-    pass
+    return len(set([author
+                    for book in books
+                    for author in book.authors]))
 
 
 def count_read(books):
@@ -89,4 +91,4 @@ def count_read(books):
     :param books: A (possibly empty) list of books.
     """
 
-    pass
+    return len(filter(lambda b: b.read, books))
