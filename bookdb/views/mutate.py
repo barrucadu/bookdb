@@ -50,7 +50,7 @@ def edit_view(request):
             'read':      'checked'
                 if book.read else '',
             'lastread':  str(book.lastread)
-                if not book.lastread == date.MIN else '',
+                if not book.lastread == date.min else '',
             'location':  book.location,
             'borrower':  book.borrower}
 
@@ -95,7 +95,7 @@ def add_post_view(request):
         # have been given. If it has, we use what was
         # given. Unfortunately, it's given as a string.
         lastread = date.min
-        if 'read' in request.POST:
+        if 'read' in request.POST and request.POST['lastread'] != '':
             datetime = list(map(int, request.POST['lastread'].split('-')))
             lastread = date(datetime[0], datetime[1], datetime[2])
 
@@ -127,7 +127,41 @@ def edit_post_view(request):
     :param request: The request object.
     """
 
-    pass
+    try:
+        isbn = request.matchdict['isbn']
+        book = DBSession.query(Book).filter(Book.isbn == isbn).one()
+
+        authors = [author.strip()
+                   for author in request.POST['author'].split('&')]
+        authors.sort()
+        authors = ' & '.join(authors)
+
+        # Last read date is mandatory in the database, but may not
+        # have been given. If it has, we use what was
+        # given. Unfortunately, it's given as a string.
+        lastread = date.min
+        if 'read' in request.POST and request.POST['lastread'] != '':
+            datetime = list(map(int, request.POST['lastread'].split('-')))
+            lastread = date(datetime[0], datetime[1], datetime[2])
+
+        book.isbn     = request.POST['isbn']
+        book.title    = request.POST['title']
+        book.author   = authors
+        book.read     = 'read' in request.POST
+        book.lastread = lastread
+        book.location = request.POST['location']
+        book.borrower = request.POST['borrower']
+
+        DBSession.commit()
+
+        return {'pagetitle': 'Edit Successful',
+                'redirect':  '/',
+                'message':   'The book has been updated in the database.'}
+    except:
+        DBSession.rollback()
+        return {'pagetitle': 'Edit Failed',
+                'redirect':  '/',
+                'message':   'An error occurred whilst updating the book.'}
 
 
 @view_config(route_name='deletep', renderer='information.mako')
