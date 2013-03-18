@@ -26,7 +26,7 @@ percentread = round((read / len(books)) * 100) if len(books) > 0 else 0
     % else:
       % for book in books:
         <tr>
-          <td class="isbn">${book.isbn}</td>
+          <td class="isbn"><a href="/${book.isbn}">${book.isbn}</a></td>
           <td>${book.title}</td>
           <td>
             <ol>
