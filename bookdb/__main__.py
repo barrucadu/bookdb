@@ -10,14 +10,16 @@ Options:
   --port=<port>  Port to listen on [default: 3000]
 """
 
-# Import views
+# Import views and models
 import views
+import models
 
 # Import everything else
 import os
 from docopt import docopt
 from pyramid.config import Configurator
 from wsgiref.simple_server import make_server
+from sqlalchemy import create_engine
 
 # Figure out where we are
 here = os.path.dirname(os.path.abspath(__file__))
@@ -48,6 +50,11 @@ if __name__ == '__main__':
     config.scan(views)
 
     app = config.make_wsgi_app()
+
+    # Initialise the SQL database
+    engine = create_engine('sqlite:///bookdb.sqlite3')
+    models.initialise_sql(engine)
+    config.scan(models)
 
     # Start the server
     server = make_server(arguments['--host'],
