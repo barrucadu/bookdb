@@ -30,7 +30,7 @@ percentread = round((read / len(books)) * 100) if len(books) > 0 else 0
           <td>${book.title}</td>
           <td>
             <ol>
-              % for author in book.authors:
+              % for author in book.authors():
                 <li><a href="/author/${author}">${author}</a></li>
               % endfor
             </ol>

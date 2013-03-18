@@ -46,7 +46,7 @@ def edit_view(request):
             'submit':    'Edit',
             'isbn':      isbn,
             'title':     book.title,
-            'author':    ' & '.join(book.authors),
+            'author':    book.author,
             'read':      'checked'
                 if book.read else '',
             'lastread':  str(book.lastread)
@@ -84,9 +84,12 @@ def add_post_view(request):
     # TODO: Catch specific errors and give more helpful error
     # messages.
     try:
-        # Authors are sepaarted by ampersands
+        # We want to sort the (ampersand-separated) author list, so
+        # book lists will be in order.
         authors = [author.strip()
                    for author in request.POST['author'].split('&')]
+        authors.sort()
+        authors = ' & '.join(authors)
 
         # Last read date is mandatory in the database, but may not
         # have been given. If it has, we use what was

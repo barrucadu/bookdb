@@ -129,7 +129,7 @@ def booklist(filter=[]):
             books = books.filter(dbfield.like('%{}%'.format(val)))
 
     # And return them
-    return books.order_by(Book.authors, Book.title).all()
+    return books.order_by(Book.author, Book.title).all()
 
 
 def count_authors(books):
@@ -140,7 +140,7 @@ def count_authors(books):
 
     return len(set([author
                     for book in books
-                    for author in book.authors]))
+                    for author in book.authors()]))
 
 
 def count_read(books):

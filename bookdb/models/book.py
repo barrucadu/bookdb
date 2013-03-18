@@ -1,5 +1,5 @@
 from models import Base
-from sqlalchemy import Boolean, Column, Date, Integer, PickleType, String
+from sqlalchemy import Boolean, Column, Date, Integer, String
 
 
 class Book(Base):
@@ -7,7 +7,7 @@ class Book(Base):
     authors, read flag, last read date, location, and borrower.
 
     Unfortunately sqlalchemy has no list column type, and so the
-    authors are pickled.
+    authors stored as an ampersand-sepaarted string.
     """
 
     __tablename__ = 'books'
@@ -18,21 +18,22 @@ class Book(Base):
     id       = Column(Integer, primary_key=True)
     isbn     = Column(String, unique=True)
     title    = Column(String)
-    authors  = Column(PickleType)
+    author   = Column(String)
     read     = Column(Boolean)
     lastread = Column(Date)
     location = Column(String)
     borrower = Column(String)
 
-    def __init__(self, isbn, title, authors, read, lastread,
+    def __init__(self, isbn, title, author, read, lastread,
                  location, borrower):
         """Create a new book from the given data.
 
         :param isbn: The ISBN number of the book, this cannot already
             be in the database.
         :param title: The title of the book.
-        :param authors: List of authors of the book, in the format
-            "Surname, Forename Initials"
+        :param author: List of authors of the book, in the format
+            "Surname, Forename Initials", with ampersands separating
+            different authors.
         :param read: Whether the book has been read or not
         :param lastread: The date on which the book was last read
             (invalid if read = False)
@@ -42,11 +43,18 @@ class Book(Base):
 
         self.isbn     = isbn
         self.title    = title
-        self.authors  = authors
+        self.author   = author
         self.read     = read
         self.lastread = lastread
         self.location = location
         self.borrower = borrower
+
+    def authors(self):
+        """Get the authors of a book in list form.
+        """
+
+        return [author.strip()
+                for author in self.author.split('&')]
 
     @staticmethod
     def unstring(field):
@@ -59,7 +67,7 @@ class Book(Base):
         try:
             return {'isbn':     Book.isbn,
                     'title':    Book.title,
-                    'authors':  Book.authors,
+                    'author':   Book.author,
                     'read':     Book.read,
                     'lastread': Book.lastread,
                     'location': Book.location,
