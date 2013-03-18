@@ -47,3 +47,21 @@ class Book(Base):
         self.lastread = lastread
         self.location = location
         self.borrower = borrower
+
+    def unstring(self, field):
+        """Take the name of a field and return the field. Return None
+        if the name is bad.
+
+        :param field: The name of the field.
+        """
+
+        try:
+            return {'isbn':     Book.isbn,
+                    'title':    Book.title,
+                    'authors':  Book.authors,
+                    'read':     Book.read,
+                    'lastread': Book.lastread,
+                    'location': Book.location,
+                    'borrower': Book.borrower}[field]
+        except:
+            return None

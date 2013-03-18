@@ -9,6 +9,8 @@ Book lists are ordered by author name and then by title.
 """
 
 from pyramid.view import view_config
+from models import DBSession
+from models.book import Book
 
 
 @view_config(route_name='list', renderer='booklist.mako')
@@ -71,7 +73,17 @@ def booklist(filter=[]):
         returned, and this must be the case for all pairs.
     """
 
-    pass
+    # Get all the books
+    books = DBSession.query(Book)
+
+    # Then apply every valid filter
+    for field, val in filter:
+        dbfield = Book.unstring(field)
+        if dbfield is not None:
+            books = books.filter(dbfield.like('%{}%'.format(val)))
+
+    # And return them
+    return books.order_by(Book.authors, Book.title)
 
 
 def count_authors(books):
