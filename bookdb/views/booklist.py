@@ -118,15 +118,16 @@ def booklist(filter=[]):
 
     # Then apply every valid filter
     for field, val in filter:
-        # We have a bit of sugar on the read attribute, using "yes"
-        # and "no" in the URL rather than True or False.
-        if field == "read":
-            val = val == "yes"
-
         # Now get the actual field object and filter by it.
         dbfield = Book.unstring(field)
-        if dbfield is not None:
-            books = books.filter(dbfield.like('%{}%'.format(val)))
+
+        # The "read" field needs special treatment as it's a
+        # boolean.
+        if field == "read":
+            books = books.filter(dbfield == (val == "yes"))
+        else:
+            if dbfield is not None:
+                books = books.filter(dbfield.like('%{}%'.format(val)))
 
     # And return them
     return books.order_by(Book.author, Book.title).all()
