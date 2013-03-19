@@ -1,13 +1,15 @@
 <%
 import datetime
+from templates.utils import plural
 
 percentread = round((read / len(books)) * 100) if len(books) > 0 else 0
 %>
 
 <%inherit file="wrapper.mako"/>
 
-<p>Showing ${len(books)} books by ${authors} authors, of which ${read}
-  (${percentread}%) have been read.</p>
+<p>Showing ${len(books)} ${plural(len(books), "book")} by ${authors}
+  ${plural(authors, "author")}, of which ${read} (${percentread}%)
+  ${plural(read, "has")} been read.</p>
 
 <table>
   <thead>
