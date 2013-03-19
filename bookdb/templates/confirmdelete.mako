@@ -2,7 +2,7 @@
 
 <div class="confirm">
   <p>Do you really want to delete <span class="isbn">${isbn}</span>
-  (<strong>${title}, by ${author}</strong>)?</p>
+  (<strong>${title}</strong>, by <strong>${author}</strong>)?</p>
 
   <form action="/${isbn}/delete" method="post">
     <input type="submit" value="Confirm Delete">
