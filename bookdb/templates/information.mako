@@ -3,7 +3,7 @@
 <html>
   <head>
     <title>${pagetitle}</title>
-    <meta http-equiv="refresh" content="5;URL='${redirect}'">
+    <meta http-equiv="refresh" content="2;URL='${redirect}'">
 
     <link rel="stylesheet" href="/static/style.css" type="text/css">
   </head>

@@ -111,7 +111,7 @@ def add_post_view(request):
         DBSession.commit()
 
         return {'pagetitle': 'Add Successful',
-                'redirect':  '/',
+                'redirect':  '/{}'.format(isbn),
                 'message':   'The book has been added to the database.'}
     except:
         DBSession.rollback()
@@ -155,7 +155,7 @@ def edit_post_view(request):
         DBSession.commit()
 
         return {'pagetitle': 'Edit Successful',
-                'redirect':  '/',
+                'redirect':  '/{}'.format(isbn),
                 'message':   'The book has been updated in the database.'}
     except:
         DBSession.rollback()
