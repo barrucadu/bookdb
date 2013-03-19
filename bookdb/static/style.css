@@ -116,7 +116,7 @@ label {
     float: left;
 }
 
-input {
+input, textarea {
     border: 1px solid #cccccc;
     border-radius: 3px;
     color: #555555;
@@ -125,6 +125,11 @@ input {
 
 input[type="text"], input[type="date"] {
     width: 250px;
+}
+
+textarea {
+    width: 350px;
+    height: 150px;
 }
 
 .help {
@@ -158,4 +163,15 @@ ul.meta {
 td.meta a {
     font-size: 0.85em;
     margin: 0 1px;
+}
+
+blockquote, .notes {
+    border-left: 2px solid #BCA474;
+    padding: 0.5em 0 0.5em 1em;
+    font-style: italic;
+    margin: 1em;
+}
+
+.notes {
+    font-style: normal;
 }

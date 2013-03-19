@@ -27,7 +27,9 @@ def add_view(request):
             'read':      '',
             'lastread':  '',
             'location':  '',
-            'borrower':  ''}
+            'borrower':  '',
+            'quote':     '',
+            'notes':     ''}
 
 
 @view_config(route_name='edit', renderer='bookform.mako')
@@ -52,7 +54,9 @@ def edit_view(request):
             'lastread':  str(book.lastread)
                 if not book.lastread == date.min else '',
             'location':  book.location,
-            'borrower':  book.borrower}
+            'borrower':  book.borrower,
+            'quote':     book.quote,
+            'notes':     book.notes}
 
 
 @view_config(route_name='delete', renderer='confirmdelete.mako')
@@ -105,13 +109,15 @@ def add_post_view(request):
                        'read' in request.POST,
                        lastread,
                        request.POST['location'],
-                       request.POST['borrower'])
+                       request.POST['borrower'],
+                       request.POST['quote'],
+                       request.POST['notes'])
 
         DBSession.add(newbook)
         DBSession.commit()
 
         return {'pagetitle': 'Add Successful',
-                'redirect':  '/{}'.format(isbn),
+                'redirect':  '/{}'.format(request.POST['isbn']),
                 'message':   'The book has been added to the database.'}
     except:
         DBSession.rollback()
@@ -151,6 +157,8 @@ def edit_post_view(request):
         book.lastread = lastread
         book.location = request.POST['location']
         book.borrower = request.POST['borrower']
+        book.quote    = request.POST['quote']
+        book.notes    = request.POST['notes']
 
         DBSession.commit()
 

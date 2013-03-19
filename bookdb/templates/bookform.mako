@@ -32,6 +32,14 @@
         <input type="text" id="borrower" name="borrower" value="${borrower}">
       </li>
       <li>
+        <label for="quote">Quote</label>
+        <textarea id="quote" name="quote">${quote}</textarea>
+      </li>
+      <li>
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes">${notes}</textarea>
+      </li>
+      <li>
         <input type="submit" value="${submit}">
       </li>
     </ol>

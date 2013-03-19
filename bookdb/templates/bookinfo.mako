@@ -1,8 +1,16 @@
 <%
 import datetime
+from markdown import markdown
+from markupsafe import escape
 %>
 
 <%inherit file="wrapper.mako"/>
+
+% if book.quote.strip() != "":
+  <blockquote>
+    ${book.quote}
+  </blockquote>
+% endif
 
 <dl>
   <dt>ISBN</dt>
@@ -39,6 +47,12 @@ import datetime
   <dt>Borrower</dt>
   <dd>${book.borrower}</dd>
 </dl>
+
+% if book.notes.strip() != "":
+  <div class="notes">
+    ${markdown(escape(book.notes))|n}
+  </div>
+% endif
 
 <ul class="meta">
   <li><a href="/${book.isbn}/edit">Edit</a></li>

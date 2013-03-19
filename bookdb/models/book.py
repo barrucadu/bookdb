@@ -1,5 +1,5 @@
 from models import Base
-from sqlalchemy import Boolean, Column, Date, Integer, String
+from sqlalchemy import Boolean, Column, Date, Integer, String, Text
 
 
 class Book(Base):
@@ -23,9 +23,11 @@ class Book(Base):
     lastread = Column(Date)
     location = Column(String)
     borrower = Column(String)
+    quote    = Column(Text)
+    notes    = Column(Text)
 
     def __init__(self, isbn, title, author, read, lastread,
-                 location, borrower):
+                 location, borrower, quote, notes):
         """Create a new book from the given data.
 
         :param isbn: The ISBN number of the book, this cannot already
@@ -39,6 +41,8 @@ class Book(Base):
             (invalid if read = False)
         :param location: Location of the book.
         :param borrower: Borrower of the book (may be empty)
+        :param quote:    A quote from the book (may be empty).
+        :param notes:    Any notes on the book (may be empty).
         """
 
         self.isbn     = isbn
@@ -48,6 +52,8 @@ class Book(Base):
         self.lastread = lastread
         self.location = location
         self.borrower = borrower
+        self.quote    = quote
+        self.notes    = notes
 
     def authors(self):
         """Get the authors of a book in list form.
@@ -71,6 +77,8 @@ class Book(Base):
                     'read':     Book.read,
                     'lastread': Book.lastread,
                     'location': Book.location,
-                    'borrower': Book.borrower}[field]
+                    'borrower': Book.borrower,
+                    'quote':    Book.quote,
+                    'notes':    Book.notes}[field]
         except:
             return None
