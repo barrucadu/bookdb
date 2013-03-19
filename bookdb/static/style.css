@@ -154,3 +154,8 @@ dd li {
 ul.meta {
     text-align: center;
 }
+
+td.meta a {
+    font-size: 0.85em;
+    margin: 0 1px;
+}

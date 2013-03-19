@@ -17,16 +17,17 @@ percentread = round((read / len(books)) * 100) if len(books) > 0 else 0
     <th>Read</th>
     <th>Location</th>
     <th>Borrower</th>
+    <th>Meta</th>
   </thead>
   <tbody>
     % if len(books) == 0:
       <tr>
-        <td colspan="6">There are no books.</td>
+        <td colspan="7">There are no books.</td>
       </tr>
     % else:
       % for book in books:
         <tr>
-          <td class="isbn"><a href="/${book.isbn}">${book.isbn}</a></td>
+          <td class="isbn">${book.isbn}</td>
           <td>${book.title}</td>
           <td>
             <ol>
@@ -47,6 +48,11 @@ percentread = round((read / len(books)) * 100) if len(books) > 0 else 0
           </td>
           <td><a href="/location/${book.location}">${book.location}</a>
           <td><a href="/borrower/${book.borrower}">${book.borrower}</td>
+          <td class="meta">
+            <a href="/${book.isbn}">[info]</a>
+            <a href="/${book.isbn}/edit">[edit]</a>
+            <a href="/${book.isbn}/delete">[delete]</a>
+          </td>
         </tr>
       % endfor
     % endif
