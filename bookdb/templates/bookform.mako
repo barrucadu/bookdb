@@ -25,7 +25,7 @@
       </li>
       <li>
         <label for="location">Location</label>
-        <input type="text" id="location" name="location" value="${location}">
+        <input type="text" id="location" name="location" value="${location}" required>
       </li>
       <li>
         <label for="borrower">Borrower</label>
