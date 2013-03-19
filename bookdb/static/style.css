@@ -1,0 +1,156 @@
+* {
+    margin: 0;
+    padding: 0;
+    font-size: 1em;
+}
+
+body {
+    background-color: #A7BFC1;
+    margin: 2%;
+    font-family: sans-serif;
+    font-size: 13px;
+    color: #333333;
+}
+
+.page {
+    background-color: #E7E7E5;
+    border: 5px solid #AAB080;
+    width: 1280px;
+    margin: 0 auto;
+    padding: 25px;
+}
+
+.information {
+    background-color: #E7E7E5;
+    border: 5px solid #AAB080;
+    width: 600px;
+    margin: 0 auto;
+    padding: 25px;
+}
+
+p {
+    margin-bottom: 6px;
+}
+
+ul, ol {
+    list-style-type: none;
+}
+
+header {
+    margin-bottom: 16px;
+}
+
+h1 {
+    margin-bottom: 8px;
+    font-size: 2em;
+}
+
+nav ul li {
+    display: inline;
+    margin: 6px;
+}
+
+table {
+    width: 100%;
+    border: 1px solid #DAE0B0;
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+
+tr + tr {
+    border-top: 1px solid #DAE0B0;
+}
+
+td + td {
+    border-left: 1px solid #DAE0B0;
+}
+
+td ol, td ol li {
+    margin: 0;
+    padding: 0;
+    display: inline;
+}
+
+td ol li {
+    display: block;
+}
+
+th {
+    background-color: #DAE0B0;
+}
+
+th, td {
+    padding: 5px;
+}
+
+.isbn {
+    font-family: monospace;
+}
+
+a:active, a:link, a:visited, a:hover {
+    color: #838474;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #503941;
+}
+
+footer {
+    font-size: 0.9em;
+    text-align: right;
+    margin-top: 16px;
+}
+
+fieldset {
+    border: 0;
+}
+
+fieldset li {
+    margin-bottom: 6px;
+}
+
+label {
+    font-weight: bold;
+    width: 175px;
+    float: left;
+}
+
+input {
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    color: #555555;
+    padding: 5px;
+}
+
+input[type="text"], input[type="date"] {
+    width: 250px;
+}
+
+.help {
+    background-color: #D4C8B7;
+    border: 3px solid #81838C;
+    padding: 8px;
+    margin: 0 auto;
+    width: 600px;
+    text-align: center;
+}
+
+dt {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+dd {
+    margin-left: 3em;
+    margin-bottom: 2em;
+}
+
+dd li {
+    display: inline;
+    margin: 0 6px;
+}
+
+ul.meta {
+    text-align: center;
+}
