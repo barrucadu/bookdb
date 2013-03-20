@@ -6,6 +6,8 @@ from markupsafe import escape
 
 <%inherit file="wrapper.mako"/>
 
+<img src="${image}" alt="${book.title}, by ${book.author}"/>
+
 % if book.quote.strip() != "":
   <blockquote>
     ${book.quote}
