@@ -83,31 +83,13 @@ def add_post_view(request):
     :param request: The request object.
     """
 
-    # Wrap the whole thing up in a try/catch block to catch ALL the
-    # errors!
-    # TODO: Catch specific errors and give more helpful error
-    # messages.
+    # TODO: Better error messages.
     try:
-        # We want to sort the (ampersand-separated) author list, so
-        # book lists will be in order.
-        authors = [author.strip()
-                   for author in request.POST['author'].split('&')]
-        authors.sort()
-        authors = ' & '.join(authors)
-
-        # Last read date is mandatory in the database, but may not
-        # have been given. If it has, we use what was
-        # given. Unfortunately, it's given as a string.
-        lastread = date.min
-        if 'read' in request.POST and request.POST['lastread'] != '':
-            datetime = list(map(int, request.POST['lastread'].split('-')))
-            lastread = date(datetime[0], datetime[1], datetime[2])
-
         newbook = Book(request.POST['isbn'],
                        request.POST['title'],
-                       authors,
+                       sort_authors(request.POST['author']),
                        'read' in request.POST,
-                       lastread,
+                       last_read_date(request),
                        request.POST['location'],
                        request.POST['borrower'],
                        request.POST['quote'],
@@ -133,28 +115,16 @@ def edit_post_view(request):
     :param request: The request object.
     """
 
+    # TODO: Better error messages.
     try:
         isbn = request.matchdict['isbn']
         book = DBSession.query(Book).filter(Book.isbn == isbn).one()
 
-        authors = [author.strip()
-                   for author in request.POST['author'].split('&')]
-        authors.sort()
-        authors = ' & '.join(authors)
-
-        # Last read date is mandatory in the database, but may not
-        # have been given. If it has, we use what was
-        # given. Unfortunately, it's given as a string.
-        lastread = date.min
-        if 'read' in request.POST and request.POST['lastread'] != '':
-            datetime = list(map(int, request.POST['lastread'].split('-')))
-            lastread = date(datetime[0], datetime[1], datetime[2])
-
         book.isbn     = request.POST['isbn']
         book.title    = request.POST['title']
-        book.author   = authors
+        book.author   = sort_authors(request.POST['author'])
         book.read     = 'read' in request.POST
-        book.lastread = lastread
+        book.lastread = last_read_date(request)
         book.location = request.POST['location']
         book.borrower = request.POST['borrower']
         book.quote    = request.POST['quote']
@@ -179,6 +149,7 @@ def delete_post_view(request):
     :param request: The request object.
     """
 
+    # TODO: Better error messages.
     try:
         isbn = request.matchdict['isbn']
         book = DBSession.query(Book).filter(Book.isbn == isbn).one()
@@ -193,3 +164,42 @@ def delete_post_view(request):
         return {'pagetitle': 'Delete Failed',
                 'redirect':  '/',
                 'message':   'An error occurred whilst deleting the book.'}
+
+
+def sort_authors(authors):
+    """The user can enter a list of authors separated by ampersands in
+    any order, but we really want them to be sorted internally, as
+    this makes sorting by author a really trivial operation. So, this
+    function takes an author string and sorts it.
+
+    >>> sort_authors("Zidane, Zealot Z. & Aardvark, Alvis A.")
+    "Aardvark, Alvis A. & Zidane, Zealot Z."
+
+    :param authors: The unsorted author string
+    """
+
+    authorlist = [author.strip()
+                   for author in authors.split('&')]
+    authorlist.sort()
+    return ' & '.join(authorlist)
+
+
+def last_read_date(request):
+    """The last read date of a book is mandatory in the database, but
+    this is hidden from the user. Why require a value for this if the
+    book isn't read? Why even require one if it is read? It may be
+    unknown. This function looks at the request for a last read date,
+    and makes use of it if found. Otherwise, a default value is
+    used. To further complicate things, the last read date is sent as
+    a string, rather than a better data structure, so we need to parse
+    it as well.
+
+    :param request: The request object, it is assumed the last read
+        date is request.POST['lastread']
+    """
+
+    try:
+        datelist = list(map(int, request.POST['lastread'].split('-')))
+        return date(datelist[0], datelist[1], datelist[2])
+    except:
+        return date.min
