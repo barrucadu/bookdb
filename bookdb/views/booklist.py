@@ -37,49 +37,33 @@ def search_view(request):
     """
 
     # The search criteria are encoded in the GET parameters, where
-    # every key is a search field. The read field is matched by matchread
-    # and matchunread.
-    criteria = request.GET
-    books = None
+    # every key is a search field.
+    criteria = []
+    for field, value in request.GET.items():
+        dbfield = Book.unstring(field)
+        if dbfield is not None:
+            criteria.append((dbfield, value, True))
 
-    matchread   = criteria.get("matchread",   "")
-    matchunread = criteria.get("matchunread", "")
-    if "matchread" in criteria.keys() \
-        and "matchunread" in criteria.keys():
-        # All books are either read or unread, so don't add any
-        # constraints.
-        criteria.pop("matchread")
-        criteria.pop("matchunread")
+    # Finally, we need to manually filter by matchread and
+    # matchunread, as those don't directly correspond to a field in
+    # the database.
+    matchread = "matchread" in request.GET.keys()
+    matchunread = "matchunread" in request.GET.keys()
+    books = [book
+             for book in booklist(criteria)
+             if (book.read and matchread) or (not book.read and matchunread)]
 
-    elif "matchread" in criteria.keys():
-        # Only want read books
-        criteria.pop("matchread")
-        criteria["read"] = "yes"
-
-    elif "matchunread" in criteria.keys():
-        # Only want unread books
-        criteria.pop("matchunread")
-        criteria["read"] = "no"
-
-    else:
-        # There are no books which are both read and unread, so take a
-        # shortcut.
-        books = []
-
-    books = booklist(criteria.items()) if books is None else books
-    return {'pagetitle': 'BookDB :: Search',
-            'books':     books,
-            'authors':   count_authors(books),
-            'read':      count_read(books),
-            # Search-specific template vars
-            'isbn':        criteria.get("isbn",     ""),
-            'title':       criteria.get("title",    ""),
-            'author':      criteria.get("author",   ""),
-            'matchread':   matchread,
-            'matchunread': matchunread,
-            'location':    criteria.get("location", ""),
-            'borrower':    criteria.get("borrower", "")
-            }
+    return {'pagetitle':   'BookDB :: Search',
+            'books':       books,
+            'authors':     count_authors(books),
+            'read':        count_read(books),
+            'isbn':        request.GET.get("isbn",        ""),
+            'title':       request.GET.get("title",       ""),
+            'author':      request.GET.get("author",      ""),
+            'matchread':   request.GET.get("matchread",   ""),
+            'matchunread': request.GET.get("matchunread", ""),
+            'location':    request.GET.get("location",    ""),
+            'borrower':    request.GET.get("borrower",    "")}
 
 
 @view_config(route_name='filter', renderer='booklist.mako')
@@ -89,12 +73,18 @@ def filter_view(request):
     :param request: The request object.
     """
 
-    # We need to extract the single field and value, and pass those in
-    # as the one filter criteria.
+    # TODO: Display an error message if either the field or the value
+    # are missing, or if the field is invalid.
     field = request.matchdict['field']
     value = request.matchdict['value']
 
-    books = booklist([(field, value)])
+    if field == "read":
+        books = [book
+                 for book in booklist()
+                 if book.read == (value == "yes")]
+    else:
+        books = booklist([(Book.unstring(field), value, True)])
+
     return {'pagetitle': 'BookDB :: Filter',
             'books':     books,
             'authors':   count_authors(books),
@@ -109,27 +99,19 @@ def booklist(filter=[]):
     match some criteria.
 
     :param filter: A list of (field, value) pairs. Only books for
-        which the given field contains the given value will be
-        returned, and this must be the case for all pairs.
+    which the given field matches the given value will be returned,
+    and this must be the case for all pairs.
+
+        "field" is a field of a Book object
+        "value" is the value to compare against
     """
 
-    # Get all the books
     books = DBSession.query(Book)
 
-    # Then apply every valid filter
     for field, val in filter:
-        # Now get the actual field object and filter by it.
-        dbfield = Book.unstring(field)
+        assert field is not None
+        books = books.filter(field.like('%{}%'.format(val)))
 
-        # The "read" field needs special treatment as it's a
-        # boolean.
-        if field == "read":
-            books = books.filter(dbfield == (val == "yes"))
-        else:
-            if dbfield is not None:
-                books = books.filter(dbfield.like('%{}%'.format(val)))
-
-    # And return them
     return books.order_by(Book.author, Book.title).all()
 
 
