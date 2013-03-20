@@ -23,15 +23,7 @@ def add_view(request):
     return {'pagetitle': 'BookDB :: Add',
             'target':    '/add',
             'submit':    'Add',
-            'isbn':      '',
-            'title':     '',
-            'author':    '',
-            'read':      '',
-            'lastread':  '',
-            'location':  '',
-            'borrower':  '',
-            'quote':     '',
-            'notes':     ''}
+            'book':      Book()}
 
 
 @view_config(route_name='edit', renderer='bookform.mako')
@@ -48,15 +40,7 @@ def edit_view(request):
     return {'pagetitle': 'BookDB :: Edit',
             'target':    '/{}/edit'.format(isbn),
             'submit':    'Edit',
-            'isbn':      isbn,
-            'title':     book.title,
-            'author':    book.author,
-            'read':      book.read,
-            'lastread':  book.lastread,
-            'location':  book.location,
-            'borrower':  book.borrower,
-            'quote':     book.quote,
-            'notes':     book.notes}
+            'book':      book}
 
 
 @view_config(route_name='delete', renderer='confirmdelete.mako')

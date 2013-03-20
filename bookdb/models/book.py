@@ -1,5 +1,6 @@
 from models import Base
 from sqlalchemy import Boolean, Column, Date, Integer, String, Text
+from datetime import date
 
 
 class Book(Base):
@@ -26,8 +27,14 @@ class Book(Base):
     quote    = Column(Text)
     notes    = Column(Text)
 
+    def __init__(self):
+        """Create a new book, which contains no data.
+        """
+
+        self.mutate('', '', '', False, date.min, '', '', '', '')
+
     def mutate(self, isbn, title, author, read, lastread,
-                 location, borrower, quote, notes):
+               location, borrower, quote, notes):
         """Modify this book to contain the new data
 
         :param isbn: The ISBN number of the book, this cannot already
