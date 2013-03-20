@@ -49,10 +49,8 @@ def edit_view(request):
             'isbn':      isbn,
             'title':     book.title,
             'author':    book.author,
-            'read':      'checked'
-                if book.read else '',
-            'lastread':  str(book.lastread)
-                if not book.lastread == date.min else '',
+            'read':      book.read,
+            'lastread':  book.lastread,
             'location':  book.location,
             'borrower':  book.borrower,
             'quote':     book.quote,

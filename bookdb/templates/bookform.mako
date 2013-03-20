@@ -1,3 +1,7 @@
+<%
+from datetime import date
+%>
+
 <%inherit file="wrapper.mako"/>
 
 <form action="${target}" method="post">
@@ -17,11 +21,19 @@
       </li>
       <li>
         <label for="read">Read</label>
-        <input type="checkbox" id="read" name="read" ${read}>
+% if read:
+        <input type="checkbox" id="read" name="read" checked>
+% else:
+        <input type="checkbox" id="read" name="read">
+% endif
       </li>
       <li>
         <label for="lastread">Last Read</label>
+% if lastread == date.min:
+        <input type="date" id="lastread" name="lastread">
+% else:
         <input type="date" id="lastread" name="lastread" value="${lastread}">
+% endif
       </li>
       <li>
         <label for="location">Location</label>
