@@ -15,14 +15,11 @@ import views
 import models
 
 # Import everything else
-import os
 from docopt import docopt
 from pyramid.config import Configurator
 from wsgiref.simple_server import make_server
 from sqlalchemy import create_engine
-
-# Figure out where we are
-here = os.path.dirname(os.path.abspath(__file__))
+import dirs
 
 # Parse the command-line arguments
 arguments = docopt(__doc__)
@@ -31,10 +28,10 @@ arguments = docopt(__doc__)
 if __name__ == '__main__':
     # Build the configuration and the WSGI app
     config = Configurator(settings={
-        'mako.directories': os.path.join(here, 'templates')
+        'mako.directories': dirs.templates
     })
 
-    config.add_static_view(name='static', path=os.path.join(here, 'static'))
+    config.add_static_view(name='static', path=dirs.static)
 
     config.add_route('list',    '/',                request_method='GET')
     config.add_route('search',  '/search',          request_method='GET')
