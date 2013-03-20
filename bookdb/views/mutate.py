@@ -76,12 +76,10 @@ def add_post_view(request):
         DBSession.commit()
 
         return {'pagetitle': 'Add Successful',
-                'redirect':  '/{}'.format(request.POST['isbn']),
                 'message':   'The book has been added to the database.'}
     except:
         DBSession.rollback()
         return {'pagetitle': 'Add Failed',
-                'redirect':  '/',
                 'message':   'An error occurred whilst adding the book.'}
 
 
@@ -103,12 +101,10 @@ def edit_post_view(request):
         DBSession.commit()
 
         return {'pagetitle': 'Edit Successful',
-                'redirect':  '/{}'.format(isbn),
                 'message':   'The book has been updated in the database.'}
     except:
         DBSession.rollback()
         return {'pagetitle': 'Edit Failed',
-                'redirect':  '/',
                 'message':   'An error occurred whilst updating the book.'}
 
 
@@ -128,12 +124,10 @@ def delete_post_view(request):
         DBSession.commit()
 
         return {'pagetitle': 'Delete Successful',
-                'redirect':  '/',
                 'message':   'The book has been deleted from the database.'}
     except:
         DBSession.rollback()
         return {'pagetitle': 'Delete Failed',
-                'redirect':  '/',
                 'message':   'An error occurred whilst deleting the book.'}
 
 

@@ -3,7 +3,7 @@
 <html>
   <head>
     <title>${pagetitle}</title>
-    <meta http-equiv="refresh" content="2;URL='${redirect}'">
+    <meta http-equiv="refresh" content="2;URL='/'">
 
     <link rel="stylesheet" href="/static/style.css" type="text/css">
   </head>
@@ -15,7 +15,7 @@
       </header>
 
       <p>${message}</p>
-      <p><a href="${redirect}">Click here to continue immediately</a></p>
+      <p><a href="/">Click here to continue immediately</a></p>
 
       <footer>
         <a href="https://github.com/barrucadu/bookdb">Github</a>
