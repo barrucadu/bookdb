@@ -9,6 +9,8 @@ from pyramid.view import view_config
 from models import DBSession
 from models.book import Book
 from datetime import date
+import dirs
+import os
 
 
 @view_config(route_name='add', renderer='bookform.mako')
@@ -84,6 +86,7 @@ def add_post_view(request):
     # TODO: Better error messages.
     try:
         newbook = mutate(Book(), request)
+        upload_cover(request)
 
         DBSession.add(newbook)
         DBSession.commit()
@@ -108,6 +111,7 @@ def edit_post_view(request):
     # TODO: Better error messages.
     try:
         isbn = request.matchdict['isbn']
+        upload_cover(request)
 
         mutate(DBSession.query(Book).filter(Book.isbn == isbn).one(),
                request)
@@ -135,6 +139,7 @@ def delete_post_view(request):
     try:
         isbn = request.matchdict['isbn']
         book = DBSession.query(Book).filter(Book.isbn == isbn).one()
+        delete_cover(isbn)
         DBSession.delete(book)
         DBSession.commit()
 
@@ -207,3 +212,47 @@ def last_read_date(request):
         return date(datelist[0], datelist[1], datelist[2])
     except:
         return date.min
+
+
+def upload_cover(request):
+    """Books may have covers associated with them, but only a few
+    types of file are supported. We need to check to see if an image
+    is provided and, if it the correct type, save it to the
+    appropriate place.
+
+    :param request: The request object
+    """
+
+    # Firstly check if an image has been sent
+    if 'cover' not in request.POST.keys() or request.POST['cover'] == b'':
+        return
+
+    # Extract the data and file extension
+    ext = request.POST['cover'].filename[-3:]
+    data = request.POST['cover'].file
+
+    # Check the file extension
+    if ext not in ['png', 'gif', 'jpg']:
+        return
+
+    # Delete the current cover
+    delete_cover(request.POST['isbn'])
+
+    # Save the new one
+    with open(os.path.join(
+            dirs.uploads,
+            '{}.{}'.format(request.POST['isbn'], ext)), 'wb') as f:
+        f.write(data.read())
+
+
+def delete_cover(isbn):
+    """Deletes the cover image, if there is one, associated with the
+    given ISBN.
+
+    :param isbn: Book to remove the cover of
+    """
+
+    for ext in ['png', 'gif', 'jpg']:
+        img = os.path.join(dirs.uploads, isbn + '.' + ext)
+        if os.path.exists(img):
+            os.remove(img)

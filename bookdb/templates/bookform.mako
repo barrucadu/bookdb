@@ -4,9 +4,13 @@ from datetime import date
 
 <%inherit file="wrapper.mako"/>
 
-<form action="${target}" method="post">
+<form action="${target}" method="post" enctype="multipart/form-data">
   <fieldset>
     <ol>
+      <li>
+        <label for="cover">Cover Image</label>
+        <input type="file" id="cover" name="cover">
+      </li>
       <li>
         <label for="isbn">ISBN</label>
         <input type="text" id="isbn" name="isbn" value="${isbn}" required>
@@ -59,5 +63,6 @@ from datetime import date
 </form>
 
 <div class="help">
+  <p>Cover imges should be 225x150px, and be in png, gif, or jpg format.</p>
   <p>To enter multiple authors, separate them with an ampersand.</p>
 </div>
