@@ -85,15 +85,7 @@ def add_post_view(request):
 
     # TODO: Better error messages.
     try:
-        newbook = Book(request.POST['isbn'],
-                       request.POST['title'],
-                       sort_authors(request.POST['author']),
-                       'read' in request.POST,
-                       last_read_date(request),
-                       request.POST['location'],
-                       request.POST['borrower'],
-                       request.POST['quote'],
-                       request.POST['notes'])
+        newbook = mutate(Book(), request)
 
         DBSession.add(newbook)
         DBSession.commit()
@@ -118,17 +110,9 @@ def edit_post_view(request):
     # TODO: Better error messages.
     try:
         isbn = request.matchdict['isbn']
-        book = DBSession.query(Book).filter(Book.isbn == isbn).one()
 
-        book.isbn     = request.POST['isbn']
-        book.title    = request.POST['title']
-        book.author   = sort_authors(request.POST['author'])
-        book.read     = 'read' in request.POST
-        book.lastread = last_read_date(request)
-        book.location = request.POST['location']
-        book.borrower = request.POST['borrower']
-        book.quote    = request.POST['quote']
-        book.notes    = request.POST['notes']
+        mutate(DBSession.query(Book).filter(Book.isbn == isbn).one(),
+               request)
 
         DBSession.commit()
 
@@ -166,6 +150,28 @@ def delete_post_view(request):
                 'message':   'An error occurred whilst deleting the book.'}
 
 
+def mutate(book, request):
+    """Adding and editing a book are basically the same operation: you
+    take a new or already existing book, replace all its data with the
+    new data, and update the database. This can be abstracted.
+
+    :param book: The book object to update
+    :param request: The request to update the book from
+    """
+
+    book.mutate(request.POST['isbn'],
+                request.POST['title'],
+                sort_authors(request.POST['author']),
+                'read' in request.POST,
+                last_read_date(request),
+                request.POST['location'],
+                request.POST['borrower'],
+                request.POST['quote'],
+                request.POST['notes'])
+
+    return book
+
+
 def sort_authors(authors):
     """The user can enter a list of authors separated by ampersands in
     any order, but we really want them to be sorted internally, as
@@ -179,7 +185,7 @@ def sort_authors(authors):
     """
 
     authorlist = [author.strip()
-                   for author in authors.split('&')]
+                  for author in authors.split('&')]
     authorlist.sort()
     return ' & '.join(authorlist)
 

@@ -26,9 +26,9 @@ class Book(Base):
     quote    = Column(Text)
     notes    = Column(Text)
 
-    def __init__(self, isbn, title, author, read, lastread,
+    def mutate(self, isbn, title, author, read, lastread,
                  location, borrower, quote, notes):
-        """Create a new book from the given data.
+        """Modify this book to contain the new data
 
         :param isbn: The ISBN number of the book, this cannot already
             be in the database.
