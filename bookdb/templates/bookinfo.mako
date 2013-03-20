@@ -2,11 +2,12 @@
 import datetime
 from markdown import markdown
 from markupsafe import escape
+from templates.utils import find_book_image
 %>
 
 <%inherit file="wrapper.mako"/>
 
-<img src="${image}" alt="${book.title}, by ${book.author}"/>
+<img src="${find_book_image(book.isbn)}" alt="${book.title}, by ${book.author}"/>
 
 % if book.quote.strip() != "":
   <blockquote>

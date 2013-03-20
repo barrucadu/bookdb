@@ -1,3 +1,7 @@
+import os
+import dirs
+
+
 def plural(count, singular):
     """Turn a singular word into a plural if need be.
 
@@ -15,3 +19,19 @@ def plural(count, singular):
             return irregulars[singular]
         else:
             return singular + "s"
+
+
+def find_book_image(isbn):
+    """Find the image file associated with a book, and return its path.
+
+    :param isbn: The ISBN of the book.
+    """
+
+    imagefile = '/static/nocover.png'
+
+    exts = ['png', 'jpg', 'gif']
+    for ext in exts:
+        if os.path.exists(os.path.join(dirs.uploads, isbn + '.' + ext)):
+            imagefile = '/static/uploads/{}.{}'.format(isbn, ext)
+
+    return imagefile
