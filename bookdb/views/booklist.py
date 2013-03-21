@@ -42,7 +42,7 @@ def search_view(request):
     for field, value in request.GET.items():
         dbfield = Book.unstring(field)
         if dbfield is not None:
-            criteria.append((dbfield, value, True))
+            criteria.append((dbfield, value))
 
     # Finally, we need to manually filter by matchread and
     # matchunread, as those don't directly correspond to a field in
@@ -83,7 +83,7 @@ def filter_view(request):
                  for book in booklist()
                  if book.read == (value == "yes")]
     else:
-        books = booklist([(Book.unstring(field), value, True)])
+        books = booklist([(Book.unstring(field), value)])
 
     return {'pagetitle': 'BookDB :: Filter',
             'books':     books,
@@ -133,4 +133,5 @@ def count_read(books):
     """
 
     return len([book
-                for book in books if book.read])
+                for book in books
+                if book.read])
