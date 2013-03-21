@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+<%
+from templates.utils import are_unread_books, next_book
+%>
 <!DOCTYLE html>
 <html>
   <head>
@@ -15,6 +17,13 @@
     <div class="page">
       <header>
         <h1>${pagetitle}</h1>
+
+        % if are_unread_books():
+          <div id="next">
+            <h2>Why not read…</h2>
+            ${next_book().title}
+          </div>
+        % endif
 
         <nav>
           <ul>
