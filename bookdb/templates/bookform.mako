@@ -12,15 +12,15 @@ from datetime import date
         <input type="file" id="cover" name="cover">
       </li>
       <li>
-        <label for="isbn">ISBN</label>
+        <label for="isbn" class="required">ISBN</label>
         <input type="text" id="isbn" name="isbn" value="${book.isbn}" required>
       </li>
       <li>
-        <label for="title">Title</label>
+        <label for="title" class="required">Title</label>
         <input type="text" id="title" name="title" value="${book.title}" required>
       </li>
       <li>
-        <label for="isbn">Author</label>
+        <label for="isbn" class="required">Author</label>
         <input type="text" id="author" name="author" value="${book.author}" required>
       </li>
       <li>
@@ -40,7 +40,7 @@ from datetime import date
 % endif
       </li>
       <li>
-        <label for="location">Location</label>
+        <label for="location" class="required">Location</label>
         <input type="text" id="location" name="location" value="${book.location}" required>
       </li>
       <li>
@@ -63,6 +63,7 @@ from datetime import date
 </form>
 
 <div class="help">
+  <p><span class="required">Required fields</span> must be filled in.</p>
   <p>Cover imges should be 225x150px, and be in png, gif, or jpg format.</p>
   <p>To enter multiple authors, separate them with an ampersand.</p>
 </div>

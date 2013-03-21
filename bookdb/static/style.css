@@ -141,6 +141,10 @@ label {
     float: left;
 }
 
+.required {
+    color: #FF6666;
+}
+
 input, textarea {
     border: 1px solid #cccccc;
     border-radius: 3px;
