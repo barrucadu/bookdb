@@ -9,9 +9,9 @@ Book lists are ordered by author name and then by title.
 """
 
 from pyramid.view import view_config
-from pyramid.renderers import render_to_response
 from models import DBSession
 from models.book import Book
+from errors import handle_exception
 
 
 @view_config(route_name='list', renderer='booklist.mako')
@@ -79,12 +79,9 @@ def filter_view(request):
 
     # Display an error if the field doesn't exist
     if Book.unstring(field) is None:
-        return render_to_response(
-            'information.mako',
-            {'title':   'Bad Filter',
-             'message': 'The field you attempted to filter by does not exist',
-             'error':   True},
-            request=request)
+        return handle_exception(
+            request,
+            message='The field you attempted to filter by does not exist.')
 
     if field == "read":
         books = [book

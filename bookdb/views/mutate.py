@@ -9,6 +9,7 @@ from pyramid.view import view_config
 from models import DBSession
 from models.book import Book
 from datetime import date
+from errors import handle_exception
 import dirs
 import os
 
@@ -33,14 +34,16 @@ def edit_view(request):
     :param request: The request object.
     """
 
-    # TODO: Display an error page if the book does not exist.
-    isbn = request.matchdict["isbn"]
-    book = DBSession.query(Book).filter(Book.isbn == isbn).one()
+    try:
+        isbn = request.matchdict["isbn"]
+        book = DBSession.query(Book).filter(Book.isbn == isbn).one()
 
-    return {'title':  'BookDB :: Edit',
-            'target': '/{}/edit'.format(isbn),
-            'submit': 'Edit',
-            'book':   book}
+        return {'title':  'BookDB :: Edit',
+                'target': '/{}/edit'.format(isbn),
+                'submit': 'Edit',
+                'book':   book}
+    except Exception as e:
+        return handle_exception(request, e)
 
 
 @view_config(route_name='delete', renderer='confirmdelete.mako')
@@ -50,14 +53,16 @@ def delete_view(request):
     :param request: The request object.
     """
 
-    # TODO: Display an error page if the book does not exist.
-    isbn = request.matchdict["isbn"]
-    book = DBSession.query(Book).filter(Book.isbn == isbn).one()
+    try:
+        isbn = request.matchdict["isbn"]
+        book = DBSession.query(Book).filter(Book.isbn == isbn).one()
 
-    return {'title':     'Confirm Delete',
-            'isbn':      isbn,
-            'booktitle': book.title,
-            'author':    ' & '.join(book.authors())}
+        return {'title':     'Confirm Delete',
+                'isbn':      isbn,
+                'booktitle': book.title,
+                'author':    ' & '.join(book.authors())}
+    except Exception as e:
+        return handle_exception(request, e)
 
 
 @view_config(route_name='addp', renderer='information.mako')
@@ -67,7 +72,6 @@ def add_post_view(request):
     :param request: The request object.
     """
 
-    # TODO: Better error messages.
     try:
         newbook = mutate(Book(), request)
         upload_cover(request)
@@ -77,10 +81,8 @@ def add_post_view(request):
 
         return {'title':   'Add Successful',
                 'message': 'The book has been added to the database.'}
-    except:
-        DBSession.rollback()
-        return {'title':   'Add Failed',
-                'message': 'An error occurred whilst adding the book.'}
+    except Exception as e:
+        return handle_exception(request, e)
 
 
 @view_config(route_name='editp', renderer='information.mako')
@@ -90,7 +92,6 @@ def edit_post_view(request):
     :param request: The request object.
     """
 
-    # TODO: Better error messages.
     try:
         isbn = request.matchdict['isbn']
         upload_cover(request)
@@ -102,10 +103,8 @@ def edit_post_view(request):
 
         return {'title':   'Edit Successful',
                 'message': 'The book has been updated in the database.'}
-    except:
-        DBSession.rollback()
-        return {'title':   'Edit Failed',
-                'message': 'An error occurred whilst updating the book.'}
+    except Exception as e:
+        return handle_exception(request, e)
 
 
 @view_config(route_name='deletep', renderer='information.mako')
@@ -115,7 +114,6 @@ def delete_post_view(request):
     :param request: The request object.
     """
 
-    # TODO: Better error messages.
     try:
         isbn = request.matchdict['isbn']
         book = DBSession.query(Book).filter(Book.isbn == isbn).one()
@@ -125,10 +123,8 @@ def delete_post_view(request):
 
         return {'title':   'Delete Successful',
                 'message': 'The book has been deleted from the database.'}
-    except:
-        DBSession.rollback()
-        return {'title':   'Delete Failed',
-                'message': 'An error occurred whilst deleting the book.'}
+    except Exception as e:
+        return handle_exception(request, e)
 
 
 def mutate(book, request):
