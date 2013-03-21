@@ -5,6 +5,10 @@
     <title>${pagetitle}</title>
 
     <link rel="stylesheet" href="/static/style.css" type="text/css">
+
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+    <script src="/static/bookdb.js"></script>
   </head>
 
   <body>

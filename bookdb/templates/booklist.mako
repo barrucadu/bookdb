@@ -1,6 +1,8 @@
 <%
 import datetime
-from templates.utils import plural
+from markdown import markdown
+from markupsafe import escape
+from templates.utils import plural, find_book_image
 
 percentread = round((read / len(books)) * 100) if len(books) > 0 else 0
 %>
@@ -51,9 +53,28 @@ percentread = round((read / len(books)) * 100) if len(books) > 0 else 0
           <td><a href="/location/${book.location}">${book.location}</a>
           <td><a href="/borrower/${book.borrower}">${book.borrower}</td>
           <td class="meta">
-            <a href="/${book.isbn}">[info]</a>
+            <a href="#" class="toggle" id="${book.isbn}-toggle">[info]</a>
             <a href="/${book.isbn}/edit">[edit]</a>
             <a href="/${book.isbn}/delete">[delete]</a>
+          </td>
+        </tr>
+        <tr id="${book.isbn}-toggle-tr" class="hidden">
+          <td colspan="7">
+            <div id="${book.isbn}-toggle-div" class="hidden">
+              <img src="${find_book_image(book.isbn)}" alt="${book.title}, by ${book.author}">
+
+              % if book.quote.strip() != "":
+                <blockquote>
+                  ${markdown(escape(book.quote))|n}
+                </blockquote>
+              % endif
+
+              % if book.notes.strip() != "":
+                <div class="notes">
+                  ${markdown(escape(book.notes))|n}
+                </div>
+              % endif
+            </div>
           </td>
         </tr>
       % endfor
