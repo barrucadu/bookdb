@@ -1,13 +1,20 @@
 """BookDB.
 
 Usage:
-  bookdb [--host=<host>] [--port=<port>]
+  bookdb [--host=<host>] [--port=<port>] [--database=<database>]
   bookdb -h | --help
 
 Options:
-  -h --help      Show this screen
-  --host=<host>  Hostname or IP to listen on [default: localhost]
-  --port=<port>  Port to listen on [default: 3000]
+  -h --help              Show this screen
+
+  --host=<host>          Hostname or IP to listen on
+                           [default: localhost]
+
+  --port=<port>          Port to listen on
+                           [default: 3000]
+
+  --database=<database>  The filename of the SQLite database
+                           [default: bookdb.sqlite3]
 """
 
 # Import views and models
@@ -18,7 +25,8 @@ import models
 from docopt import docopt
 from pyramid.config import Configurator
 from wsgiref.simple_server import make_server
-from sqlalchemy import create_engine
+import sqlalchemy
+from sys import exit
 import dirs
 
 # Parse the command-line arguments
@@ -48,13 +56,24 @@ if __name__ == '__main__':
     app = config.make_wsgi_app()
 
     # Initialise the SQL database
-    engine = create_engine('sqlite:///bookdb.sqlite3')
-    models.initialise_sql(engine)
-    config.scan(models)
+    try:
+        engine = sqlalchemy.create_engine(
+            'sqlite:///{}'.format(arguments['--database']))
+        models.initialise_sql(engine)
+        config.scan(models)
+    except sqlalchemy.exc.OperationalError:
+        print("Cannot initialise database.")
+        exit(1)
 
     # Start the server
-    server = make_server(arguments['--host'],
-                         int(arguments['--port']),
-                         app)
-
-    server.serve_forever()
+    try:
+        server = make_server(arguments['--host'],
+                             int(arguments['--port']),
+                             app)
+        server.serve_forever()
+    except ValueError:
+        print("Port must be a numeric value.")
+        exit(1)
+    except OSError:
+        print("Cannot listen on given address.")
+        exit(1)
