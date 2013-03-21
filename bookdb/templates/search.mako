@@ -9,7 +9,7 @@
       </li>
       <li>
         <label for="title">Title</label>
-        <input type="text" id="title" name="title" value="${title}">
+        <input type="text" id="title" name="title" value="${booktitle}">
       </li>
       <li>
         <label for="author">Author</label>

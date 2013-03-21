@@ -24,10 +24,10 @@ def list_view(request):
     # The template takes a page title, list of books, the number of
     # unique authors and the number of books which are read.
     books = booklist()
-    return {'pagetitle': 'BookDB',
-            'books':     books,
-            'authors':   count_authors(books),
-            'read':      count_read(books)}
+    return {'title':   'BookDB',
+            'books':   books,
+            'authors': count_authors(books),
+            'read':    count_read(books)}
 
 
 @view_config(route_name='search', renderer='search.mako')
@@ -54,12 +54,12 @@ def search_view(request):
              for book in booklist(criteria)
              if (book.read and matchread) or (not book.read and matchunread)]
 
-    return {'pagetitle':   'BookDB :: Search',
+    return {'title':       'BookDB :: Search',
             'books':       books,
             'authors':     count_authors(books),
             'read':        count_read(books),
             'isbn':        request.GET.get("isbn",        ""),
-            'title':       request.GET.get("title",       ""),
+            'booktitle':   request.GET.get("title",       ""),
             'author':      request.GET.get("author",      ""),
             'matchread':   request.GET.get("matchread",   ""),
             'matchunread': request.GET.get("matchunread", ""),
@@ -81,9 +81,9 @@ def filter_view(request):
     if Book.unstring(field) is None:
         return render_to_response(
             'information.mako',
-            {'pagetitle': 'Bad Filter',
-             'message':   'The field you attempted to filter by does not exist',
-             'error':     True},
+            {'title':   'Bad Filter',
+             'message': 'The field you attempted to filter by does not exist',
+             'error':   True},
             request=request)
 
     if field == "read":
@@ -93,10 +93,10 @@ def filter_view(request):
     else:
         books = booklist([(Book.unstring(field), value)])
 
-    return {'pagetitle': 'BookDB :: Filter',
-            'books':     books,
-            'authors':   count_authors(books),
-            'read':      count_read(books)}
+    return {'title':   'BookDB :: Filter',
+            'books':   books,
+            'authors': count_authors(books),
+            'read':    count_read(books)}
 
 
 def booklist(filter=[]):

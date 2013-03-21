@@ -2,7 +2,7 @@
 <!DOCTYLE html>
 <html>
   <head>
-    <title>${pagetitle}</title>
+    <title>${title}</title>
 
 % if error is UNDEFINED:
     <meta http-equiv="refresh" content="2;URL='/'">
@@ -19,7 +19,7 @@
 
     <div class="information">
       <header>
-        <h1>${pagetitle}</h1>
+        <h1>${title}</h1>
       </header>
 
       <p>${message}</p>

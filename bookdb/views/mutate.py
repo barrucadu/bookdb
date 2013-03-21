@@ -20,10 +20,10 @@ def add_view(request):
     :param request: The request object.
     """
 
-    return {'pagetitle': 'BookDB :: Add',
-            'target':    '/add',
-            'submit':    'Add',
-            'book':      Book()}
+    return {'title':  'BookDB :: Add',
+            'target': '/add',
+            'submit': 'Add',
+            'book':   Book()}
 
 
 @view_config(route_name='edit', renderer='bookform.mako')
@@ -37,10 +37,10 @@ def edit_view(request):
     isbn = request.matchdict["isbn"]
     book = DBSession.query(Book).filter(Book.isbn == isbn).one()
 
-    return {'pagetitle': 'BookDB :: Edit',
-            'target':    '/{}/edit'.format(isbn),
-            'submit':    'Edit',
-            'book':      book}
+    return {'title':  'BookDB :: Edit',
+            'target': '/{}/edit'.format(isbn),
+            'submit': 'Edit',
+            'book':   book}
 
 
 @view_config(route_name='delete', renderer='confirmdelete.mako')
@@ -54,10 +54,10 @@ def delete_view(request):
     isbn = request.matchdict["isbn"]
     book = DBSession.query(Book).filter(Book.isbn == isbn).one()
 
-    return {'pagetitle': 'Confirm Delete',
-            'isbn': isbn,
-            'title': book.title,
-            'author': ' & '.join(book.authors())}
+    return {'title':     'Confirm Delete',
+            'isbn':      isbn,
+            'booktitle': book.title,
+            'author':    ' & '.join(book.authors())}
 
 
 @view_config(route_name='addp', renderer='information.mako')
@@ -75,12 +75,12 @@ def add_post_view(request):
         DBSession.add(newbook)
         DBSession.commit()
 
-        return {'pagetitle': 'Add Successful',
-                'message':   'The book has been added to the database.'}
+        return {'title':   'Add Successful',
+                'message': 'The book has been added to the database.'}
     except:
         DBSession.rollback()
-        return {'pagetitle': 'Add Failed',
-                'message':   'An error occurred whilst adding the book.'}
+        return {'title':   'Add Failed',
+                'message': 'An error occurred whilst adding the book.'}
 
 
 @view_config(route_name='editp', renderer='information.mako')
@@ -100,12 +100,12 @@ def edit_post_view(request):
 
         DBSession.commit()
 
-        return {'pagetitle': 'Edit Successful',
-                'message':   'The book has been updated in the database.'}
+        return {'title':   'Edit Successful',
+                'message': 'The book has been updated in the database.'}
     except:
         DBSession.rollback()
-        return {'pagetitle': 'Edit Failed',
-                'message':   'An error occurred whilst updating the book.'}
+        return {'title':   'Edit Failed',
+                'message': 'An error occurred whilst updating the book.'}
 
 
 @view_config(route_name='deletep', renderer='information.mako')
@@ -123,12 +123,12 @@ def delete_post_view(request):
         DBSession.delete(book)
         DBSession.commit()
 
-        return {'pagetitle': 'Delete Successful',
-                'message':   'The book has been deleted from the database.'}
+        return {'title':   'Delete Successful',
+                'message': 'The book has been deleted from the database.'}
     except:
         DBSession.rollback()
-        return {'pagetitle': 'Delete Failed',
-                'message':   'An error occurred whilst deleting the book.'}
+        return {'title':   'Delete Failed',
+                'message': 'An error occurred whilst deleting the book.'}
 
 
 def mutate(book, request):

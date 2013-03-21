@@ -4,7 +4,7 @@ from templates.utils import are_unread_books, next_book
 <!DOCTYLE html>
 <html>
   <head>
-    <title>${pagetitle}</title>
+    <title>${title}</title>
 
     <link rel="stylesheet" href="/static/style.css" type="text/css">
 
@@ -16,7 +16,7 @@ from templates.utils import are_unread_books, next_book
   <body>
     <div class="page">
       <header>
-        <h1>${pagetitle}</h1>
+        <h1>${title}</h1>
 
         % if are_unread_books():
           <div id="next">
