@@ -28,6 +28,14 @@ body {
     padding: 25px;
 }
 
+.error {
+    background-color: #E89E79;
+}
+
+.error .information {
+    border-color: #FF8652;
+}
+
 p {
     margin-bottom: 6px;
 }
