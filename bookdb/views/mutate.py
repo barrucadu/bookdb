@@ -72,6 +72,9 @@ def add_post_view(request):
     :param request: The request object.
     """
 
+    if request.registry.settings['readonly']:
+        return handle_exception(request, message='The database is read-only.')
+
     try:
         newbook = mutate(Book(), request)
         upload_cover(request)
@@ -91,6 +94,9 @@ def edit_post_view(request):
 
     :param request: The request object.
     """
+
+    if request.registry.settings['readonly']:
+        return handle_exception(request, message='The database is read-only.')
 
     try:
         isbn = request.matchdict['isbn']
@@ -113,6 +119,9 @@ def delete_post_view(request):
 
     :param request: The request object.
     """
+
+    if request.registry.settings['readonly']:
+        return handle_exception(request, message='The database is read-only.')
 
     try:
         isbn = request.matchdict['isbn']

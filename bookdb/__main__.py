@@ -1,7 +1,7 @@
 """BookDB.
 
 Usage:
-  bookdb [--host=<host>] [--port=<port>] [--database=<database>]
+  bookdb [--host=<host>] [--port=<port>] [--database=<database>] [--readonly]
   bookdb -h | --help
 
 Options:
@@ -15,6 +15,8 @@ Options:
 
   --database=<database>  The filename of the SQLite database
                            [default: bookdb.sqlite3]
+
+  --readonly             Do not allow updates to the database.
 """
 
 # Import views and models
@@ -36,7 +38,8 @@ arguments = docopt(__doc__)
 if __name__ == '__main__':
     # Build the configuration and the WSGI app
     config = Configurator(settings={
-        'mako.directories': dirs.templates
+        'mako.directories': dirs.templates,
+        'readonly':         arguments['--readonly']
     })
 
     config.add_static_view(name='static', path=dirs.static)
