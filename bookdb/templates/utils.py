@@ -30,12 +30,12 @@ def find_book_image(isbn):
     :param isbn: The ISBN of the book.
     """
 
-    imagefile = '/static/nocover.png'
+    imagefile = 'static/nocover.png'
 
     exts = ['png', 'jpg', 'gif']
     for ext in exts:
         if os.path.exists(os.path.join(dirs.uploads, isbn + '.' + ext)):
-            imagefile = '/static/uploads/{}.{}'.format(isbn, ext)
+            imagefile = 'static/uploads/{}.{}'.format(isbn, ext)
 
     return imagefile
 

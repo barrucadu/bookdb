@@ -1,11 +1,13 @@
 """BookDB.
 
 Usage:
-  bookdb [--host=<host>] [--port=<port>] [--database=<database>] [--readonly]
+  bookdb [--readonly] [--host=<host>] [--port=<port>] [--database=<database>] [--webpath=<webpath>]
   bookdb -h | --help
 
 Options:
   -h --help              Show this screen
+
+  --readonly             Do not allow updates to the database.
 
   --host=<host>          Hostname or IP to listen on
                            [default: localhost]
@@ -16,7 +18,7 @@ Options:
   --database=<database>  The filename of the SQLite database
                            [default: bookdb.sqlite3]
 
-  --readonly             Do not allow updates to the database.
+  --webpath=<webpath>    Prepend this to all URLs in the application.
 """
 
 # Import views and models
@@ -30,16 +32,31 @@ from wsgiref.simple_server import make_server
 import sqlalchemy
 from sys import exit
 import dirs
+from pyramid.events import subscriber, BeforeRender
 
 # Parse the command-line arguments
 arguments = docopt(__doc__)
+
+
+@subscriber(BeforeRender)
+def add_web_path(event):
+    """Add the web path to all template contexts before they are
+    rendered.
+
+    :param event: The template render event.
+    """
+
+    if arguments['--webpath'] is None:
+        event['webpath'] = ''
+    else:
+        event['webpath'] = arguments['--webpath']
 
 # Start the server
 if __name__ == '__main__':
     # Build the configuration and the WSGI app
     config = Configurator(settings={
         'mako.directories': dirs.templates,
-        'readonly':         arguments['--readonly']
+        'readonly':         arguments['--readonly'],
     })
 
     config.add_static_view(name='static', path=dirs.static)
@@ -56,6 +73,9 @@ if __name__ == '__main__':
 
     config.scan(views)
 
+    # Load any remaining local configuration
+    config.scan()
+
     app = config.make_wsgi_app()
 
     # Initialise the SQL database
@@ -63,7 +83,6 @@ if __name__ == '__main__':
         engine = sqlalchemy.create_engine(
             'sqlite:///{}'.format(arguments['--database']))
         models.initialise_sql(engine)
-        config.scan(models)
     except sqlalchemy.exc.OperationalError:
         print("Cannot initialise database.")
         exit(1)

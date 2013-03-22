@@ -5,10 +5,10 @@
     <title>${title}</title>
 
 % if error is UNDEFINED:
-    <meta http-equiv="refresh" content="2;URL='/'">
+    <meta http-equiv="refresh" content="2;URL='${webpath}/'">
 % endif
 
-    <link rel="stylesheet" href="/static/style.css" type="text/css">
+    <link rel="stylesheet" href="${webpath}/static/style.css" type="text/css">
   </head>
 
 % if error is UNDEFINED:
@@ -23,7 +23,7 @@
       </header>
 
       <p>${message}</p>
-      <p><a href="/">Click here to continue.</a></p>
+      <p><a href="${webpath}/">Click here to continue.</a></p>
 
       <footer>
         <a href="https://github.com/barrucadu/bookdb">Github</a>

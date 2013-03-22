@@ -6,11 +6,11 @@ from templates.utils import are_unread_books, next_book
   <head>
     <title>${title}</title>
 
-    <link rel="stylesheet" href="/static/style.css" type="text/css">
+    <link rel="stylesheet" href="${webpath}/static/style.css" type="text/css">
 
     <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
     <script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
-    <script src="/static/bookdb.js"></script>
+    <script src="${webpath}/static/bookdb.js"></script>
   </head>
 
   <body>
@@ -27,9 +27,9 @@ from templates.utils import are_unread_books, next_book
 
         <nav>
           <ul>
-            <li><a href="/">Home</a>
-            <li><a href="/add">Add</a>
-            <li><a href="/search">Search</a>
+            <li><a href="${webpath}/">Home</a>
+            <li><a href="${webpath}/add">Add</a>
+            <li><a href="${webpath}/search">Search</a>
           </ul>
         </nav>
       </header>

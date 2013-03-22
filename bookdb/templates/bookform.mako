@@ -4,7 +4,7 @@ from datetime import date
 
 <%inherit file="wrapper.mako"/>
 
-<form action="${target}" method="post" enctype="multipart/form-data">
+<form action="${webpath}/${target}" method="post" enctype="multipart/form-data">
   <fieldset>
     <ol>
       <li>

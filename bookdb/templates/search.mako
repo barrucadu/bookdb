@@ -1,6 +1,6 @@
 <%inherit file="booklist.mako"/>
 
-<form method="get" action="/search">
+<form method="get" action="${webpath}/search">
   <fieldset>
     <ol>
       <li>

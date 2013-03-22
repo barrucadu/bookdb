@@ -22,7 +22,7 @@ def add_view(request):
     """
 
     return {'title':  'BookDB :: Add',
-            'target': '/add',
+            'target': 'add',
             'submit': 'Add',
             'book':   Book()}
 
@@ -39,7 +39,7 @@ def edit_view(request):
         book = DBSession.query(Book).filter(Book.isbn == isbn).one()
 
         return {'title':  'BookDB :: Edit',
-                'target': '/{}/edit'.format(isbn),
+                'target': '{}/edit'.format(isbn),
                 'submit': 'Edit',
                 'book':   book}
     except Exception as e:
