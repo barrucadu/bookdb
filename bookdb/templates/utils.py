@@ -51,6 +51,6 @@ def next_book():
     """Pick a random unread book
     """
 
-    books = DBSession.query(Book)
+    books = DBSession.query(Book).filter(Book.read == False)
 
     return books[randrange(0, books.count())]
