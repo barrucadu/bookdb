@@ -64,7 +64,7 @@ localizer = get_localizer(request)
         <tr id="${book.isbn}-toggle-tr" class="hidden">
           <td colspan="7">
             <div id="${book.isbn}-toggle-div" class="hidden">
-              <img src="${webpath}/${find_book_image(book.isbn)}" alt="${book.title}, by ${book.author}">
+              <img src="${webpath}/${find_book_image(book)}" alt="${book.title}, by ${book.author}">
 
               % if book.quote.strip() != "":
                 <blockquote>

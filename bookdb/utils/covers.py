@@ -1,14 +1,15 @@
 import os
 import utils.dirs as dirs
-
-extensions = ['.png', '.gif', '.jpg', '.jpeg']
+from models import DBSession
+from models.book import Book
 
 
 def upload(request):
-    """Books may have covers associated with them, but only a few
-    types of file are supported. We need to check to see if an image
-    is provided and, if it the correct type, save it to the
-    appropriate place.
+    """Books may have covers associated with them. We need to check to
+    see if an image is provided and save it to the appropriate place.
+
+    The book must be already in the database before calling this
+    function, as it retrieves and updates it.
 
     :param request: The request object
     """
@@ -23,38 +24,23 @@ def upload(request):
     ext = os.path.splitext(request.POST['cover'].filename)[1]
     data = request.POST['cover'].file
 
-    # Check the file extension
-    if ext not in extensions:
-        return
-
     # Delete the current cover
-    delete(isbn)
+    book = Book.lookup(isbn)
+    delete(book)
+    book.image = isbn + ext
+    DBSession.commit()
 
     # Save the new one
     with open(os.path.join(dirs.uploads, isbn + ext), 'wb') as f:
         f.write(data.read())
 
 
-def delete(isbn):
+def delete(book):
     """Deletes the cover image, if there is one, associated with the
-    given ISBN.
+    given book.
 
-    :param isbn: Book to remove the cover of
+    :param book: Book to remove the cover of
     """
 
-    for ext in extensions:
-        img = os.path.join(dirs.uploads, isbn + ext)
-        if os.path.exists(img):
-            os.remove(img)
-
-
-def find(isbn):
-    """Find the cover associated with the given ISBN, and return its
-    filename. If there is no such cover, we return None.
-
-    :param isbn: The ISBN of the book.
-    """
-
-    for ext in extensions:
-        if os.path.exists(os.path.join(dirs.uploads, isbn + ext)):
-            return isbn + ext
+    if book.image != '':
+        os.remove(os.path.join(dirs.uploads, book.image))

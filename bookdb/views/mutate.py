@@ -70,10 +70,10 @@ def add_post_view(request):
     """
 
     newbook = mutate(Book(), request)
-    covers.upload(request)
-
     DBSession.add(newbook)
     DBSession.commit()
+
+    covers.upload(request)
 
     return {'message': 'The book has been added to the database.'}
 
@@ -87,11 +87,10 @@ def edit_post_view(request):
     """
 
     isbn = request.matchdict['isbn']
-    covers.upload(request)
-
     mutate(Book.lookup(isbn), request)
-
     DBSession.commit()
+
+    covers.upload(request)
 
     return {'message': 'The book has been updated in the database.'}
 
@@ -105,8 +104,10 @@ def delete_post_view(request):
     """
 
     isbn = request.matchdict['isbn']
-    covers.delete(isbn)
-    DBSession.delete(Book.lookup(isbn))
+    book = Book.lookup(isbn)
+
+    covers.delete(book)
+    DBSession.delete(book)
     DBSession.commit()
 
     return {'message': 'The book has been deleted from the database.'}
@@ -129,7 +130,8 @@ def mutate(book, request):
                 request.POST['location'],
                 request.POST['borrower'],
                 request.POST['quote'],
-                request.POST['notes'])
+                request.POST['notes'],
+                book.image)
 
     return book
 

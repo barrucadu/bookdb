@@ -1,21 +1,18 @@
 from models import DBSession
 from models.book import Book
 from random import randrange
-import utils.covers as covers
 
 
-def find_book_image(isbn):
+def find_book_image(book):
     """Find the image file associated with a book, and return its path.
 
-    :param isbn: The ISBN of the book.
+    :param book: The book
     """
 
-    imagefile = covers.find(isbn)
-
-    if imagefile is None:
+    if book.image == '':
         return 'static/nocover.png'
     else:
-        return 'static/uploads/{}'.format(imagefile)
+        return 'static/uploads/{}'.format(book.image)
 
 
 def are_unread_books():
