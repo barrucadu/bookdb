@@ -11,11 +11,10 @@ def mutates(f):
     """
 
     @wraps(f)
-    def wrapper(*args, **kwargs):
-        request = args[1]
+    def wrapper(request):
         if request.registry.settings['readonly']:
             return error(request, 'The database is read-only.')
 
-        return f(request, **kwargs)
+        return f(request)
 
     return wrapper
