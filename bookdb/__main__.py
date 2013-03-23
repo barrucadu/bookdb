@@ -22,8 +22,7 @@ Options:
 """
 
 # Import views and models
-import views
-import models
+import models, utils, views
 
 # Import everything else
 from docopt import docopt
@@ -74,6 +73,7 @@ if __name__ == '__main__':
     config.scan(views)
 
     # Load any remaining local configuration
+    config.scan(utils)
     config.scan()
 
     app = config.make_wsgi_app()

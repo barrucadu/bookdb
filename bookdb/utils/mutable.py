@@ -1,4 +1,4 @@
-from utils.errors import handle_exception
+from utils.errors import error
 from functools import wraps
 
 
@@ -14,8 +14,7 @@ def mutates(f):
     def wrapper(*args, **kwargs):
         request = args[1]
         if request.registry.settings['readonly']:
-            return handle_exception(request,
-                                    message='The database is read-only.')
+            return error(request, 'The database is read-only.')
 
         return f(request, **kwargs)
 

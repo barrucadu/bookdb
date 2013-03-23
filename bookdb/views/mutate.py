@@ -9,7 +9,6 @@ from pyramid.view import view_config
 from models import DBSession
 from models.book import Book
 from datetime import date
-from utils.errors import handle_exception
 from utils.mutable import mutates
 import utils.covers as covers
 
@@ -36,16 +35,13 @@ def edit_view(request):
     :param request: The request object.
     """
 
-    try:
-        isbn = request.matchdict["isbn"]
-        book = DBSession.query(Book).filter(Book.isbn == isbn).one()
+    isbn = request.matchdict["isbn"]
+    book = DBSession.query(Book).filter(Book.isbn == isbn).one()
 
-        return {'title':  'BookDB :: Edit',
-                'target': '{}/edit'.format(isbn),
-                'submit': 'Edit',
-                'book':   book}
-    except Exception as e:
-        return handle_exception(request, e)
+    return {'title':  'BookDB :: Edit',
+            'target': '{}/edit'.format(isbn),
+            'submit': 'Edit',
+            'book':   book}
 
 
 @view_config(route_name='delete', renderer='confirmdelete.mako')
@@ -56,16 +52,13 @@ def delete_view(request):
     :param request: The request object.
     """
 
-    try:
-        isbn = request.matchdict["isbn"]
-        book = Book.lookup(isbn)
+    isbn = request.matchdict["isbn"]
+    book = Book.lookup(isbn)
 
-        return {'title':     'Confirm Delete',
-                'isbn':      isbn,
-                'booktitle': book.title,
-                'author':    ' & '.join(book.authors())}
-    except Exception as e:
-        return handle_exception(request, e)
+    return {'title':     'Confirm Delete',
+            'isbn':      isbn,
+            'booktitle': book.title,
+            'author':    ' & '.join(book.authors())}
 
 
 @view_config(route_name='addp', renderer='information.mako')
@@ -76,16 +69,13 @@ def add_post_view(request):
     :param request: The request object.
     """
 
-    try:
-        newbook = mutate(Book(), request)
-        covers.upload(request)
+    newbook = mutate(Book(), request)
+    covers.upload(request)
 
-        DBSession.add(newbook)
-        DBSession.commit()
+    DBSession.add(newbook)
+    DBSession.commit()
 
-        return {'message': 'The book has been added to the database.'}
-    except Exception as e:
-        return handle_exception(request, e)
+    return {'message': 'The book has been added to the database.'}
 
 
 @view_config(route_name='editp', renderer='information.mako')
@@ -96,17 +86,14 @@ def edit_post_view(request):
     :param request: The request object.
     """
 
-    try:
-        isbn = request.matchdict['isbn']
-        covers.upload(request)
+    isbn = request.matchdict['isbn']
+    covers.upload(request)
 
-        mutate(Book.lookup(isbn), request)
+    mutate(Book.lookup(isbn), request)
 
-        DBSession.commit()
+    DBSession.commit()
 
-        return {'message': 'The book has been updated in the database.'}
-    except Exception as e:
-        return handle_exception(request, e)
+    return {'message': 'The book has been updated in the database.'}
 
 
 @view_config(route_name='deletep', renderer='information.mako')
@@ -117,15 +104,12 @@ def delete_post_view(request):
     :param request: The request object.
     """
 
-    try:
-        isbn = request.matchdict['isbn']
-        covers.delete(isbn)
-        DBSession.delete(Book.lookup(isbn))
-        DBSession.commit()
+    isbn = request.matchdict['isbn']
+    covers.delete(isbn)
+    DBSession.delete(Book.lookup(isbn))
+    DBSession.commit()
 
-        return {'message': 'The book has been deleted from the database.'}
-    except Exception as e:
-        return handle_exception(request, e)
+    return {'message': 'The book has been deleted from the database.'}
 
 
 def mutate(book, request):
