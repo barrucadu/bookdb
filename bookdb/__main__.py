@@ -83,7 +83,7 @@ if __name__ == '__main__':
     # Initialise the SQL database
     try:
         engine = sqlalchemy.create_engine(
-            'sqlite:///{}'.format(arguments['--database']))
+            'sqlite:///' + arguments['--database'])
         models.initialise_sql(engine)
     except sqlalchemy.exc.OperationalError:
         print("Cannot initialise database.")

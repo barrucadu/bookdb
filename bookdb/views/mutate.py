@@ -39,7 +39,7 @@ def edit_view(request):
     book = Book.lookup(isbn)
 
     return {'title':  'BookDB :: Edit',
-            'target': '{}/edit'.format(isbn),
+            'target': isbn + '/edit',
             'submit': 'Edit',
             'book':   book}
 

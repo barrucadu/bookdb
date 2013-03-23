@@ -12,7 +12,7 @@ def find_book_image(book):
     if book.image == '':
         return 'static/nocover.png'
     else:
-        return 'static/uploads/{}'.format(book.image)
+        return 'static/uploads/' + book.image
 
 
 def are_unread_books():
