@@ -39,11 +39,9 @@ def search_view(request):
 
     # The search criteria are encoded in the GET parameters, where
     # every key is a search field.
-    criteria = []
-    for field, value in request.GET.items():
-        dbfield = Book.unstring(field)
-        if dbfield is not None:
-            criteria.append((dbfield, value))
+    criteria = [(Book.unstring(field), value)
+                for field, value in request.GET.items()
+                if Book.unstring(field) is not None]
 
     # Finally, we need to manually filter by matchread and
     # matchunread, as those don't directly correspond to a field in
@@ -114,7 +112,6 @@ def booklist(filter=[]):
     books = DBSession.query(Book)
 
     for field, val in filter:
-        assert field is not None
         books = books.filter(field.like('%{}%'.format(val)))
 
     return books.order_by(Book.author, Book.title).all()
