@@ -22,7 +22,9 @@ Options:
 """
 
 # Import views and models
-import models, utils, views
+import models
+import utils
+import views
 
 # Import everything else
 from docopt import docopt
