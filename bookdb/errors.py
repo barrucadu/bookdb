@@ -29,7 +29,6 @@ def handle_exception(request, e=None, message=None):
     return render_to_response(
         'information.mako',
         {
-            'title':   'Error Occurred',
             'message': message,
             'error':   True
         },

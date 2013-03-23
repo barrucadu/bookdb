@@ -82,8 +82,7 @@ def add_post_view(request):
         DBSession.add(newbook)
         DBSession.commit()
 
-        return {'title':   'Add Successful',
-                'message': 'The book has been added to the database.'}
+        return {'message': 'The book has been added to the database.'}
     except Exception as e:
         return handle_exception(request, e)
 
@@ -107,8 +106,7 @@ def edit_post_view(request):
 
         DBSession.commit()
 
-        return {'title':   'Edit Successful',
-                'message': 'The book has been updated in the database.'}
+        return {'message': 'The book has been updated in the database.'}
     except Exception as e:
         return handle_exception(request, e)
 
@@ -130,8 +128,7 @@ def delete_post_view(request):
         DBSession.delete(book)
         DBSession.commit()
 
-        return {'title':   'Delete Successful',
-                'message': 'The book has been deleted from the database.'}
+        return {'message': 'The book has been deleted from the database.'}
     except Exception as e:
         return handle_exception(request, e)
 

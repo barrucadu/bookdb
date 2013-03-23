@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+<%
+title = "Information" if error is UNDEFINED else "Error!"
+%>
+
 <!DOCTYLE html>
 <html>
   <head>
