@@ -10,11 +10,13 @@ from models import DBSession
 from models.book import Book
 from datetime import date
 from utils.errors import handle_exception
+from utils.mutable import mutates
 import utils.dirs as dirs
 import os
 
 
 @view_config(route_name='add', renderer='bookform.mako')
+@mutates
 def add_view(request):
     """Display a form to add a new book.
 
@@ -28,6 +30,7 @@ def add_view(request):
 
 
 @view_config(route_name='edit', renderer='bookform.mako')
+@mutates
 def edit_view(request):
     """Display a form to edit a book.
 
@@ -47,6 +50,7 @@ def edit_view(request):
 
 
 @view_config(route_name='delete', renderer='confirmdelete.mako')
+@mutates
 def delete_view(request):
     """Ask for confirmation to delete a book.
 
@@ -66,14 +70,12 @@ def delete_view(request):
 
 
 @view_config(route_name='addp', renderer='information.mako')
+@mutates
 def add_post_view(request):
     """Process a book addition and display a confirmation.
 
     :param request: The request object.
     """
-
-    if request.registry.settings['readonly']:
-        return handle_exception(request, message='The database is read-only.')
 
     try:
         newbook = mutate(Book(), request)
@@ -88,14 +90,12 @@ def add_post_view(request):
 
 
 @view_config(route_name='editp', renderer='information.mako')
+@mutates
 def edit_post_view(request):
     """Process a book edit and display a confirmation.
 
     :param request: The request object.
     """
-
-    if request.registry.settings['readonly']:
-        return handle_exception(request, message='The database is read-only.')
 
     try:
         isbn = request.matchdict['isbn']
@@ -111,14 +111,12 @@ def edit_post_view(request):
 
 
 @view_config(route_name='deletep', renderer='information.mako')
+@mutates
 def delete_post_view(request):
     """Process a book deletion and display a confirmation.
 
     :param request: The request object.
     """
-
-    if request.registry.settings['readonly']:
-        return handle_exception(request, message='The database is read-only.')
 
     try:
         isbn = request.matchdict['isbn']
