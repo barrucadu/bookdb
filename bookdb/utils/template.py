@@ -41,13 +41,13 @@ def are_unread_books():
     """Check if there are any unread books in the database.
     """
 
-    return DBSession.query(Book).filter(Book.read == False).count() > 0
+    return DBSession.query(Book).filter(~Book.read).count() > 0
 
 
 def next_book():
     """Pick a random unread book
     """
 
-    books = DBSession.query(Book).filter(Book.read == False)
+    books = DBSession.query(Book).filter(~Book.read)
 
     return books[randrange(0, books.count())]
