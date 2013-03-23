@@ -166,7 +166,7 @@ def last_read_date(request):
     """
 
     try:
-        datelist = list(map(int, request.POST['lastread'].split('-')))
-        return date(datelist[0], datelist[1], datelist[2])
+        year, month, day = map(int, request.POST['lastread'].split('-'))
+        return date(year, month, day)
     except:
         return date.min
