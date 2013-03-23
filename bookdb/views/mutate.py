@@ -55,10 +55,8 @@ def delete_view(request):
     isbn = request.matchdict["isbn"]
     book = Book.lookup(isbn)
 
-    return {'title':     'Confirm Delete',
-            'isbn':      isbn,
-            'booktitle': book.title,
-            'author':    ' & '.join(book.authors())}
+    return {'isbn': isbn,
+            'book': book}
 
 
 @view_config(route_name='addp', renderer='information.mako')

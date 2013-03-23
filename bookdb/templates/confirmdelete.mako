@@ -1,10 +1,26 @@
-<%inherit file="wrapper.mako"/>
+<!DOCTYLE html>
+<html>
+  <head>
+    <title>Confirm Delete</title>
+    <link rel="stylesheet" href="${webpath}/static/style.css" type="text/css">
+  </head>
 
-<div class="confirm">
-  <p>Do you really want to delete <span class="isbn">${isbn}</span>
-  (<strong>${booktitle}</strong>, by <strong>${author}</strong>)?</p>
+  <body>
+    <div class="information">
+      <header>
+        <h1>Confirm Delete</h1>
+      </header>
 
-  <form action="${webpath}/${isbn}/delete" method="post">
-    <input type="submit" value="Confirm Delete">
-  </form>
-</div>
+      <p>Do you really want to delete <span class="isbn">${isbn}</span>
+        (<strong>${book.title}</strong>, by <strong>${book.author}</strong>)?</p>
+
+      <form action="${webpath}/${isbn}/delete" method="post">
+        <input type="submit" value="Confirm Delete">
+      </form>
+
+      <footer>
+        <a href="https://github.com/barrucadu/bookdb">Github</a>
+      </footer>
+    </div>
+  </body>
+</html>
