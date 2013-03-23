@@ -1,8 +1,7 @@
-import os
-import utils.dirs as dirs
 from models import DBSession
 from models.book import Book
 from random import randrange
+import utils.covers as covers
 
 
 def plural(count, singular):
@@ -30,14 +29,12 @@ def find_book_image(isbn):
     :param isbn: The ISBN of the book.
     """
 
-    imagefile = 'static/nocover.png'
+    imagefile = covers.find(isbn)
 
-    exts = ['png', 'jpg', 'gif']
-    for ext in exts:
-        if os.path.exists(os.path.join(dirs.uploads, isbn + '.' + ext)):
-            imagefile = 'static/uploads/{}.{}'.format(isbn, ext)
-
-    return imagefile
+    if imagefile is None:
+        return 'static/nocover.png'
+    else:
+        return 'static/uploads/{}'.format(imagefile)
 
 
 def are_unread_books():
