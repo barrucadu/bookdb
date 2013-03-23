@@ -1,4 +1,4 @@
-from models import Base
+from models import Base, DBSession
 from sqlalchemy import Boolean, Column, Date, Integer, String, Text
 from datetime import date
 
@@ -89,3 +89,13 @@ class Book(Base):
                     'notes':    Book.notes}[field]
         except:
             return None
+
+    @staticmethod
+    def lookup(isbn):
+        """Look up a book by ISBN. Throws an exception if there is no
+        such book
+
+        :param isbn: The ISBN of the book.
+        """
+
+        return DBSession.query(Book).filter(Book.isbn == isbn).one()

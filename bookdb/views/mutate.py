@@ -55,7 +55,7 @@ def delete_view(request):
 
     try:
         isbn = request.matchdict["isbn"]
-        book = DBSession.query(Book).filter(Book.isbn == isbn).one()
+        book = Book.lookup(isbn)
 
         return {'title':     'Confirm Delete',
                 'isbn':      isbn,
@@ -101,8 +101,7 @@ def edit_post_view(request):
         isbn = request.matchdict['isbn']
         upload_cover(request)
 
-        mutate(DBSession.query(Book).filter(Book.isbn == isbn).one(),
-               request)
+        mutate(Book.lookup(isbn), request)
 
         DBSession.commit()
 
@@ -123,9 +122,8 @@ def delete_post_view(request):
 
     try:
         isbn = request.matchdict['isbn']
-        book = DBSession.query(Book).filter(Book.isbn == isbn).one()
         delete_cover(isbn)
-        DBSession.delete(book)
+        DBSession.delete(Book.lookup(isbn))
         DBSession.commit()
 
         return {'message': 'The book has been deleted from the database.'}
