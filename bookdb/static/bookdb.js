@@ -14,6 +14,6 @@ $(document).ready(function() {
             div.show('blind', 400);
         }
 
-        e.preventDefault();
+        event.preventDefault();
     });
 });
