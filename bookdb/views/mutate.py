@@ -36,7 +36,7 @@ def edit_view(request):
     """
 
     isbn = request.matchdict["isbn"]
-    book = DBSession.query(Book).filter(Book.isbn == isbn).one()
+    book = Book.lookup(isbn)
 
     return {'title':  'BookDB :: Edit',
             'target': '{}/edit'.format(isbn),
