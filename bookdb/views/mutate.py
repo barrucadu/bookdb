@@ -67,9 +67,9 @@ def add_post_view(request):
     :param request: The request object.
     """
 
-    newbook = mutate(Book(), request)
-    covers.upload(newbook, request)
-    DBSession.add(newbook)
+    book = mutate(Book(), request)
+    covers.upload(book, request)
+    DBSession.add(book)
     DBSession.commit()
 
     return {'message': 'The book has been added to the database.'}
