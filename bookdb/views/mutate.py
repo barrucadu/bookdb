@@ -148,8 +148,7 @@ def sort_authors(authors):
 
     authorlist = [author.strip()
                   for author in authors.split('&')]
-    authorlist.sort()
-    return ' & '.join(authorlist)
+    return ' & '.join(sorted(authorlist))
 
 
 def last_read_date(request):
