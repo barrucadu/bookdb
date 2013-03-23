@@ -60,15 +60,15 @@ if __name__ == '__main__':
 
     config.add_static_view(name='static', path=dirs.static)
 
-    config.add_route('list',    '/',                request_method='GET')
-    config.add_route('search',  '/search',          request_method='GET')
-    config.add_route('add',     '/add',             request_method='GET')
-    config.add_route('edit',    '/{isbn}/edit',     request_method='GET')
-    config.add_route('delete',  '/{isbn}/delete',   request_method='GET')
-    config.add_route('addp',    '/add',             request_method='POST')
-    config.add_route('editp',   '/{isbn}/edit',     request_method='POST')
-    config.add_route('deletep', '/{isbn}/delete',   request_method='POST')
-    config.add_route('filter',  '/{field}/{value}', request_method='GET')
+    config.add_route('list',    '/')
+    config.add_route('search',  '/search')
+    config.add_route('addp',    '/add',           request_method='POST')
+    config.add_route('editp',   '/{isbn}/edit',   request_method='POST')
+    config.add_route('deletep', '/{isbn}/delete', request_method='POST')
+    config.add_route('add',     '/add')
+    config.add_route('edit',    '/{isbn}/edit')
+    config.add_route('delete',  '/{isbn}/delete')
+    config.add_route('filter',  '/{field}/{value}')
 
     config.scan(views)
 
