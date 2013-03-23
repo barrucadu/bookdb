@@ -70,10 +70,9 @@ def add_post_view(request):
     """
 
     newbook = mutate(Book(), request)
+    covers.upload(newbook, request)
     DBSession.add(newbook)
     DBSession.commit()
-
-    covers.upload(request)
 
     return {'message': 'The book has been added to the database.'}
 
@@ -87,10 +86,9 @@ def edit_post_view(request):
     """
 
     isbn = request.matchdict['isbn']
-    mutate(Book.lookup(isbn), request)
+    book = mutate(Book.lookup(isbn), request)
+    covers.upload(book, request)
     DBSession.commit()
-
-    covers.upload(request)
 
     return {'message': 'The book has been updated in the database.'}
 

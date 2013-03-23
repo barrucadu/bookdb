@@ -1,20 +1,17 @@
 import os
 import utils.dirs as dirs
-from models import DBSession
-from models.book import Book
 
 
-def upload(request):
+def upload(book, request):
     """Books may have covers associated with them. We need to check to
     see if an image is provided and save it to the appropriate place.
 
-    The book must be already in the database before calling this
-    function, as it retrieves and updates it.
-
+    :param book: The book to update
     :param request: The request object
-    """
 
-    isbn = request.POST['isbn']
+    The database is not updated, after this the book should either be
+    added (if new) or the changes committed (if old).
+    """
 
     # Firstly check if an image has been sent
     if 'cover' not in request.POST.keys() or request.POST['cover'] == b'':
@@ -25,13 +22,11 @@ def upload(request):
     data = request.POST['cover'].file
 
     # Delete the current cover
-    book = Book.lookup(isbn)
     delete(book)
-    book.image = isbn + ext
-    DBSession.commit()
+    book.image = book.isbn + ext
 
     # Save the new one
-    with open(os.path.join(dirs.uploads, isbn + ext), 'wb') as f:
+    with open(os.path.join(dirs.uploads, book.isbn + ext), 'wb') as f:
         f.write(data.read())
 
 
