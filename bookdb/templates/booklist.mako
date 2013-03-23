@@ -2,16 +2,19 @@
 import datetime
 from markdown import markdown
 from markupsafe import escape
-from utils.template import plural, find_book_image
+from utils.template import find_book_image
+from pyramid.i18n import get_localizer
 
 percentread = round((read / len(books)) * 100) if len(books) > 0 else 0
+
+localizer = get_localizer(request)
 %>
 
 <%inherit file="wrapper.mako"/>
 
-<p>Showing ${len(books)} ${plural(len(books), "book")} by ${authors}
-  ${plural(authors, "author")}, of which ${read} (${percentread}%)
-  ${plural(read, "has")} been read.</p>
+<p>Showing ${len(books)} ${localizer.pluralize("book", "books", len(books))} by ${authors}
+  ${localizer.pluralize("author", "authors", authors)}, of which ${read} (${percentread}%)
+  ${localizer.pluralize("has", "have", read)} been read.</p>
 
 <table>
   <thead>
