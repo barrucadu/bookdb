@@ -31,7 +31,7 @@ from pyramid.config import Configurator
 from wsgiref.simple_server import make_server
 import sqlalchemy
 from sys import exit
-import dirs
+import utils.dirs as dirs
 from pyramid.events import subscriber, BeforeRender
 
 # Parse the command-line arguments

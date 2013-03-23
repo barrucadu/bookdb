@@ -1,7 +1,7 @@
 import os
 
 # Figure out where we are
-here = os.path.dirname(os.path.abspath(__file__))
+here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Templates
 templates = os.path.join(here, 'templates')

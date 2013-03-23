@@ -1,5 +1,5 @@
 import os
-import dirs
+import utils.dirs as dirs
 from models import DBSession
 from models.book import Book
 from random import randrange

@@ -2,7 +2,7 @@
 import datetime
 from markdown import markdown
 from markupsafe import escape
-from templates.utils import plural, find_book_image
+from utils.template import plural, find_book_image
 
 percentread = round((read / len(books)) * 100) if len(books) > 0 else 0
 %>

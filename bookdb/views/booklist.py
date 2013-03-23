@@ -11,7 +11,7 @@ Book lists are ordered by author name and then by title.
 from pyramid.view import view_config
 from models import DBSession
 from models.book import Book
-from errors import handle_exception
+from utils.errors import handle_exception
 
 
 @view_config(route_name='list', renderer='booklist.mako')

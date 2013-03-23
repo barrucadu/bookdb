@@ -1,5 +1,5 @@
 <%
-from templates.utils import are_unread_books, next_book
+from utils.template import are_unread_books, next_book
 %>
 <!DOCTYLE html>
 <html>

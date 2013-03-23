@@ -9,8 +9,8 @@ from pyramid.view import view_config
 from models import DBSession
 from models.book import Book
 from datetime import date
-from errors import handle_exception
-import dirs
+from utils.errors import handle_exception
+import utils.dirs as dirs
 import os
 
 
