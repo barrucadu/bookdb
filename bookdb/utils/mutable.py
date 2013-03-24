@@ -1,3 +1,10 @@
+"""utils.mutable: Write-permission control.
+
+mutates: A decorator for a view function which mutates the
+database. This will bail out with an error if we're in read-only
+mode.
+"""
+
 from utils.errors import error
 from functools import wraps
 

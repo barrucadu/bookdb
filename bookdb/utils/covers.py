@@ -1,3 +1,9 @@
+"""utils.covers: Utility functions for dealing with book covers.
+
+upload: Upload a new cover image, deleting any prior ones.
+delete: Delete a book's cover image (if any).
+"""
+
 import os
 import utils.dirs as dirs
 

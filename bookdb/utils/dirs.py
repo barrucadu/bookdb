@@ -1,3 +1,6 @@
+"""utils.dirs: Commonly-used directories.
+"""
+
 import os
 
 # Figure out where we are

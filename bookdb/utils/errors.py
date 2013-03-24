@@ -1,3 +1,10 @@
+"""utils.errors: Error reporting functions.
+
+error:          Rollback the database and display an error message.
+exception_view: Catch any exceptions that bubble to the top of the
+program and display an error message.
+"""
+
 from models import DBSession
 from pyramid.renderers import render_to_response
 from pyramid.view import view_config
@@ -24,8 +31,8 @@ def error(request, message):
 
 @view_config(context=Exception)
 def exception_view(e, request):
-    """A context manager for handling exceptions and returning an
-    error message as appropriate
+    """A view handler for uncaught exceptions and returning an error
+    message as appropriate
 
     :param e: The uncaught exception
     :param request: The request object.

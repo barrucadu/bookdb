@@ -1,3 +1,11 @@
+"""utils.templates: Template utilities.
+
+find_book_image:  Get the relative path from the web root to a book's
+cover image.
+are_unread_books: Check if there are any unread books
+next_book:        Pick an unread book at random
+"""
+
 from models import DBSession
 from models.book import Book
 from random import randrange
