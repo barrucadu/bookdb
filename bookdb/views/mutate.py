@@ -7,7 +7,7 @@ delete: Delete a book from the database.
 
 from pyramid.view import view_config
 from models import DBSession
-from models.book import Book
+from models.book import Book, lookup
 from datetime import date
 from utils.mutable import mutates
 import utils.covers as covers
@@ -36,7 +36,7 @@ def edit_view(request):
     """
 
     isbn = request.matchdict["isbn"]
-    book = Book.lookup(isbn)
+    book = lookup(isbn)
 
     return {'title':  'BookDB :: Edit',
             'target': isbn + '/edit',
@@ -53,7 +53,7 @@ def delete_view(request):
     """
 
     isbn = request.matchdict["isbn"]
-    book = Book.lookup(isbn)
+    book = lookup(isbn)
 
     return {'isbn': isbn,
             'book': book}
@@ -84,7 +84,7 @@ def edit_post_view(request):
     """
 
     isbn = request.matchdict['isbn']
-    book = mutate(Book.lookup(isbn), request)
+    book = mutate(lookup(isbn), request)
     covers.upload(book, request)
     DBSession.commit()
 
@@ -100,7 +100,7 @@ def delete_post_view(request):
     """
 
     isbn = request.matchdict['isbn']
-    book = Book.lookup(isbn)
+    book = lookup(isbn)
 
     covers.delete(book)
     DBSession.delete(book)

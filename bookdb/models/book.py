@@ -1,3 +1,9 @@
+"""Book model: data structure and associated operations on books.
+
+Book:   ORM class for dealing with books in the database
+lookup: Look up a book by ISBN.
+"""
+
 from models import Base, DBSession
 from sqlalchemy import Boolean, Column, Date, Integer, String, Text
 from datetime import date
@@ -5,10 +11,11 @@ from datetime import date
 
 class Book(Base):
     """A class to represent a book. A book has an ISBN, title, list of
-    authors, read flag, last read date, location, and borrower.
+    authors, read flag, last read date, location, borrower, quote,
+    notes, and image.
 
     Unfortunately sqlalchemy has no list column type, and so the
-    authors stored as an ampersand-sepaarted string.
+    authors stored as an ampersand-separated string.
     """
 
     __tablename__ = 'books'
@@ -32,10 +39,11 @@ class Book(Base):
         """Create a new book, which contains no data.
         """
 
-        self.mutate('', '', '', False, date.min, '', '', '', '', '')
+        self.mutate()
 
-    def mutate(self, isbn, title, author, read, lastread,
-               location, borrower, quote, notes, image):
+    def mutate(self, isbn='', title='', author='', read=False,
+               lastread=date.min, location='', borrower='',
+               quote='', notes='', image=''):
         """Modify this book to contain the new data
 
         :param isbn: The ISBN number of the book, this cannot already
@@ -48,10 +56,10 @@ class Book(Base):
         :param lastread: The date on which the book was last read
             (invalid if read = False)
         :param location: Location of the book.
-        :param borrower: Borrower of the book (may be empty)
-        :param quote:    A quote from the book (may be empty).
-        :param notes:    Any notes on the book (may be empty).
-        :param image:    The filename of the cover image (may be empty).
+        :param borrower: Borrower of the book.
+        :param quote:    A quote from the book.
+        :param notes:    Any notes on the book.
+        :param image:    The filename of the cover image.
         """
 
         self.isbn     = isbn
@@ -94,12 +102,12 @@ class Book(Base):
         except:
             return None
 
-    @staticmethod
-    def lookup(isbn):
-        """Look up a book by ISBN. Throws an exception if there is no
-        such book
 
-        :param isbn: The ISBN of the book.
-        """
+def lookup(isbn):
+    """Look up a book by ISBN. Throws an exception if there is no
+    such book
 
-        return DBSession.query(Book).filter(Book.isbn == isbn).one()
+    :param isbn: The ISBN of the book.
+    """
+
+    return DBSession.query(Book).filter(Book.isbn == isbn).one()
