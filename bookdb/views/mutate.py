@@ -118,12 +118,12 @@ def mutate(book, request):
     :param request: The request to update the book from
     """
 
-    book.mutate(request.POST.get('isbn', book.isbn),
-                request.POST.get('title', book.title),
-                sort_authors(request.POST.get('author', book.author)),
+    book.mutate(request.POST['isbn'],
+                request.POST['title'],
+                sort_authors(request.POST['author']),
                 'read' in request.POST,
                 last_read_date(request),
-                request.POST.get('location', book.location),
+                request.POST['location'],
                 request.POST.get('borrower', book.borrower),
                 request.POST.get('quote', book.quote),
                 request.POST.get('notes', book.notes),
