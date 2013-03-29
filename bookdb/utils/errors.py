@@ -43,9 +43,6 @@ def exception_view(e, request):
         'KeyError':        'Please fill in all required fields.',
         'PermissionError': 'Could not upload cover image.'}
 
-    exception = type(e).__name__
-
-    if exception in messages:
-        return error(request, messages[exception])
-    else:
-        return error(request, 'An unhandled error occurred. This is a bug.')
+    return error(request, messages.get(
+        type(e).__name__,
+        'An unhandled error occurred. This is a bug.'))
