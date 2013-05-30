@@ -26,6 +26,10 @@ class Book(Base):
     id       = Column(Integer, primary_key=True)
     isbn     = Column(String, unique=True)
     title    = Column(String)
+    subtitle = Column(Text)
+    volume   = Column(Text)
+    fascicle = Column(Text)
+    voltitle = Column(Text)
     author   = Column(String)
     read     = Column(Boolean)
     lastread = Column(Date)
@@ -41,14 +45,19 @@ class Book(Base):
 
         self.mutate()
 
-    def mutate(self, isbn='', title='', author='', read=False,
-               lastread=date.min, location='', borrower='',
-               quote='', notes='', image=''):
+    def mutate(self, isbn='', title='', subtitle='', volume=-1,
+               fascicle=-1, voltitle='', author='', read=False,
+               lastread=date.min, location='', borrower='', quote='',
+               notes='', image=''):
         """Modify this book to contain the new data
 
         :param isbn: The ISBN number of the book, this cannot already
             be in the database.
         :param title: The title of the book.
+        :param subtitle: Subtitle of the book (if any).
+        :param volume: Volume number of the book (if any).
+        :param fascicle: Fascicle number o the book (if any).
+        :param voltitle: Title of the volume (if any).
         :param author: List of authors of the book, in the format
             "Surname, Forename Initials", with ampersands separating
             different authors.
@@ -64,6 +73,10 @@ class Book(Base):
 
         self.isbn     = isbn
         self.title    = title
+        self.subtitle = subtitle
+        self.volume   = volume
+        self.fascicle = fascicle
+        self.voltitle = voltitle
         self.author   = author
         self.read     = read
         self.lastread = lastread
@@ -91,6 +104,10 @@ class Book(Base):
         try:
             return {'isbn':     Book.isbn,
                     'title':    Book.title,
+                    'subtitle': Book.subtitle,
+                    'volume':   Book.volume,
+                    'fascicle': Book.fascicle,
+                    'voltitle': Book.voltitle,
                     'author':   Book.author,
                     'read':     Book.read,
                     'lastread': Book.lastread,
@@ -101,7 +118,6 @@ class Book(Base):
                     'image':    Book.image}[field]
         except:
             return None
-
 
 def lookup(isbn):
     """Look up a book by ISBN. Throws an exception if there is no

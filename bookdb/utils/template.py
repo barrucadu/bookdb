@@ -37,3 +37,25 @@ def next_book():
     books = DBSession.query(Book).filter(~Book.read)
 
     return books[randrange(0, books.count())]
+
+
+def prettyprint_book(book):
+    """Pretty-print the title of a book.
+    """
+
+    out = book.title
+
+    if book.subtitle:
+        out += ': {}'.format(book.subtitle)
+
+    if book.volume and book.fascicle:
+        out += ' (vol. {}; fas. {})'.format(book.volume, book.fascicle)
+    elif book.volume:
+        out += ' (vol. {})'.format(book.volume)
+    elif book.fascicle:
+        out += ' (fas. {})'.format(book.fascicle)
+
+    if book.voltitle:
+        out += ' {}'.format(book.voltitle)
+
+    return out

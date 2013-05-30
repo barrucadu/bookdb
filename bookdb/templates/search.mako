@@ -12,6 +12,22 @@
         <input type="text" id="title" name="title" value="${booktitle}">
       </li>
       <li>
+        <label for="subtitle">Subtitle</label>
+        <input type="text" id="subtitle" name="subtitle" value="${subtitle}">
+      </li>
+      <li>
+        <label for="title">Volume Number</label>
+        <input type="text" id="volume" name="volume" value="${volume}">
+      </li>
+      <li>
+        <label for="title">Fascicle Number</label>
+        <input type="text" id="fascicle" name="fascicle" value="${fascicle}">
+      </li>
+      <li>
+        <label for="title">Volume Title</label>
+        <input type="text" id="voltitle" name="voltitle" value="${voltitle}">
+      </li>
+      <li>
         <label for="author">Author</label>
         <input type="text" id="author" name="author" value="${author}">
       </li>

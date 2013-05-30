@@ -2,7 +2,7 @@
 import datetime
 from markdown import markdown
 from markupsafe import escape
-from utils.template import find_book_image
+from utils.template import find_book_image, prettyprint_book
 from pyramid.i18n import get_localizer
 
 percentread = round((read / len(books)) * 100) if len(books) > 0 else 0
@@ -35,7 +35,7 @@ localizer = get_localizer(request)
       % for book in books:
         <tr>
           <td class="isbn">${book.isbn}</td>
-          <td>${book.title}</td>
+          <td>${prettyprint_book(book)}</td>
           <td>
             <ol>
               % for author in book.authors():

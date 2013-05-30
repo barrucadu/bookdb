@@ -120,6 +120,10 @@ def mutate(book, request):
 
     book.mutate(request.POST['isbn'],
                 request.POST['title'],
+                request.POST['subtitle'],
+                request.POST['volume'],
+                request.POST['fascicle'],
+                request.POST['voltitle'],
                 sort_authors(request.POST['author']),
                 'read' in request.POST,
                 last_read_date(request),
