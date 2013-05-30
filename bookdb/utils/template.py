@@ -48,11 +48,11 @@ def prettyprint_book(book):
     if book.subtitle:
         out += ': {}'.format(book.subtitle)
 
-    if book.volume and book.fascicle:
+    if book.volume != '' and book.fascicle != '':
         out += ' (vol. {}; fas. {})'.format(book.volume, book.fascicle)
-    elif book.volume:
+    elif book.volume != '':
         out += ' (vol. {})'.format(book.volume)
-    elif book.fascicle:
+    elif book.fascicle != '':
         out += ' (fas. {})'.format(book.fascicle)
 
     if book.voltitle:
