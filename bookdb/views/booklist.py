@@ -117,7 +117,7 @@ def booklist(filter=[]):
     for field, val in filter:
         books = books.filter(field.like('%{}%'.format(val)))
 
-    return books.order_by(Book.author, Book.title).all()
+    return books.order_by(Book.author, Book.title, Book.volume, Book.fascicle).all()
 
 
 def count_authors(books):
