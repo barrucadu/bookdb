@@ -1,5 +1,5 @@
 <%
-from utils.template import are_unread_books, next_book
+from utils.template import are_unread_books, next_book, prettyprint_book
 %>
 <!DOCTYLE html>
 <html>
@@ -21,7 +21,7 @@ from utils.template import are_unread_books, next_book
         % if are_unread_books():
           <div id="next">
             <h2>Why not read…</h2>
-            ${next_book().title}
+            ${prettyprint_book(next_book())}
           </div>
         % endif
 
