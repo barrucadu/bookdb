@@ -209,3 +209,7 @@ blockquote {
 .notes {
     margin: 1em;
 }
+
+.pseudo {
+    font-style: italic;
+}

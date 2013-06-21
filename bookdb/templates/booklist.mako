@@ -39,7 +39,13 @@ localizer = get_localizer(request)
           <td>
             <ol>
               % for author in book.authors():
-                <li><a href="${webpath}/author/${author}">${author}</a></li>
+                <li
+                  % if author in ["Anonymous", "Various"]:
+                    class="pseudo"
+                  % endif
+                >
+                  <a href="${webpath}/author/${author}">${author}</a>
+                </li>
               % endfor
             </ol>
 
