@@ -42,6 +42,14 @@ localizer = get_localizer(request)
                 <li><a href="${webpath}/author/${author}">${author}</a></li>
               % endfor
             </ol>
+
+            % if book.translator:
+              (trans. <a href="${webpath}/translator/${book.translator}">${book.translator}</a>)
+            % endif
+
+            % if book.editor:
+              (ed. <a href="${webpath}/editor/${book.editor}">${book.editor}</a>)
+            % endif
           <td>
             % if book.read:
               % if book.lastread == datetime.date.min:

@@ -66,7 +66,9 @@ def search_view(request):
             'matchread':   request.GET.get("matchread",   ""),
             'matchunread': request.GET.get("matchunread", ""),
             'location':    request.GET.get("location",    ""),
-            'borrower':    request.GET.get("borrower",    "")}
+            'borrower':    request.GET.get("borrower",    ""),
+            'translator':  request.GET.get("translator",  ""),
+            'editor':      request.GET.get("editor",      "")}
 
 
 @view_config(route_name='filter', renderer='booklist.mako')

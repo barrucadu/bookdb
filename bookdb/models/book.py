@@ -38,6 +38,8 @@ class Book(Base):
     quote    = Column(Text)
     notes    = Column(Text)
     image    = Column(Text)
+    translator = Column(Text)
+    editor   = Column(Text)
 
     def __init__(self):
         """Create a new book, which contains no data.
@@ -45,10 +47,10 @@ class Book(Base):
 
         self.mutate()
 
-    def mutate(self, isbn='', title='', subtitle='', volume=-1,
-               fascicle=-1, voltitle='', author='', read=False,
+    def mutate(self, isbn='', title='', subtitle='', volume='',
+               fascicle='', voltitle='', author='', read=False,
                lastread=date.min, location='', borrower='', quote='',
-               notes='', image=''):
+               notes='', image='', translator='', editor=''):
         """Modify this book to contain the new data
 
         :param isbn: The ISBN number of the book, this cannot already
@@ -69,6 +71,8 @@ class Book(Base):
         :param quote:    A quote from the book.
         :param notes:    Any notes on the book.
         :param image:    The filename of the cover image.
+        :param translator: Name (author format) of the translator (if any).
+        :param editor:   Name (author format) of the editor (if any).
         """
 
         self.isbn     = isbn
@@ -85,6 +89,8 @@ class Book(Base):
         self.quote    = quote
         self.notes    = notes
         self.image    = image
+        self.translator = translator
+        self.editor   = editor
 
     def authors(self):
         """Get the authors of a book in list form.
@@ -115,7 +121,9 @@ class Book(Base):
                     'borrower': Book.borrower,
                     'quote':    Book.quote,
                     'notes':    Book.notes,
-                    'image':    Book.image}[field]
+                    'image':    Book.image,
+                    'translator': Book.translator,
+                    'editor':   Book.editor}[field]
         except:
             return None
 

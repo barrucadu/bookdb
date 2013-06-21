@@ -16,20 +16,28 @@
         <input type="text" id="subtitle" name="subtitle" value="${subtitle}">
       </li>
       <li>
-        <label for="title">Volume Number</label>
+        <label for="volume">Volume Number</label>
         <input type="text" id="volume" name="volume" value="${volume}">
       </li>
       <li>
-        <label for="title">Fascicle Number</label>
+        <label for="fascicle">Fascicle Number</label>
         <input type="text" id="fascicle" name="fascicle" value="${fascicle}">
       </li>
       <li>
-        <label for="title">Volume Title</label>
+        <label for="voltitle">Volume Title</label>
         <input type="text" id="voltitle" name="voltitle" value="${voltitle}">
       </li>
       <li>
         <label for="author">Author</label>
         <input type="text" id="author" name="author" value="${author}">
+      </li>
+      <li>
+        <label for="translator">Translator</label>
+        <input type="text" id="translator" name="translator" value="${translator}">
+      </li>
+      <li>
+        <label for="editor">Editor</label>
+        <input type="text" id="editor" name="editor" value="${editor}">
       </li>
       <li>
         <label for="matchread">Match Read</label>

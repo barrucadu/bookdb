@@ -20,24 +20,32 @@ from datetime import date
         <input type="text" id="title" name="title" value="${book.title}" required>
       </li>
       <li>
-        <label for="title">Subtitle</label>
+        <label for="subtitle">Subtitle</label>
         <input type="text" id="subtitle" name="subtitle" value="${book.subtitle}">
       </li>
       <li>
-        <label for="title">Volume Number</label>
+        <label for="volume">Volume Number</label>
         <input type="text" id="volume" name="volume" value="${book.volume}">
       </li>
       <li>
-        <label for="title">Fascicle Number</label>
+        <label for="fascicle">Fascicle Number</label>
         <input type="text" id="fascicle" name="fascicle" value="${book.fascicle}">
       </li>
       <li>
-        <label for="title">Volume Title</label>
+        <label for="voltitle">Volume Title</label>
         <input type="text" id="voltitle" name="voltitle" value="${book.voltitle}">
       </li>
       <li>
-        <label for="isbn" class="required">Author</label>
+        <label for="author" class="required">Author</label>
         <input type="text" id="author" name="author" value="${book.author}" required>
+      </li>
+      <li>
+        <label for="translator">Translator</label>
+        <input type="text" id="translator" name="translator" value="${book.translator}">
+      </li>
+      <li>
+        <label for="editor">Editor</label>
+        <input type="text" id="editor" name="editor" value="${book.editor}">
       </li>
       <li>
         <label for="read">Read</label>

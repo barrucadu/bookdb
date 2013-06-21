@@ -131,7 +131,9 @@ def mutate(book, request):
                 request.POST.get('borrower', book.borrower),
                 request.POST.get('quote', book.quote),
                 request.POST.get('notes', book.notes),
-                book.image)
+                book.image,
+                request.POST.get('translator', book.translator),
+                request.POST.get('editor', book.editor))
 
     return book
 
