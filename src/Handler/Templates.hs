@@ -45,15 +45,13 @@ search :: Maybe Book -- ^ A suggestion
        -> Maybe Text -- ^ The title
        -> Maybe Text -- ^ The subtitle
        -> Maybe Text -- ^ The author
-       -> Maybe Text -- ^ The translator
-       -> Maybe Text -- ^ The editor
        -> Bool -- ^ Whether to match read
        -> Bool -- ^ Whether to match unread
        -> Maybe Text -- ^ The location
        -> Maybe Text -- ^ The borrower
        -> [Book] -- ^ Books matching the search
        -> HtmlUrl Sitemap
-search suggestion isbn btitle subtitle author translator editor matchread matchunread location borrower books = 
+search suggestion isbn btitle subtitle author matchread matchunread location borrower books = 
   let authors = numAuthors books
       read    = numRead books
       title   = "BookDB :: Search" :: Text

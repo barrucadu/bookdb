@@ -6,8 +6,6 @@ Template vars:
  - btitle :: Maybe Text, the title from the prior search
  - subtitle :: Maybe Text, the subtitle from the prior search
  - author :: Maybe Text, the author from the prior search
- - translator :: Maybe Text, the translator from the prior search
- - editor :: Maybe Text, the editor from the prior search
  - matchread :: Bool, the match read from the prior search
  - matchunread :: Bool, the match unread from the prior search
  - location :: Maybe Text, the location from the prior search
@@ -31,12 +29,6 @@ Template vars:
       <li>
         <label for="author">Author
         <input type="text" #author name="author" value="#{fromMaybe "" author}">
-      <li>
-        <label for="translator">Translator
-        <input type="text" #translator name="translator" value="#{fromMaybe "" translator}">
-      <li>
-        <label for="editor">Editor
-        <input type="text" #editor name="editor" value="#{fromMaybe "" editor}">
       <li>
         <label for="matchread">Match Read
         $if matchread
