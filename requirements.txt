@@ -1,4 +1,0 @@
-docopt
-pyramid
-sqlalchemy
-markdown

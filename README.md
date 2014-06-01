@@ -3,24 +3,16 @@ BookDB
 
 A database and web app to keep track of all my books.
 
-Dependencies
-------------
+Note: this depends on Seacat, which hasn't got a stable release
+yet. See the repo (https://github.com/Barrucadu/lambdadelta).
 
-* Python 3
-* virtualenv
-* pip
+Running
+-------
 
-Set-up
-------
+Before first use, and after all database changes:
 
-    virtualenv ../env
-    source ../env/bin/activate
-    pip install -r requirements.txt
+    bookdb migrate examples/bookdb.conf
 
-Usage
------
+Starting the server:
 
-    source ../env/bin/activate
-    python bookdb
-
-See `python bookdb --help` for more details.
+    bookdb runserver examples/bookdb.conf
