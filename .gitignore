@@ -1,2 +1,4 @@
-*.pyc
-*.sqlite3
+.cabal-sandbox
+cabal.sandbox.config
+dist
+*.sqlite
