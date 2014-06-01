@@ -1,0 +1,72 @@
+<!--
+Template vars:
+ - target :: PathInfo r => r, where to send the form to
+ - book :: Maybe Book, the book we're dealing with
+-->
+$with book <- fromMaybe emptyBook book
+  <form action="@{target}" method="post" enctype="multipart/form-data">
+    <fieldset>
+      <ol>
+        <li>
+          <label for="cover">Cover Image
+          <input type="file" #cover name="cover">
+        <li>
+          <label for="isbn" .required>ISBN
+          <input type="text" #isbn name="isbn" value="#{bookIsbn book}" required>
+        <li>
+          <label for="title" .required>Title
+          <input type="text" #title name="title" value="#{bookTitle book}" required>
+        <li>
+          <label for="subtitle">Subtitle
+          <input type="text" #subtitle name="subtitle" value="#{bookSubtitle book}">
+        <li>
+          <label for="volume">Volume Number
+          <input type="text" #volume name="volume" value="#{bookVolume book}">
+        <li>
+          <label for="fascicle">Fascicle Number
+          <input type="text" #fascicle name="fascicle" value="#{bookFascicle book}">
+        <li>
+          <label for="voltitle">Volume Title
+          <input type="text" #voltitle name="voltitle" value="#{bookVoltitle book}">
+        <li>
+          <label for="author" .required>Author
+          <input type="text" #author name="author" value="#{bookAuthor book}" required>
+        <li>
+          <label for="translator">Translator
+          <input type="text" #translator name="translator" value="#{fromMaybe "" $ bookTranslator book}">
+        <li>
+          <label for="editor">Editor
+          <input type="text" #editor name="editor" value="#{fromMaybe "" $ bookEditor book}">
+        <li>
+          <label for="read">Read
+          $if bookRead book
+            <input type="checkbox" #read name="read" checked>
+          $else
+            <input type="checkbox" #read name="read">
+        <li>
+          <label for="lastread">Last Read
+          $maybe read <- bookLastread book
+            <input type="date" #lastread name="lastread" value="#{formatTime defaultTimeLocale "%F" read}">
+          $nothing
+            <input type="date" #lastread name="lastread">
+        <li>
+          <label for="location" .required>Location
+          <input type="text" #location name="location" value="#{bookLocation book}" required>
+        <li>
+          <label for="borrower">Borrower
+          <input type="text" #borrower name="borrower" value="#{bookBorrower book}">
+        <li>
+          <label for="quote">Quote
+          <textarea #quote name="quote">#{bookQuote book}</textarea>
+        <li>
+          <label for="notes">Notes
+          <textarea #notes name="notes">#{bookNotes book}</textarea>
+        <li>
+          <input type="submit" value="Save">
+
+<div .help>
+  <p>
+    <span .required>Required fields
+    \ must be filled in.
+  <p>Cover imges should be 225x150px, and be in png, gif, or jpg format.
+  <p>To enter multiple authors, separate them with an ampersand.

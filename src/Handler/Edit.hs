@@ -12,6 +12,8 @@ module Handler.Edit
 
 import Routes
 
+import qualified Handler.Templates as T
+
 import Data.Text (Text)
 import Web.Seacat
 

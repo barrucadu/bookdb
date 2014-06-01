@@ -1,0 +1,22 @@
+<!--
+Template vars:
+ - book :: Book, the book to delete
+-->
+$doctype 5
+<html>
+  <head>
+    <title>Confirm Delete
+    <link rel="stylesheet" href="@{Stylesheet}" type="text/css">
+
+  <body>
+    <div .information>
+      <header>
+        <h1>Confirm Delete
+
+      <p>Do you really want to delete <span .isbn>#{bookIsbn book}</span> (<strong>#{bookTitle book}</strong>, by <strong>#{bookAuthor book}</strong>)?
+
+      <form action="@{Delete $ bookIsbn book}" method="post">
+        <input type="submit" value="Confirm Delete">
+
+      <footer>
+        <a href="https://github.com/barrucadu/bookdb">Github

@@ -6,6 +6,8 @@ module Handler.List
 
 import Routes
 
+import qualified Handler.Templates as T
+
 import Data.Text (Text)
 import Database.Persist
 import Web.Seacat

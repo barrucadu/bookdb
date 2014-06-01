@@ -1,0 +1,28 @@
+<!--
+Template vars:
+ - error :: Bool, whether this is an error or not
+ - message :: Text, the message to display
+-->
+$doctype 5
+$with title <- bool error "error" "information"
+  <html>
+    <head>
+      <title>#{title}</title>
+
+      $if error
+      $else
+        <meta http-equiv="refresh" content="2;URL='@{Booklist}'">
+
+      <link rel="stylesheet" href="@{Stylesheet}" type="text/css">
+
+  <body class="#{title}">
+    <div .information>
+      <header>
+        <h1>#{title}
+
+      <p>#{message}
+      <p>
+        <a href="@{Booklist}">Click here to continue.
+
+      <footer>
+        <a href="https://github.com/barrucadu/bookdb">Github

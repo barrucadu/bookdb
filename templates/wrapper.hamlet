@@ -1,0 +1,41 @@
+<!--
+Template vars:
+
+ - title :: Text, the title
+ - suggestion :: Maybe Book, a suggestion for a book to read
+ - body :: HtmlUrl r, the body template to render within
+-->
+$doctype 5
+<html>
+  <head>
+    <title>#{title}
+
+    <link rel="stylesheet" href="@{Stylesheet}" type="text/css">
+
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js">
+    <script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js">
+    <script src="@{Javascript}">
+
+  <body>
+    <div .page>
+      <header>
+        <h1>#{title}
+        
+        $maybe sugg <- suggestion
+          <div #next>
+            <h2>Why not read…
+            #{pprint sugg}
+
+        <nav>
+          <ul>
+            <li>
+              <a href="@{Booklist}">Home
+            <li>
+              <a href="@{Add}">Add
+            <li>
+              <a href="@{Search}">Search
+
+      ^{body}
+
+      <footer>
+        <a href="https://github.com/barrucadu/bookdb">Github

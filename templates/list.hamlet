@@ -1,0 +1,68 @@
+<!--
+Template vars:
+ - books :: [Book], list of books
+ - authors :: Int, the number of authors
+ - read :: Int, the number of read books
+-->
+<p> Showing #{length books} #{pluralise "book" "books" (length books)} by #{authors} #{pluralise "author" "authors" authors}, of which #{read} (#{percent read (length books)}%) #{pluralise "has" "have" read} been read.
+
+<table>
+  <thead>
+    <th>ISBN
+    <th>Title
+    <th>Author
+    <th>Read
+    <th>Location
+    <th>Borrower
+    <th>Meta
+  <tbody>
+    $if length books == 0
+      <tr>
+        <td colspan="7">There are no books.
+    $else
+      $forall book <- books
+        <tr>
+          <td .isbn>#{bookIsbn book}
+          <td>
+            <ol>
+              $forall author <- splitOn " and " (bookAuthor book)
+                $if elem author ["Anonymous", "Various"]
+                  <li .pseudo>#{author}
+                $else
+                  <li>
+                    <a href="@{Author author}">#{author}
+
+            $maybe trans <- bookTranslator book
+              (trans. <a href="@{Translator trans}">#{trans}
+              \ )
+
+            $maybe edit <- bookEditor book
+              (trans. <a href="@{Editor edit}">#{edit}
+              \ )
+          <td>
+            $if bookRead book
+              $maybe read <- bookLastread book
+                <a href="@{Read}">✔ (#{formatTime defaultTimeLocale "%F" read})
+              $nothing
+                <a href="@{Read}">✔
+            $else
+              <a href="@{Unread}">✘
+          <td>
+            <a href="@{Location $ bookLocation book}">#{bookLocation book}
+          <td>
+            <a href="@{Borrower $ bookBorrower book}">#{bookBorrower book}
+          <td .meta>
+            <a href="#" .toggle id="#{bookIsbn book}-toggle">[info]
+            <a href="@{Edit $ bookIsbn book}">[edit]
+            <a href="@{Delete $ bookIsbn book}">[delete]
+        <tr .hidden id="#{bookIsbn book}-toggle-tr">
+          <td colspan="7">
+            <div .hidden id="#{bookIsbn book}-toggle-div">
+              $maybe cover <- bookCover book
+                <img src="@{Image cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
+
+              <blockquote>
+                #{bookQuote book}
+
+              <div .notes>
+                #{bookNotes book}
