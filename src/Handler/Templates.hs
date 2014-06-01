@@ -110,7 +110,7 @@ numAuthors = S.size . authors
 -- |Get the list of unique authors in a list of books
 authors :: [Book] -> Set Text
 authors = foldr authors' S.empty
-  where authors' b s = S.union s . S.fromList . splitOn " and " $ bookAuthor b
+  where authors' b s = S.union s . S.fromList . splitOn " & " $ bookAuthor b
 
 -- |Get the number of read books in a list of books
 numRead :: [Book] -> Int

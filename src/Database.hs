@@ -23,7 +23,7 @@ Book
     fascicle Text
     voltitle Text
 
-    -- Multiple authors can be sepaarted by "and", and they will be
+    -- Multiple authors can be sepaarted by " & ", and they will be
     -- displayed in a list on the book list page. Perhaps a [Text]
     -- would be more appropriate here, but then it would need to be
     -- serialised when editing and unserialised when adding. Just

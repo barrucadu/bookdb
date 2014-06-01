@@ -24,8 +24,10 @@ Template vars:
         <tr>
           <td .isbn>#{bookIsbn book}
           <td>
+            #{bookTitle book}
+          <td>
             <ol>
-              $forall author <- splitOn " and " (bookAuthor book)
+              $forall author <- splitOn " & " (bookAuthor book)
                 $if elem author ["Anonymous", "Various"]
                   <li .pseudo>#{author}
                 $else
