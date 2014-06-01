@@ -128,6 +128,7 @@ pluralise _ p _ = p
 percent :: Int -- ^ The actual value
         -> Int -- ^ The max value
         -> Int
+percent _ 0 = 100
 percent a b = round $ (fromIntegral a / fromIntegral b) * 100
 
 -- |Pretty-print a book
