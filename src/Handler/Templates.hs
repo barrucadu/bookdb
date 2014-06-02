@@ -24,7 +24,7 @@ import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Set (Set)
 import Data.Time.Format (formatTime)
-import Data.Text (Text, splitOn, null)
+import Data.Text (Text, splitOn, null, toLower)
 import System.Locale (defaultTimeLocale)
 import Text.Hamlet (HtmlUrl, hamletFile)
 

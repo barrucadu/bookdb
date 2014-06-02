@@ -4,7 +4,7 @@ Template vars:
  - message :: Text, the message to display
 -->
 $doctype 5
-$with title <- bool error "error" "information"
+$with title <- bool error "Error" "Information"
   <html>
     <head>
       <title>#{title}</title>
@@ -15,7 +15,7 @@ $with title <- bool error "error" "information"
 
       <link rel="stylesheet" href="@{Stylesheet}" type="text/css">
 
-  <body class="#{title}">
+  <body class="#{toLower title}">
     <div .information>
       <header>
         <h1>#{title}
