@@ -6,21 +6,18 @@ module Handler.List
     , restrict
     ) where
 
-import Database
-import Handler.Utils
-import Routes
-
-import qualified Handler.Templates as T
-
 import Control.Monad (when)
 import Data.Maybe (isJust, fromJust)
 import Data.Text (Text)
+import Database
 import Database.Esqueleto hiding ((==.))
 import Database.Persist hiding ((||.))
+import Handler.Utils
+import Routes
 import Web.Seacat
 import Web.Seacat.RequestHandler (htmlUrlResponse)
 
--------------------------
+import qualified Handler.Templates as T
 
 index :: Handler Sitemap
 index = do

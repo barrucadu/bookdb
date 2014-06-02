@@ -2,9 +2,9 @@
 
 module Database where
 
-import Database.Persist.TH
-import Data.Time (UTCTime)
 import Data.Text (Text)
+import Data.Time (UTCTime)
+import Database.Persist.TH
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Book

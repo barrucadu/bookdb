@@ -4,20 +4,17 @@ module Main where
 
 import Prelude hiding (userError)
 
-import Database
-import Handler.List
-import Handler.Information
-import Handler.Edit
-import Routes
-
 import Data.ConfigFile (emptyCP, readstring)
 import Data.Either.Utils (forceEither)
 import Data.Text (Text, pack)
+import Database
+import Handler.Edit
+import Handler.Information
+import Handler.List
 import Network.HTTP.Types.Method (StdMethod(..))
 import Network.HTTP.Types.Status (notFound404, methodNotAllowed405, internalServerError500)
+import Routes
 import Web.Seacat
-
--------------------------
 
 -- |Run the server
 main :: IO ()

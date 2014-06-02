@@ -15,16 +15,15 @@ module Handler.Templates
     , index
     ) where
 
-import Database
-import Routes
-
 import Prelude hiding (null)
 
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Set (Set)
-import Data.Time.Format (formatTime)
 import Data.Text (Text, splitOn, null, toLower)
+import Data.Time.Format (formatTime)
+import Database
+import Routes
 import System.Locale (defaultTimeLocale)
 import Text.Hamlet (HtmlUrl, hamletFile)
 

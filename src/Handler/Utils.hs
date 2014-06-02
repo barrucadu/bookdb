@@ -1,12 +1,11 @@
 module Handler.Utils (suggest) where
 
-import Database
-import Routes
-
 import Control.Monad.IO.Class (liftIO)
+import Database
 import Database.Persist
-import Web.Seacat
+import Routes
 import System.Random (randomRIO)
+import Web.Seacat
 
 -- |Get a suggestion
 suggest :: RequestProcessor Sitemap (Maybe Book)

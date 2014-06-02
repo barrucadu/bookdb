@@ -10,14 +10,11 @@ module Handler.Edit
     , commitDelete
     ) where
 
-import Routes
-
-import qualified Handler.Templates as T
-
 import Data.Text (Text)
+import Routes
 import Web.Seacat
 
--------------------------
+import qualified Handler.Templates as T
 
 add :: Handler Sitemap
 add = undefined
