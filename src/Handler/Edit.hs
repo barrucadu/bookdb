@@ -14,12 +14,15 @@ module Handler.Edit
 
 import Prelude hiding (userError)
 
+import Control.Applicative ((<$>))
 import Data.Text (Text)
 import Database
 import Database.Persist (Entity(..), (==.), selectFirst)
 import Handler.Information (userError)
+import Handler.Utils
 import Routes
 import Web.Seacat
+import Web.Seacat.RequestHandler (htmlUrlResponse)
 
 import qualified Handler.Templates as T
 
@@ -78,13 +81,17 @@ withBook handler isbn = do
 -------------------------
 
 add' :: Handler Sitemap
-add' = undefined
+add' = do
+  suggestion <- suggest
+  htmlUrlResponse $ T.addForm suggestion
 
 edit' :: Entity Book -> Handler Sitemap
-edit' (Entity bookId book) = undefined
+edit' (Entity bookId book) = do
+  suggestion <- suggest
+  htmlUrlResponse $ T.editForm suggestion book
 
 delete' :: Entity Book -> Handler Sitemap
-delete' (Entity bookId book) = undefined
+delete' (Entity bookId book) = htmlUrlResponse $ T.confirmDelete book
 
 -------------------------
 
