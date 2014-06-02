@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Handler.Edit
     ( -- * Display forms
       add
@@ -12,13 +10,10 @@ module Handler.Edit
     , commitDelete
     ) where
 
-import Prelude hiding (userError)
-
 import Control.Applicative ((<$>))
 import Data.Text (Text)
 import Database
-import Database.Persist (Entity(..), (==.), selectFirst)
-import Handler.Information (userError)
+import Database.Persist (Entity(..))
 import Handler.Utils
 import Routes
 import Web.Seacat
@@ -53,30 +48,6 @@ commitEdit = onReadWrite . withBook commitEdit'
 commitDelete :: Text -- ^ The ISBN
              -> Handler Sitemap
 commitDelete = onReadWrite . withBook commitDelete'
-
--------------------------
-
--- |Run the given handler if in read-write mode, otherwise display an
--- error page.
-onReadWrite :: Handler Sitemap -- ^ The handler
-            -> Handler Sitemap
-onReadWrite handler = do
-  readonly <- conf' "server" "readonly"
-
-  if readonly
-  then userError "Database is read-only"
-  else handler
-
--- |Run a handler which tskes a book as an argument, identified by
--- ISBN, and display an error if there is no such book.
-withBook :: (Entity Book -> Handler Sitemap) -- ^ The handler
-         -> Text -- ^ The ISBN
-         -> Handler Sitemap
-withBook handler isbn = do
-  book <- selectFirst [BookIsbn ==. isbn] []
-  case book of
-    Just b  -> handler b
-    Nothing -> userError "No such book"
 
 -------------------------
 
