@@ -19,6 +19,7 @@ import Data.Text (Text)
 import Database.Esqueleto hiding ((==.))
 import Database.Persist hiding ((||.))
 import Web.Seacat
+import Web.Seacat.RequestHandler (htmlUrlResponse)
 
 -------------------------
 
@@ -32,9 +33,7 @@ index = do
 
   let books' = map (\(Entity _ e) -> e) books
 
-  mkurl <- askMkUrl
-  htmlResponse $ T.index suggestion books' $ \a b ->
-    mkurl a $ map (second Just) b
+  htmlUrlResponse $ T.index suggestion books'
 
 search :: Handler Sitemap
 search = do
@@ -73,9 +72,7 @@ search = do
 
   let books' = map (\(Entity _ e) -> e) books
 
-  mkurl <- askMkUrl
-  htmlResponse $ T.search suggestion isbn title subtitle author matchread matchunread location borrower books' $ \a b ->
-    mkurl a $ map (second Just) b
+  htmlUrlResponse $ T.search suggestion isbn title subtitle author matchread matchunread location borrower books'
 
 
 restrict :: PersistField t
@@ -93,6 +90,4 @@ restrict field is = do
 
   let books' = map (\(Entity _ e) -> e) books
 
-  mkurl <- askMkUrl
-  htmlResponse $ T.index suggestion books' $ \a b ->
-    mkurl a $ map (second Just) b
+  htmlUrlResponse $ T.index suggestion books'
