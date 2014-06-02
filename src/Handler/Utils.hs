@@ -21,7 +21,7 @@ suggest :: RequestProcessor Sitemap (Maybe Book)
 suggest = do
   books <- selectList [BookRead ==. False] []
 
-  idx <- liftIO $ randomRIO (0, length books)
+  idx <- liftIO $ randomRIO (0, length books - 1)
 
   if null books
   then return Nothing
