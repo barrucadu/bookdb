@@ -12,7 +12,6 @@ import Routes
 
 import qualified Handler.Templates as T
 
-import Control.Arrow (second)
 import Control.Monad (when)
 import Data.Maybe (isJust, fromJust)
 import Data.Text (Text)

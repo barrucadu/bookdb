@@ -1,7 +1,12 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
+
+import Prelude hiding (userError)
 
 import Database
 import Handler.List
+import Handler.Information
 import Handler.Edit
 import Routes
 
@@ -19,6 +24,7 @@ main :: IO ()
 main = seacat route error500 $ defaultSettings { _config  = Just defaults
                                                , _migrate = Just migrateAll
                                                }
+  where error500 = serverError internalServerError500 . pack
 
 -- |Route a request to a handler. These do not cover static files, as
 -- Seacat handles those.
@@ -42,9 +48,9 @@ route POST Add        = commitAdd
 route POST (Edit e)   = commitEdit e
 route POST (Delete d) = commitDelete d
 
-route _ Error404 = error404 "File not found"
+route _ Error404 = serverError notFound404 "File not found"
 
-route _ _ = error405 "Method not allowed"
+route _ _ = serverError methodNotAllowed405 "Method not allowed"
 
 -- |Default configuration
 defaults :: ConfigParser
@@ -54,16 +60,3 @@ defaults = forceEither . readstring emptyCP $ unlines
   , "[database]"
   , "connection_string = bookdb.sqlite"
   ]
-
--- |Display a 404 error
--- Todo: prettier error pages
-error404 :: String -> Handler Sitemap
-error404 = textResponse' notFound404 . pack
-
--- |Display a 405 error
-error405 :: String -> Handler Sitemap
-error405 = textResponse' methodNotAllowed405 . pack
-
--- |Display a 500 error
-error500 :: String -> Handler Sitemap
-error500 = textResponse' internalServerError500 . pack
