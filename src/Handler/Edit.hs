@@ -4,7 +4,7 @@ module Handler.Edit
     ( -- * Display forms
       add
     , edit
-    , delete
+    , Handler.Edit.delete
 
     -- * Save changes
     , commitAdd
@@ -19,7 +19,7 @@ import Data.Text (Text, null, intercalate, splitOn, unpack, isInfixOf)
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Clock (UTCTime(..))
 import Database
-import Database.Persist (Entity(..), insert, replace)
+import Database.Persist (Entity(..), insert, replace, delete)
 import Handler.Information
 import Handler.Utils
 import Routes
@@ -81,7 +81,7 @@ commitEdit' :: Entity Book -> Handler Sitemap
 commitEdit' = mutate . Just
 
 commitDelete' :: Entity Book -> Handler Sitemap
-commitDelete' (Entity bookId book) = undefined
+commitDelete' (Entity bookId _) = Database.Persist.delete bookId >> information "Book deleted successfully"
 
 -------------------------
 
