@@ -20,7 +20,7 @@ body {
     padding: 25px;
 }
 
-.information {
+div.information {
     background-color: #E7E7E5;
     border: 5px solid #AAB080;
     width: 600px;
@@ -28,11 +28,11 @@ body {
     padding: 25px;
 }
 
-.error {
+body.error {
     background-color: #E89E79;
 }
 
-.error .information {
+body.error div.information {
     border-color: #FF8652;
 }
 
