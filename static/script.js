@@ -1,19 +1,26 @@
-$(document).ready(function() {
-    $(".hidden").hide();
+// Copied from: http://cssglobe.com/lab/tooltip/02/
+$(document).ready(function(){
+	xOffset = 10;
+	yOffset = 30;
 
-    $("a.toggle").click(function(event) {
-        var tr = $("#" + this.id + "-tr");
-        var div = $("#" + this.id + "-div");
-
-        if (tr.is(':visible')) {
-            div.hide({ effect: 'blind',
-                       duration: 400,
-                       complete: function(){ tr.hide(); }});
-        } else {
-            tr.show();
-            div.show('blind', 400);
-        }
-
-        event.preventDefault();
+	$("a.preview").hover(function(e){
+		this.t = this.title;
+		this.title = "";
+		var c = (this.t != "") ? "<br/>" + this.t : "";
+		$("body").append("<p id='preview'><img src='"+ this.href +"' alt='Image preview' />"+ c +"</p>");
+		$("#preview")
+			.css("top",(e.pageY - xOffset) + "px")
+			.css("left",(e.pageX + yOffset) + "px")
+			.fadeIn("fast");
+    },
+	function(){
+		this.title = this.t;
+		$("#preview").remove();
     });
+
+	$("a.preview").mousemove(function(e){
+		$("#preview")
+			.css("top",(e.pageY - xOffset) + "px")
+			.css("left",(e.pageX + yOffset) + "px");
+	});
 });
