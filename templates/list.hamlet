@@ -59,5 +59,8 @@ Template vars:
           <td>
             <a href="@{Borrower $ bookBorrower book}">#{bookBorrower book}
           <td .meta>
-            <a href="@{Edit $ bookIsbn book}">[edit]
-            <a href="@{Delete $ bookIsbn book}">[delete]
+            [
+            <a href="@{Edit $ bookIsbn book}">e
+            \ / 
+            <a href="@{Delete $ bookIsbn book}">d
+            ]

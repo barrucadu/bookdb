@@ -185,13 +185,9 @@ dd li {
     margin: 0 6px;
 }
 
-ul.meta {
-    text-align: center;
-}
-
-td.meta a {
+td.meta {
     font-size: 0.85em;
-    margin: 0 1px;
+    min-width: 3em;
 }
 
 img {
