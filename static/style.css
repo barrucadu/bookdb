@@ -195,10 +195,9 @@ td.meta a {
 }
 
 img {
-    width: 150px;
-    height: 225px;
-    margin: 0 1em 1em 0;
-    float: left;
+    max-width: 16px;
+    max-height: 24px;
+    margin: 0 auto;
 }
 
 blockquote {

@@ -8,6 +8,7 @@ Template vars:
 
 <table>
   <thead>
+    <th>
     <th>ISBN
     <th>Title
     <th>Author
@@ -18,10 +19,13 @@ Template vars:
   <tbody>
     $if length books == 0
       <tr>
-        <td colspan="7">There are no books.
+        <td colspan="8">There are no books.
     $else
       $forall book <- books
         <tr>
+          <td>
+            $maybe cover <- bookCover book
+              <img src="@{Image cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
           <td .isbn>#{bookIsbn book}
           <td>
             #{bookTitle book}
@@ -54,11 +58,5 @@ Template vars:
           <td>
             <a href="@{Borrower $ bookBorrower book}">#{bookBorrower book}
           <td .meta>
-            <a href="#" .toggle id="#{bookIsbn book}-toggle">[info]
             <a href="@{Edit $ bookIsbn book}">[edit]
             <a href="@{Delete $ bookIsbn book}">[delete]
-        <tr .hidden id="#{bookIsbn book}-toggle-tr">
-          <td colspan="7">
-            <div .hidden id="#{bookIsbn book}-toggle-div">
-              $maybe cover <- bookCover book
-                <img src="@{Image cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
