@@ -4,6 +4,7 @@ module Handler.List
     ( index
     , search
     , restrict
+    , restrictFuzzy
     ) where
 
 import Control.Monad (when)
@@ -70,7 +71,7 @@ search = do
 
   htmlUrlResponse $ T.search suggestion isbn title subtitle author matchread matchunread location borrower books'
 
-
+-- |Filter by exact field value
 restrict :: PersistField t
          => EntityField (BookGeneric SqlBackend) t -- ^ The field to filter on
          -> t -- ^ the value to filter by
@@ -83,6 +84,27 @@ restrict field is = do
                      , Asc BookVolume
                      , Asc BookFascicle
                      ]
+
+  let books' = map (\(Entity _ e) -> e) books
+
+  htmlUrlResponse $ T.index suggestion books'
+
+-- |Filter by fuzzy field value
+restrictFuzzy :: EntityField (BookGeneric SqlBackend) Text -- ^ The field to filter on
+              -> Text -- ^ The value to filter by
+              -> Handler Sitemap
+restrictFuzzy field contains = do
+  suggestion <- suggest
+
+  books <- select $
+          from $ \b -> do
+            where_ (b ^. field `like` (%) ++. val contains ++. (%))
+            orderBy [ asc (b ^. BookAuthor)
+                    , asc (b ^. BookTitle)
+                    , asc (b ^. BookVolume)
+                    , asc (b ^. BookFascicle)
+                    ]
+            return b
 
   let books' = map (\(Entity _ e) -> e) books
 

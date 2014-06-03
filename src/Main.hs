@@ -29,7 +29,10 @@ route :: StdMethod -> Sitemap -> Handler Sitemap
 route GET Booklist = index
 route GET Search   = search
 
-route GET (Author a)     = restrict BookAuthor a
+-- Fuzzy matching is required for author because in general the author
+-- field contains a list, and we want to be able to match any one of
+-- them.
+route GET (Author a)     = restrictFuzzy BookAuthor a
 route GET (Translator t) = restrict BookTranslator (Just t)
 route GET (Editor e)     = restrict BookEditor (Just e)
 route GET Read           = restrict BookRead True
