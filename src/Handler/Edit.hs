@@ -25,7 +25,6 @@ import Database.Persist (Entity(..), insert, replace, delete)
 import Handler.Information
 import Handler.Utils
 import Routes
-import System.FilePath.Posix (takeExtension)
 import Text.Read (readMaybe)
 import Web.Seacat
 import Web.Seacat.RequestHandler (htmlUrlResponse)
@@ -157,8 +156,5 @@ uploadCover = do
   case file of
     Just f@(FileInfo fname _ c) -> if BL.null c
                                    then return Nothing
-                                   else do
-                                     let fname' = unpack isbn ++ takeExtension (map (chr . fromIntegral) $ B.unpack fname)
-                                     save' ["covers", fname'] f
-                                     return $ Just (pack fname')
+                                   else Just <$> save' ["covers", unpack isbn] f
     Nothing -> return Nothing
