@@ -62,9 +62,3 @@ Template vars:
             <div .hidden id="#{bookIsbn book}-toggle-div">
               $maybe cover <- bookCover book
                 <img src="@{Image cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
-
-              <blockquote>
-                #{bookQuote book}
-
-              <div .notes>
-                #{bookNotes book}

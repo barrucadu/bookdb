@@ -109,8 +109,6 @@ mutate book = do
   lastread   <- param' "lastread"   ""
   location   <- param' "location"   ""
   borrower   <- param' "borrower"   ""
-  quote      <- param' "quote"      ""
-  notes      <- param' "notes"      ""
 
   if null isbn || null title || null author || null location
   then userError "Missing required fields"
@@ -122,7 +120,7 @@ mutate book = do
 
     case toDate lastread of
       Just lastread' -> do
-        let newbook = Book cover isbn title subtitle volume fascicle voltitle author' translator' editor' read' lastread' location borrower quote notes
+        let newbook = Book cover isbn title subtitle volume fascicle voltitle author' translator' editor' read' lastread' location borrower
 
         case book of
           Just (Entity bookId _) -> replace bookId newbook >> information "Book updated successfully"

@@ -56,12 +56,6 @@ $with book <- fromMaybe emptyBook book
           <label for="borrower">Borrower
           <input type="text" #borrower name="borrower" value="#{bookBorrower book}">
         <li>
-          <label for="quote">Quote
-          <textarea #quote name="quote">#{bookQuote book}</textarea>
-        <li>
-          <label for="notes">Notes
-          <textarea #notes name="notes">#{bookNotes book}</textarea>
-        <li>
           <input type="submit" value="Save">
 
 <div .help>

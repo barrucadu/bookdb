@@ -150,7 +150,7 @@ pprint book = title <> subtitle <> volume <> voltitle
 
 -- |A null book
 emptyBook :: Book
-emptyBook = Book Nothing "" "" "" "" "" "" "" Nothing Nothing False Nothing "" "" "" ""
+emptyBook = Book Nothing "" "" "" "" "" "" "" Nothing Nothing False Nothing "" ""
 
 -- |Choice
 bool :: Bool -- ^ Condition

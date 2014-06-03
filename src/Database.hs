@@ -44,12 +44,6 @@ Book
     location Text
     borrower Text
 
-    -- Not really sure if I want to keep these, I never use those
-    -- fields. I'll keep them for now, as I port the Python version to
-    -- Haskell, but may well drop them later.
-    quote Text
-    notes Text
-
     UniqueBookIsbn isbn
 
     deriving Read
