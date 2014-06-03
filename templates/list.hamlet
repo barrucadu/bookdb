@@ -29,7 +29,7 @@ Template vars:
                 <img src="@{Image cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
           <td .isbn>#{bookIsbn book}
           <td>
-            #{bookTitle book}
+            #{pprint book}
           <td>
             <ol>
               $forall author <- splitOn " & " (bookAuthor book)
