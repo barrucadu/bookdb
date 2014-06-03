@@ -14,8 +14,10 @@ module Handler.Edit
 
 import Prelude hiding (null, userError)
 
+import Control.Applicative ((<$>))
+import Data.Char (chr)
 import Data.List (sort)
-import Data.Text (Text, null, intercalate, splitOn, unpack, isInfixOf)
+import Data.Text (Text, null, intercalate, splitOn, pack, unpack)
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Clock (UTCTime(..))
 import Database
@@ -23,10 +25,13 @@ import Database.Persist (Entity(..), insert, replace, delete)
 import Handler.Information
 import Handler.Utils
 import Routes
+import System.FilePath.Posix (takeExtension)
 import Text.Read (readMaybe)
 import Web.Seacat
 import Web.Seacat.RequestHandler (htmlUrlResponse)
 
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BL
 import qualified Handler.Templates as T
 
 -- |Display an add form, or an error if in read-only mode
@@ -90,8 +95,7 @@ mutate :: Maybe (Entity Book) -- ^ The book to mutate, or Nothing to insert
        -> Handler Sitemap
 mutate book = do
   -- do cover upload
-  let cover = undefined
-
+  cover      <- uploadCover
   isbn       <- param' "isbn"       ""
   title      <- param' "title"      ""
   subtitle   <- param' "subtitle"   ""
@@ -143,3 +147,20 @@ mutate book = do
         toDay t = case map (readMaybe . unpack) $ splitOn "-" t of
                     (Just y : Just m : Just d : []) -> Just $ fromGregorian (fromIntegral y) m d
                     _          -> Nothing
+
+-------------------------
+
+-- |Upload the cover image for a book, returning its path
+uploadCover :: RequestProcessor Sitemap (Maybe Text)
+uploadCover = do
+  isbn <- param' "isbn" ""
+  file <- lookup "cover" <$> files
+
+  case file of
+    Just f@(FileInfo fname _ c) -> if BL.null c
+                                   then return Nothing
+                                   else do
+                                     let fname' = unpack isbn ++ takeExtension (map (chr . fromIntegral) $ B.unpack fname)
+                                     save' ["covers", fname'] f
+                                     return $ Just (pack fname')
+    Nothing -> return Nothing
