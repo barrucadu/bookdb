@@ -15,7 +15,7 @@ Template vars:
     <th>Read
     <th>Location
     <th>Borrower
-    <th>Meta
+    <th>
   <tbody>
     $if length books == 0
       <tr>
