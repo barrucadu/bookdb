@@ -40,12 +40,10 @@ Template vars:
                     <a href="@{Author author}">#{author}
 
             $maybe trans <- bookTranslator book
-              (trans. <a href="@{Translator trans}">#{trans}
-              \ )
+              (trans. <a href="@{Translator trans}">#{trans}</a>)
 
             $maybe edit <- bookEditor book
-              (trans. <a href="@{Editor edit}">#{edit}
-              \ )
+              (trans. <a href="@{Editor edit}">#{edit}</a>)
           <td>
             $if bookRead book
               $maybe read <- bookLastread book
@@ -59,8 +57,4 @@ Template vars:
           <td>
             <a href="@{Borrower $ bookBorrower book}">#{bookBorrower book}
           <td .meta>
-            [
-            <a href="@{Edit $ bookIsbn book}">e
-            \ / 
-            <a href="@{Delete $ bookIsbn book}">d
-            ]
+            [&nbsp;<a href="@{Edit $ bookIsbn book}">e</a>&nbsp;/&nbsp;<a href="@{Delete $ bookIsbn book}">d</a>&nbsp;]
