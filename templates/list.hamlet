@@ -9,7 +9,7 @@ Template vars:
 <table>
   <thead>
     <th>
-    <th>ISBN
+    <th>ISBN/ID
     <th>Title
     <th>Author
     <th>Read

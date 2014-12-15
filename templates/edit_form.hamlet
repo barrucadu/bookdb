@@ -11,7 +11,7 @@ $with book <- fromMaybe emptyBook book
           <label for="cover">Cover Image
           <input type="file" #cover name="cover">
         <li>
-          <label for="isbn" .required>ISBN
+          <label for="isbn" .required>ISBN/ID
           <input type="text" #isbn name="isbn" value="#{bookIsbn book}" required>
         <li>
           <label for="title" .required>Title

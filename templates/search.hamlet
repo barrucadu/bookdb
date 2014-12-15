@@ -18,7 +18,7 @@ Template vars:
   <fieldset>
     <ol>
       <li>
-        <label for="isbn">ISBN
+        <label for="isbn">ISBN/ID
         <input type="text" #isbn name="isbn" value="#{fromMaybe "" isbn}">
       <li>
         <label for="title">Title
