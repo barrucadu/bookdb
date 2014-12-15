@@ -43,7 +43,7 @@ Template vars:
               (trans. <a href="@{Translator trans}">#{trans}</a>)
 
             $maybe edit <- bookEditor book
-              (trans. <a href="@{Editor edit}">#{edit}</a>)
+              (edit. <a href="@{Editor edit}">#{edit}</a>)
           <td>
             $if bookRead book
               $maybe read <- bookLastread book
