@@ -9,8 +9,7 @@ import Prelude hiding (userError)
 import Data.Text (Text)
 import Network.HTTP.Types.Status (Status)
 import Routes (Sitemap)
-import Web.Seacat (Handler)
-import Web.Seacat.RequestHandler (htmlUrlResponse, htmlUrlResponse')
+import Server.Requests (Handler, htmlUrlResponse, htmlUrlResponse')
 
 import qualified Handler.Templates as T
 

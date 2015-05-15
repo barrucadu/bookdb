@@ -7,14 +7,15 @@ module Handler.Utils
 
 import Prelude hiding (userError)
 
+import Configuration (conf')
 import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
 import Database
 import Database.Persist
 import Handler.Information (userError)
 import Routes
+import Server
 import System.Random (randomRIO)
-import Web.Seacat
 
 -- |Get a suggestion
 suggest :: RequestProcessor Sitemap (Maybe Book)
@@ -33,7 +34,7 @@ suggest = do
 onReadWrite :: Handler Sitemap -- ^ The handler
             -> Handler Sitemap
 onReadWrite handler = do
-  readonly <- conf' "server" "readonly"
+  readonly <- conf' "bookdb" "readonly"
 
   if readonly
   then userError "Database is read-only"

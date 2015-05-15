@@ -15,8 +15,8 @@ import Database.Esqueleto hiding ((==.))
 import Database.Persist hiding ((||.))
 import Handler.Utils
 import Routes
-import Web.Seacat
-import Web.Seacat.RequestHandler (htmlUrlResponse)
+import Server
+import Server.Requests (htmlUrlResponse)
 
 import qualified Handler.Templates as T
 
@@ -73,7 +73,7 @@ search = do
 
 -- |Filter by exact field value
 restrict :: PersistField t
-         => EntityField (BookGeneric SqlBackend) t -- ^ The field to filter on
+         => EntityField Book t -- ^ The field to filter on
          -> t -- ^ the value to filter by
          -> Handler Sitemap
 restrict field is = do
@@ -90,7 +90,7 @@ restrict field is = do
   htmlUrlResponse $ T.index suggestion books'
 
 -- |Filter by fuzzy field value
-restrictFuzzy :: EntityField (BookGeneric SqlBackend) Text -- ^ The field to filter on
+restrictFuzzy :: EntityField Book Text -- ^ The field to filter on
               -> Text -- ^ The value to filter by
               -> Handler Sitemap
 restrictFuzzy field contains = do

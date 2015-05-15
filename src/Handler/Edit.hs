@@ -14,10 +14,8 @@ module Handler.Edit
 
 import Prelude hiding (null, userError)
 
-import Control.Applicative ((<$>))
-import Data.Char (chr)
 import Data.List (sort)
-import Data.Text (Text, null, intercalate, splitOn, pack, unpack)
+import Data.Text (Text, null, intercalate, splitOn, unpack)
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Clock (UTCTime(..))
 import Database
@@ -26,10 +24,9 @@ import Handler.Information
 import Handler.Utils
 import Routes
 import Text.Read (readMaybe)
-import Web.Seacat
-import Web.Seacat.RequestHandler (htmlUrlResponse)
+import Server
+import Server.Requests (htmlUrlResponse)
 
-import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Handler.Templates as T
 
@@ -69,12 +66,12 @@ add' = do
   htmlUrlResponse $ T.addForm suggestion
 
 edit' :: Entity Book -> Handler Sitemap
-edit' (Entity bookId book) = do
+edit' (Entity _ book) = do
   suggestion <- suggest
   htmlUrlResponse $ T.editForm suggestion book
 
 delete' :: Entity Book -> Handler Sitemap
-delete' (Entity bookId book) = htmlUrlResponse $ T.confirmDelete book
+delete' (Entity _ book) = htmlUrlResponse $ T.confirmDelete book
 
 -------------------------
 
