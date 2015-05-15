@@ -18,14 +18,14 @@ import Data.List (sort)
 import Data.Text (Text, null, intercalate, splitOn, unpack)
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Clock (UTCTime(..))
-import Database
 import Database.Persist (Entity(..), insert, replace, delete)
+import Text.Read (readMaybe)
+import Database
+
 import Handler.Information
 import Handler.Utils
 import Routes
-import Text.Read (readMaybe)
-import Server
-import Server.Requests (htmlUrlResponse)
+import Requests
 
 import qualified Data.ByteString.Lazy as BL
 import qualified Handler.Templates as T
@@ -139,8 +139,8 @@ mutate book = do
                           Nothing -> Nothing
 
         toDay t = case map (readMaybe . unpack) $ splitOn "-" t of
-                    (Just y : Just m : Just d : []) -> Just $ fromGregorian (fromIntegral y) m d
-                    _          -> Nothing
+                    [Just y, Just m, Just d] -> Just $ fromGregorian (fromIntegral y) m d
+                    _ -> Nothing
 
 -------------------------
 
@@ -151,7 +151,7 @@ uploadCover = do
   file <- lookup "cover" <$> files
 
   case file of
-    Just f@(FileInfo fname _ c) -> if BL.null c
-                                   then return Nothing
-                                   else Just <$> save' ["covers", unpack isbn] f
+    Just f@(FileInfo _ _ c)
+      | BL.null c -> return Nothing
+      | otherwise -> Just <$> save' ["covers", unpack isbn] f
     Nothing -> return Nothing

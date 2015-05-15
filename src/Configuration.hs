@@ -7,7 +7,6 @@ module Configuration
     ( ConfigParser
     , loadConfigFile
     , reloadConfigFile
-    , applyUserConfig
     , defaults
     , get
     , get'
@@ -17,9 +16,9 @@ module Configuration
 import Control.Monad.Error.Class (MonadError)
 import Data.ConfigFile
 import Data.Either.Utils (forceEither)
-import Server.Requests.Types (RequestProcessor, askConf)
 import System.IO.Error (catchIOError)
-import Web.Routes.PathInfo (PathInfo)
+
+import Requests.Types (RequestProcessor, askConf)
 
 -- |Load a configuration file by name.
 -- All errors (syntax, file access, etc) are squashed together,
@@ -61,7 +60,6 @@ reloadConfigFile cfg filename = ((cfg `merge`) <$> loadConfigFileUnsafe filename
 -- - Use http://localhost:3000 as the basis for all URLs
 -- - Use /tmp as the basis for all file look-ups
 -- - Use a database called bookdb.sqlite
-
 defaults :: ConfigParser
 defaults = forceEither . readstring emptyCP $ unlines
   [ "[bookdb]"
@@ -71,16 +69,6 @@ defaults = forceEither . readstring emptyCP $ unlines
   , "file_root     = /tmp"
   , "database_file = bookdb.sqlite"
   ]
-
--- |Apply the supplied configuration to the standard
--- configuration. This overrides the values in the original
--- configuration with the ones in the user configuration, if provided,
--- preserving any missing values.
-applyUserConfig :: ConfigParser       -- ^ The standard configuration
-                -> Maybe ConfigParser -- ^ Optional application-specific configuration
-                -> ConfigParser
-applyUserConfig cfg (Just usercfg) = cfg `merge` usercfg
-applyUserConfig cfg _ = cfg
 
 -- |Get a value from the configuration unsafely (throws an
 -- `IOException` on fail).
@@ -97,10 +85,10 @@ get' cp ss os = forceEither $ get cp ss os
 --
 -- This simplifies that by getting rid of the need to use `askConf`
 -- manually.
-conf :: (Get_C a, MonadError CPError m, PathInfo r) => SectionSpec -> OptionSpec -> RequestProcessor r (m a)
+conf :: (Get_C a, MonadError CPError m) => SectionSpec -> OptionSpec -> RequestProcessor r (m a)
 conf ss os = askConf >>= \config -> return $ get config ss os
 
 -- |Get a value from the configuration in a handler unsafely. Like
 -- `conf`, but throws an `IOException` if the value can't be found.
-conf' :: (Get_C a, PathInfo r) => SectionSpec -> OptionSpec -> RequestProcessor r a
+conf' :: Get_C a => SectionSpec -> OptionSpec -> RequestProcessor r a
 conf' ss os = askConf >>= \config -> return $ get' config ss os

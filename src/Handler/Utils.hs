@@ -10,12 +10,13 @@ import Prelude hiding (userError)
 import Configuration (conf')
 import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
-import Database
 import Database.Persist
-import Handler.Information (userError)
-import Routes
-import Server
 import System.Random (randomRIO)
+
+import Database
+import Handler.Information
+import Routes
+import Requests
 
 -- |Get a suggestion
 suggest :: RequestProcessor Sitemap (Maybe Book)

@@ -1,4 +1,4 @@
-module Server.Requests.Types
+module Requests.Types
     ( Cry(..)
     , MkUrl
     , RequestProcessor
@@ -54,18 +54,18 @@ type RequestProcessor r = SqlPersistT (ReaderT (Cry r) (NoLoggingT (ResourceT IO
 type Handler r = RequestProcessor r Response
 
 -- |Get the configuration from a `RequestProcessor`
-askConf :: PathInfo r => RequestProcessor r ConfigParser
+askConf :: RequestProcessor r ConfigParser
 askConf = _conf <$> askCry
 
 -- |Get the URL maker from a `RequestProcessor`
-askMkUrl :: PathInfo r => RequestProcessor r (MkUrl r)
+askMkUrl :: RequestProcessor r (MkUrl r)
 askMkUrl = _mkurl <$> askCry
 
 -- |Get the seacat request from a `RequestProcessor`
-askCry :: PathInfo r => RequestProcessor r (Cry r)
+askCry :: RequestProcessor r (Cry r)
 askCry = lift ask
 
 -- |Get the WAI request from a `RequestProcessor`
-askReq :: PathInfo r => RequestProcessor r Request
+askReq :: RequestProcessor r Request
 askReq = _req <$> askCry
 

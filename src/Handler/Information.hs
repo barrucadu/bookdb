@@ -8,8 +8,9 @@ import Prelude hiding (userError)
 
 import Data.Text (Text)
 import Network.HTTP.Types.Status (Status)
-import Routes (Sitemap)
-import Server.Requests (Handler, htmlUrlResponse, htmlUrlResponse')
+
+import Routes
+import Requests
 
 import qualified Handler.Templates as T
 

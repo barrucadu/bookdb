@@ -22,9 +22,10 @@ import Data.Monoid ((<>))
 import Data.Set (Set)
 import Data.Text (Text, splitOn, null, toLower)
 import Data.Time.Format (defaultTimeLocale, formatTime)
+import Text.Hamlet (HtmlUrl, hamletFile)
+
 import Database
 import Routes
-import Text.Hamlet (HtmlUrl, hamletFile)
 
 import qualified Data.Set as S
 
@@ -133,19 +134,19 @@ percent a b = round $ (fromIntegral a / fromIntegral b) * 100
 pprint :: Book -> Text
 pprint book = title <> subtitle <> volume <> voltitle
   where title = bookTitle book
-        subtitle = if not . null $ bookSubtitle book
-                   then ": " <> bookSubtitle book
-                   else ""
-        volume = if not . null $ bookVolume book
-                 then if not . null $ bookFascicle book
-                      then " (vol. " <> bookVolume book <> "; fas. " <> bookFascicle book <> ")"
-                      else " (vol. " <> bookVolume book <> ")"
-                 else if not . null $ bookFascicle book
-                      then " (fas. " <> bookFascicle book <> ")"
-                      else ""
-        voltitle = if not . null $ bookVoltitle book
-                   then " " <> bookVoltitle book
-                   else ""
+        subtitle
+          | not . null $ bookSubtitle book = ": " <> bookSubtitle book
+          | otherwise = ""
+        volume
+          | not . null $ bookVolume book =
+            if not . null $ bookFascicle book
+              then " (vol. " <> bookVolume book <> "; fas. " <> bookFascicle book <> ")"
+              else " (vol. " <> bookVolume book <> ")"
+          | not . null $ bookFascicle book = " (fas. " <> bookFascicle book <> ")"
+          | otherwise = ""
+        voltitle
+          | not . null $ bookVoltitle book = " " <> bookVoltitle book
+          | otherwise = ""
 
 -- |A null book
 emptyBook :: Book

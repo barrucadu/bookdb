@@ -10,13 +10,13 @@ module Handler.List
 import Control.Monad (when)
 import Data.Maybe (isJust, fromJust)
 import Data.Text (Text)
-import Database
 import Database.Esqueleto hiding ((==.))
 import Database.Persist hiding ((||.))
+
+import Database
 import Handler.Utils
 import Routes
-import Server
-import Server.Requests (htmlUrlResponse)
+import Requests
 
 import qualified Handler.Templates as T
 

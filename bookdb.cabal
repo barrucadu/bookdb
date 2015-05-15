@@ -57,14 +57,13 @@ executable bookdb
   other-modules:       Configuration
                      , Database
                      , Handler.Edit
+                     , Handler.Information
                      , Handler.List
                      , Handler.Templates
-                     , Handler.Information
                      , Handler.Utils
                      , Routes
-                     , Server
-                     , Server.Requests
-                     , Server.Requests.Types
+                     , Requests
+                     , Requests.Types
   
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    
