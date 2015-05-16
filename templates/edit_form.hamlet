@@ -38,6 +38,9 @@ $with book <- fromMaybe emptyBook book
           <label for="editor">Editor
           <input type="text" #editor name="editor" value="#{fromMaybe "" $ bookEditor book}">
         <li>
+          <label for="sorting">Sorting Key
+          <input type="text" #sorting name="sorting" value="#{fromMaybe "" $ bookSorting book}">
+        <li>
           <label for="read">Read
           $if bookRead book
             <input type="checkbox" #read name="read" checked>
@@ -64,3 +67,4 @@ $with book <- fromMaybe emptyBook book
     \ must be filled in.
   <p>Cover imges should be 225x150px, and be in png, gif, or jpg format.
   <p>To enter multiple authors, separate them with an ampersand.
+  <p>If not given, the sorting key defaults to the authors.

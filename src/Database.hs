@@ -39,6 +39,10 @@ Book
     translator Text Maybe
     editor     Text Maybe
 
+    -- Optional sorting key field. If this is Nothing, the author is
+    -- used instead.
+    sorting Text Maybe
+
     -- lastread is only a Maybe because I don't have last read dates
     -- for all my books: only those since I first made bookdb. Really,
     -- I should re-read those books which I haven't touched for that

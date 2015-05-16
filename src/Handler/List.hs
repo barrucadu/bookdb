@@ -8,7 +8,10 @@ module Handler.List
     ) where
 
 import Control.Monad (when)
-import Data.Maybe (isJust, fromJust)
+import Data.List (sortBy)
+import Data.Maybe (isJust, fromJust, fromMaybe)
+import Data.Monoid ((<>))
+import Data.Ord (comparing)
 import Data.Text (Text)
 import Database.Esqueleto hiding ((==.))
 import Database.Persist hiding ((||.))
@@ -23,12 +26,9 @@ import qualified Handler.Templates as T
 index :: Handler Sitemap
 index = do
   suggestion <- suggest
-  books <- selectList [] [ Asc BookAuthor
-                        , Asc BookTitle
-                        , Asc BookVolume
-                        , Asc BookFascicle]
+  books <- selectList [] []
 
-  let books' = map (\(Entity _ e) -> e) books
+  let books' = sortBooks $ map (\(Entity _ e) -> e) books
 
   htmlUrlResponse $ T.index suggestion books'
 
@@ -60,14 +60,9 @@ search = do
             when (isJust borrower) $
               where_ (b ^. BookBorrower `like` (%) ++. val (fromJust borrower) ++. (%))
             where_ ((b ^. BookRead &&. val matchread) ||. (not_ (b ^. BookRead) &&. val matchunread))
-            orderBy [ asc (b ^. BookAuthor)
-                    , asc (b ^. BookTitle)
-                    , asc (b ^. BookVolume)
-                    , asc (b ^. BookFascicle)
-                    ]
             return b
 
-  let books' = map (\(Entity _ e) -> e) books
+  let books' = sortBooks $ map (\(Entity _ e) -> e) books
 
   htmlUrlResponse $ T.search suggestion isbn title subtitle author matchread matchunread location borrower books'
 
@@ -78,14 +73,9 @@ restrict :: PersistField t
          -> Handler Sitemap
 restrict field is = do
   suggestion <- suggest
-  books <- selectList [ field ==. is ]
-                     [ Asc BookAuthor
-                     , Asc BookTitle
-                     , Asc BookVolume
-                     , Asc BookFascicle
-                     ]
+  books <- selectList [ field ==. is ] []
 
-  let books' = map (\(Entity _ e) -> e) books
+  let books' = sortBooks $ map (\(Entity _ e) -> e) books
 
   htmlUrlResponse $ T.index suggestion books'
 
@@ -99,13 +89,14 @@ restrictFuzzy field contains = do
   books <- select $
           from $ \b -> do
             where_ (b ^. field `like` (%) ++. val contains ++. (%))
-            orderBy [ asc (b ^. BookAuthor)
-                    , asc (b ^. BookTitle)
-                    , asc (b ^. BookVolume)
-                    , asc (b ^. BookFascicle)
-                    ]
             return b
 
-  let books' = map (\(Entity _ e) -> e) books
+  let books' = sortBooks $ map (\(Entity _ e) -> e) books
 
   htmlUrlResponse $ T.index suggestion books'
+
+-- | Sort a book list.
+sortBooks :: [Book] -> [Book]
+sortBooks = sortBy cmp where
+  cmp a b = comparing key a b <> comparing bookTitle a b <> comparing bookVolume a b <> comparing bookFascicle a b
+  key book = fromMaybe (bookAuthor book) $ bookSorting book
