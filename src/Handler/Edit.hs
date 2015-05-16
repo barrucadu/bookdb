@@ -14,6 +14,7 @@ module Handler.Edit
 
 import Prelude hiding (null, userError)
 
+import Control.Applicative ((<|>))
 import Data.List (sort)
 import Data.Text (Text, null, intercalate, splitOn, unpack)
 import Data.Time.Calendar (fromGregorian)
@@ -109,6 +110,7 @@ mutate book = do
   if null isbn || null title || null author || null location
   then userError "Missing required fields"
   else do
+    let cover'      = cover <|> (book >>= \(Entity _ b) -> bookCover b)
     let author'     = sortAuthors author
     let translator' = empty translator
     let editor'     = empty editor
@@ -116,7 +118,7 @@ mutate book = do
 
     case toDate lastread of
       Just lastread' -> do
-        let newbook = Book cover isbn title subtitle volume fascicle voltitle author' translator' editor' read' lastread' location borrower
+        let newbook = Book cover' isbn title subtitle volume fascicle voltitle author' translator' editor' read' lastread' location borrower
 
         case book of
           Just (Entity bookId _) -> replace bookId newbook >> information "Book updated successfully"
