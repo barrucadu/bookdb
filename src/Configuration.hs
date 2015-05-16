@@ -68,6 +68,7 @@ defaults = forceEither . readstring emptyCP $ unlines
   , "web_root      = http://localhost:3000"
   , "file_root     = /tmp"
   , "database_file = bookdb.sqlite"
+  , "readonly      = false"
   ]
 
 -- |Get a value from the configuration unsafely (throws an
