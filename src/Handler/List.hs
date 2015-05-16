@@ -26,11 +26,9 @@ import qualified Handler.Templates as T
 index :: Handler Sitemap
 index = do
   suggestion <- suggest
-  books <- selectList [] []
+  books <- sortBooks <$> selectList [] []
 
-  let books' = sortBooks $ map (\(Entity _ e) -> e) books
-
-  htmlUrlResponse $ T.index suggestion books'
+  htmlUrlResponse $ T.index suggestion books
 
 search :: Handler Sitemap
 search = do
@@ -45,7 +43,7 @@ search = do
   location    <- param "location"
   borrower    <- param "borrower"
 
-  books <- select $
+  books <- fmap sortBooks . select $
           from $ \b -> do
             when (isJust isbn) $
               where_ (b ^. BookIsbn     `like` (%) ++. val (fromJust isbn) ++. (%))
@@ -62,9 +60,7 @@ search = do
             where_ ((b ^. BookRead &&. val matchread) ||. (not_ (b ^. BookRead) &&. val matchunread))
             return b
 
-  let books' = sortBooks $ map (\(Entity _ e) -> e) books
-
-  htmlUrlResponse $ T.search suggestion isbn title subtitle author matchread matchunread location borrower books'
+  htmlUrlResponse $ T.search suggestion isbn title subtitle author matchread matchunread location borrower books
 
 -- |Filter by exact field value
 restrict :: PersistField t
@@ -73,11 +69,10 @@ restrict :: PersistField t
          -> Handler Sitemap
 restrict field is = do
   suggestion <- suggest
-  books <- selectList [ field ==. is ] []
 
-  let books' = sortBooks $ map (\(Entity _ e) -> e) books
+  books <- sortBooks <$> selectList [ field ==. is ] []
 
-  htmlUrlResponse $ T.index suggestion books'
+  htmlUrlResponse $ T.index suggestion books
 
 -- |Filter by fuzzy field value
 restrictFuzzy :: EntityField Book Text -- ^ The field to filter on
@@ -86,17 +81,15 @@ restrictFuzzy :: EntityField Book Text -- ^ The field to filter on
 restrictFuzzy field contains = do
   suggestion <- suggest
 
-  books <- select $
+  books <- fmap sortBooks . select $
           from $ \b -> do
             where_ (b ^. field `like` (%) ++. val contains ++. (%))
             return b
 
-  let books' = sortBooks $ map (\(Entity _ e) -> e) books
-
-  htmlUrlResponse $ T.index suggestion books'
+  htmlUrlResponse $ T.index suggestion books
 
 -- | Sort a book list.
-sortBooks :: [Book] -> [Book]
-sortBooks = sortBy cmp where
+sortBooks :: [Entity Book] -> [Book]
+sortBooks = sortBy cmp . map (\(Entity _ b) -> b) where
   cmp a b = comparing key a b <> comparing bookTitle a b <> comparing bookVolume a b <> comparing bookFascicle a b
   key book = fromMaybe (bookAuthor book) $ bookSorting book
