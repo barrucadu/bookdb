@@ -150,14 +150,14 @@ run route on500 cfile pool conf = do
                 Just cf -> reloadConfigFile conf cf
                 Nothing -> return conf
 
-      -- Build the Cry
+      -- Build the request
       (ps, fs) <- parseRequestBody lbsBackEnd req
       let ps' = map (second $ fromMaybe "") $ queryString req
-      let cry = Cry { _req    = req
-                    , _params = map (decodeUtf8 *** decodeUtf8) (ps ++ ps')
-                    , _files  = map (first decodeUtf8) fs
-                    , _conf   = conf'
-                    , _mkurl  = mkurl
-                    }
+      let cry = Request
+                  { _params = map (decodeUtf8 *** decodeUtf8) (ps ++ ps')
+                  , _files  = map (first decodeUtf8) fs
+                  , _conf   = conf'
+                  , _mkurl  = mkurl
+                  }
 
       (runResourceT . runNoLoggingT . flip runReaderT cry $ runSqlPool h p) >>= receiver

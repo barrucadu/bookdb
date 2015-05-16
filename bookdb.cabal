@@ -63,7 +63,6 @@ executable bookdb
                      , Handler.Utils
                      , Routes
                      , Requests
-                     , Requests.Types
   
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    

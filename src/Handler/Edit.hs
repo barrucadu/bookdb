@@ -15,19 +15,24 @@ module Handler.Edit
 import Prelude hiding (null, userError)
 
 import Control.Applicative ((<|>))
+import Control.Monad.IO.Class (liftIO)
+import Data.Char (chr)
 import Data.List (sort)
-import Data.Text (Text, null, intercalate, splitOn, unpack)
+import Data.Text (Text, null, intercalate, splitOn, unpack, pack)
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Clock (UTCTime(..))
 import Database.Persist (Entity(..), insert, replace, delete)
+import System.FilePath (joinPath, takeExtension, takeFileName)
 import Text.Read (readMaybe)
 import Database
 
+import Configuration
 import Handler.Information
 import Handler.Utils
 import Routes
 import Requests
 
+import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Handler.Templates as T
 
@@ -150,10 +155,21 @@ mutate book = do
 uploadCover :: RequestProcessor Sitemap (Maybe Text)
 uploadCover = do
   isbn <- param' "isbn" ""
-  file <- lookup "cover" <$> files
+  file <- lookup "cover" <$> askFiles
 
   case file of
     Just f@(FileInfo _ _ c)
       | BL.null c -> return Nothing
-      | otherwise -> Just <$> save' ["covers", unpack isbn] f
+      | otherwise -> Just <$> save ["covers", unpack isbn] f
     Nothing -> return Nothing
+
+  where
+  save fbits (FileInfo name _ content) = do
+    fileroot <- conf' "bookdb" "file_root"
+    let ext    = takeExtension (map (chr . fromIntegral) $ B.unpack name)
+    let path   = joinPath $ fileroot : fbits
+    let fname' = path ++ ext
+
+    liftIO $ BL.writeFile fname' content
+
+    return . pack $ takeFileName fname'

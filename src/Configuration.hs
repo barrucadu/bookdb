@@ -18,7 +18,7 @@ import Data.ConfigFile
 import Data.Either.Utils (forceEither)
 import System.IO.Error (catchIOError)
 
-import Requests.Types (RequestProcessor, askConf)
+import Requests
 
 -- |Load a configuration file by name.
 -- All errors (syntax, file access, etc) are squashed together,
