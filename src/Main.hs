@@ -39,8 +39,28 @@ import qualified Network.Wai.Handler.Warp as W
 
 -- |Run the server
 main :: IO ()
-main = serve route error500
-  where error500 = serverError internalServerError500 . pack
+main = do
+  args <- getArgs
+
+  when (length args < 1) $
+    die "Expected at least one argument"
+
+  let confFile = case args of
+                   (_:conffile:_) -> Just conffile
+                   _ -> Nothing
+
+  config <- maybe (return $ Just defaults) loadConfigFile confFile
+
+  case config of
+    Just conf ->
+      let connstr = get' conf "bookdb" "database_file" 
+          pool    = withSqlitePool (fromString connstr) 10
+      in case head args of
+           "run"     -> serve route error500 pool conf
+           "migrate" -> runNoLoggingT . pool $ liftIO . runSqlPersistMPool (runMigration migrateAll)
+           _         -> die "Unknown command, expected 'run' or 'migrate'."
+
+    Nothing -> die "Failed to read configuration"
 
 -- |Route a request to a handler. These do not cover static files, as
 -- Seacat handles those.
@@ -71,51 +91,24 @@ route _ Error404 = serverError notFound404 "File not found"
 
 route _ _ = serverError methodNotAllowed405 "Method not allowed"
 
--------------------------
-
--- |Launch the web server.
-serve :: PathInfo r
-      => (StdMethod -> r -> Handler r) -- ^ Routing function
-      -> (String -> Handler r) -- ^ Top-level error handling function
-      -> IO ()
-serve route on500 = do
-  args <- getArgs
-
-  when (length args < 1) $
-    die "Expected at least one argument"
-
-  let confFile = case args of
-                   (_:conffile:_) -> Just conffile
-                   _ -> Nothing
-
-  config <- maybe (return $ Just defaults) loadConfigFile confFile
-
-  case config of
-    Just conf ->
-      let connstr = get' conf "bookdb" "database_file" 
-          pool    = withSqlitePool (fromString connstr) 10
-      in case head args of
-           "run"     -> run route on500 pool conf
-           "migrate" -> runNoLoggingT . pool $ liftIO . runSqlPersistMPool (runMigration migrateAll)
-           _         -> die "Unknown command, expected 'run' or 'migrate'."
-
-    Nothing -> die "Failed to read configuration"
+-- |Top-level error handler
+error500 :: String -> Handler Sitemap
+error500 = serverError internalServerError500 . pack
 
 -- |Die with a fatal error
-die :: String -- ^ The error description
-    -> IO ()
+die :: String -> IO ()
 die err = putStrLn err >> exitFailure
 
 -------------------------
 
 -- |Serve requests
-run :: PathInfo r
-    => (StdMethod -> r -> Handler r) -- ^ Routing function
-    -> (String -> Handler r) -- ^ Top-level error handling function
-    -> ((ConnectionPool -> NoLoggingT IO ()) -> NoLoggingT IO ()) -- ^ Database connection pool runner
-    -> ConfigParser -- ^ The configuration
-    -> IO ()
-run route on500 pool conf = do
+serve :: PathInfo r
+      => (StdMethod -> r -> Handler r) -- ^ Routing function
+      -> (String -> Handler r) -- ^ Top-level error handling function
+      -> ((ConnectionPool -> NoLoggingT IO ()) -> NoLoggingT IO ()) -- ^ Database connection pool runner
+      -> ConfigParser -- ^ The configuration
+      -> IO ()
+serve route on500 pool conf = do
   let host = get' conf "bookdb" "host"
   let port = get' conf "bookdb" "port"
 
