@@ -8,16 +8,15 @@ module Configuration
     , loadConfigFile
     , defaults
     , get
-    , get'
-    , conf
-    , conf') where
+    , conf) where
 
-import Control.Monad.Error.Class (MonadError)
-import Data.ConfigFile
+import Data.ConfigFile hiding (get)
 import Data.Either.Utils (forceEither)
 import System.IO.Error (catchIOError)
 
 import Requests
+
+import qualified Data.ConfigFile as C
 
 -- |Load a configuration file by name.
 -- All errors (syntax, file access, etc) are squashed together,
@@ -61,25 +60,12 @@ defaults = forceEither . readstring emptyCP $ unlines
   , "readonly      = false"
   ]
 
--- |Get a value from the configuration unsafely (throws an
--- `IOException` on fail).
-get' :: Get_C a => ConfigParser -> SectionSpec -> OptionSpec -> a
-get' cp ss os = forceEither $ get cp ss os
+-- |Get a value from the configuration, throwing an 'IOException' if
+-- the value can't be found.
+get :: Get_C a => ConfigParser -> SectionSpec -> OptionSpec -> a
+get cp ss os = forceEither $ C.get cp ss os
 
--- |Get a value from the configuration in a handler. I found as I was
--- using Seacat that my handlers all started with a block of the form,
---
--- > cfg <- askConf
--- > let foo = get cfg "section" "foo"
--- > let bar = get cfg "section" "bar"
--- > let baz = get cfg "section" "baz"
---
--- This simplifies that by getting rid of the need to use `askConf`
--- manually.
-conf :: (Get_C a, MonadError CPError m) => SectionSpec -> OptionSpec -> RequestProcessor r (m a)
+-- |Get a value from the configuration in a handler, throwing an
+-- 'IOException' if the value can't be found.
+conf :: Get_C a => SectionSpec -> OptionSpec -> RequestProcessor r a
 conf ss os = askConf >>= \config -> return $ get config ss os
-
--- |Get a value from the configuration in a handler unsafely. Like
--- `conf`, but throws an `IOException` if the value can't be found.
-conf' :: Get_C a => SectionSpec -> OptionSpec -> RequestProcessor r a
-conf' ss os = askConf >>= \config -> return $ get' config ss os
