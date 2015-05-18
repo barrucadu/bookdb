@@ -4,7 +4,7 @@ module Main where
 
 import Prelude hiding (userError)
 
-import Configuration (ConfigParser, defaults, get', loadConfigFile, reloadConfigFile)
+import Configuration (ConfigParser, defaults, get', loadConfigFile)
 import Control.Arrow ((***), first, second)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
@@ -88,16 +88,14 @@ serve route on500 = do
                    (_:conffile:_) -> Just conffile
                    _ -> Nothing
 
-  config <- case confFile of
-             Just cfile -> loadConfigFile cfile
-             Nothing -> return $ Just defaults
+  config <- maybe (return $ Just defaults) loadConfigFile confFile
 
   case config of
     Just conf ->
       let connstr = get' conf "bookdb" "database_file" 
           pool    = withSqlitePool (fromString connstr) 10
       in case head args of
-           "run"     -> run route on500 confFile pool conf
+           "run"     -> run route on500 pool conf
            "migrate" -> runNoLoggingT . pool $ liftIO . runSqlPersistMPool (runMigration migrateAll)
            _         -> die "Unknown command, expected 'run' or 'migrate'."
 
@@ -114,11 +112,10 @@ die err = putStrLn err >> exitFailure
 run :: PathInfo r
     => (StdMethod -> r -> Handler r) -- ^ Routing function
     -> (String -> Handler r) -- ^ Top-level error handling function
-    -> Maybe FilePath -- ^ The config file
     -> ((ConnectionPool -> NoLoggingT IO ()) -> NoLoggingT IO ()) -- ^ Database connection pool runner
     -> ConfigParser -- ^ The configuration
     -> IO ()
-run route on500 cfile pool conf = do
+run route on500 pool conf = do
   let host = get' conf "bookdb" "host"
   let port = get' conf "bookdb" "port"
 
@@ -145,18 +142,12 @@ run route on500 cfile pool conf = do
         method         = forceEither . parseMethod . requestMethod $ req
 
     runHandler h p mkurl req receiver = do
-      -- Reload the config
-      conf' <- case cfile of
-                Just cf -> reloadConfigFile conf cf
-                Nothing -> return conf
-
-      -- Build the request
       (ps, fs) <- parseRequestBody lbsBackEnd req
       let ps' = map (second $ fromMaybe "") $ queryString req
       let cry = Request
                   { _params = map (decodeUtf8 *** decodeUtf8) (ps ++ ps')
                   , _files  = map (first decodeUtf8) fs
-                  , _conf   = conf'
+                  , _conf   = conf
                   , _mkurl  = mkurl
                   }
 

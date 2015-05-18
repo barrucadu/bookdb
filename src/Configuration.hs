@@ -6,7 +6,6 @@
 module Configuration
     ( ConfigParser
     , loadConfigFile
-    , reloadConfigFile
     , defaults
     , get
     , get'
@@ -44,15 +43,6 @@ loadConfigFileUnsafe filename = do
   let base = emptyCP { accessfunc = interpolatingAccess 10 }
   cp <- readfile base filename
   return . merge defaults $ forceEither cp
-
--- |Reload and reapply the configuration file. If an error is raised,
--- fall back to the original configuration. Specifically, this merges
--- the new configuration with the old, so if the new configuration has
--- removed a required setting, this won't cause a problem.
-reloadConfigFile :: ConfigParser    -- ^ The original configuration
-                 -> FilePath        -- ^ The config file to load
-                 -> IO ConfigParser -- ^ The new configuration
-reloadConfigFile cfg filename = ((cfg `merge`) <$> loadConfigFileUnsafe filename) `catchIOError` const (return cfg)
 
 -- |Default configuration values:
 --
