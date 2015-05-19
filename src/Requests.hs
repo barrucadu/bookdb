@@ -89,7 +89,6 @@ askParams = _params <$> request
 askFiles :: RequestProcessor r [(Text, FileInfo ByteString)]
 askFiles = _files <$> request
 
-
 -- |Get the request from a `RequestProcessor`
 request :: RequestProcessor r (Request r)
 request = lift ask
