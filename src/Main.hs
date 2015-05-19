@@ -45,11 +45,9 @@ main = do
   when (length args < 1) $
     die "Expected at least one argument"
 
-  let confFile = case args of
-                   (_:conffile:_) -> Just conffile
-                   _ -> Nothing
-
-  config <- maybe (return $ Just defaults) loadConfigFile confFile
+  config <- case args of
+             (_:conffile:_) -> loadConfigFile conffile
+             _ -> return $ Just defaults
 
   case config of
     Just conf ->
