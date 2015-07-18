@@ -80,9 +80,9 @@ executable bookdb
                      , http-types            >=0.8 && <0.9
                      , monad-logger          >=0.3 && <0.4
                      , mtl                   >=2.2 && <2.3
-                     , persistent            >=2.1 && <2.2
-                     , persistent-sqlite     >=2.1 && <2.2
-                     , persistent-template   >=2.1 && <2.2
+                     , persistent            >=2.1 && <2.3
+                     , persistent-sqlite     >=2.1 && <2.3
+                     , persistent-template   >=2.1 && <2.3
                      , random                >=1.1 && <1.2
                      , resourcet             >=1.1 && <1.2
                      , shakespeare           >=2.0 && <2.1
