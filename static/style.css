@@ -58,23 +58,6 @@ nav ul li {
     margin: 6px;
 }
 
-div#next {
-    float: right;
-    display: block;
-    text-align: center;
-    position: relative;
-    top: -32px;
-    padding: 1em;
-    background-color: #D4C8B7;
-    border: 3px solid #81838C;
-}
-
-div#next h2 {
-    font-size: 1em;
-    font-weight: bold;
-    margin-bottom: 6px;
-}
-
 table {
     width: 100%;
     border: 1px solid #DAE0B0;

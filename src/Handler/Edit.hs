@@ -67,14 +67,10 @@ commitDelete = onReadWrite . withBook commitDelete'
 -------------------------
 
 add' :: Handler Sitemap
-add' = do
-  suggestion <- suggest
-  htmlUrlResponse $ T.addForm suggestion
+add' = htmlUrlResponse T.addForm
 
 edit' :: Entity Book -> Handler Sitemap
-edit' (Entity _ book) = do
-  suggestion <- suggest
-  htmlUrlResponse $ T.editForm suggestion book
+edit' (Entity _ book) = htmlUrlResponse $ T.editForm book
 
 delete' :: Entity Book -> Handler Sitemap
 delete' (Entity _ book) = htmlUrlResponse $ T.confirmDelete book

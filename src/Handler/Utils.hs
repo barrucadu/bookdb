@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Handler.Utils
-    ( suggest
-    , onReadWrite
+    ( onReadWrite
     , withBook
     , with) where
 
@@ -18,18 +17,6 @@ import Database
 import Handler.Information
 import Routes
 import Requests
-
--- |Get a suggestion
-suggest :: RequestProcessor Sitemap (Maybe Book)
-suggest = do
-  books <- selectList [BookRead ==. False] []
-
-  idx <- liftIO $ randomRIO (0, length books - 1)
-
-  if null books
-  then return Nothing
-  else return . Just . (\(Entity _ e) -> e) $ books !! idx
-
 
 -- |Run the given handler if in read-write mode, otherwise display an
 -- error page.

@@ -25,15 +25,12 @@ import qualified Handler.Templates as T
 
 index :: Handler Sitemap
 index = do
-  suggestion <- suggest
   books <- sortBooks <$> selectList [] []
 
-  htmlUrlResponse $ T.index suggestion books
+  htmlUrlResponse $ T.index books
 
 search :: Handler Sitemap
 search = do
-  suggestion <- suggest
-
   isbn        <- param "isbn"
   title       <- param "title"
   subtitle    <- param "subtitle"
@@ -63,7 +60,7 @@ search = do
             where_ ((b ^. BookRead &&. val matchread) ||. (not_ (b ^. BookRead) &&. val matchunread))
             return b
 
-  htmlUrlResponse $ T.search suggestion isbn title subtitle author matchread matchunread location borrower category books
+  htmlUrlResponse $ T.search isbn title subtitle author matchread matchunread location borrower category books
 
 -- |Filter by exact field value
 restrict :: PersistField t
@@ -71,25 +68,21 @@ restrict :: PersistField t
          -> t -- ^ the value to filter by
          -> Handler Sitemap
 restrict field is = do
-  suggestion <- suggest
-
   books <- sortBooks <$> selectList [ field ==. is ] []
 
-  htmlUrlResponse $ T.index suggestion books
+  htmlUrlResponse $ T.index books
 
 -- |Filter by fuzzy field value
 restrictFuzzy :: EntityField Book Text -- ^ The field to filter on
               -> Text -- ^ The value to filter by
               -> Handler Sitemap
 restrictFuzzy field contains = do
-  suggestion <- suggest
-
   books <- fmap sortBooks . select $
           from $ \b -> do
             where_ (b ^. field `like` (%) ++. val contains ++. (%))
             return b
 
-  htmlUrlResponse $ T.index suggestion books
+  htmlUrlResponse $ T.index books
 
 -- | Sort a book list.
 sortBooks :: [Entity Book] -> [Book]

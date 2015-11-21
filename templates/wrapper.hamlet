@@ -20,11 +20,6 @@ $doctype 5
     <div .page>
       <header>
         <h1>#{title}
-        
-        $maybe sugg <- suggestion
-          <div #next>
-            <h2>Why not read…
-            #{pprint sugg}
 
         <nav>
           <ul>

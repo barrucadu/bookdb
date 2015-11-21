@@ -31,16 +31,14 @@ import qualified Data.Set as S
 
 -------------------------
 
-index :: Maybe Book -- ^ A suggestion
-      -> [Book]     -- ^ The list of all books
+index :: [Book]     -- ^ The list of all books
       -> HtmlUrl Sitemap
-index suggestion books =
+index books =
   let title   = "BookDB" :: Text
       body    = list books (numAuthors books) (numRead books)
   in $(hamletFile "templates/wrapper.hamlet")
 
-search :: Maybe Book -- ^ A suggestion
-       -> Maybe Text -- ^ The ISBN
+search :: Maybe Text -- ^ The ISBN
        -> Maybe Text -- ^ The title
        -> Maybe Text -- ^ The subtitle
        -> Maybe Text -- ^ The author
@@ -51,7 +49,7 @@ search :: Maybe Book -- ^ A suggestion
        -> Maybe BookCategory -- ^ The category
        -> [Book] -- ^ Books matching the search
        -> HtmlUrl Sitemap
-search suggestion isbn btitle subtitle author matchread matchunread location borrower category books = 
+search isbn btitle subtitle author matchread matchunread location borrower category books = 
   let authors = numAuthors books
       read    = numRead books
       title   = "BookDB :: Search" :: Text
@@ -66,19 +64,17 @@ list books authors read = $(hamletFile "templates/list.hamlet")
 
 -------------------------
 
-addForm :: Maybe Book -- ^ A suggestion
-        -> HtmlUrl Sitemap
-addForm suggestion =
+addForm :: HtmlUrl Sitemap
+addForm =
   let book   = Nothing
       target = Add
       title  = "BookDB :: Add" :: Text
       body   = $(hamletFile "templates/edit_form.hamlet")
   in $(hamletFile "templates/wrapper.hamlet")
 
-editForm :: Maybe Book -- ^ A suggestion
-         -> Book -- ^ The book to edit
+editForm :: Book -- ^ The book to edit
          -> HtmlUrl Sitemap
-editForm suggestion bk =
+editForm bk =
   let book   = Just bk
       target = Edit $ bookIsbn bk
       title  = "BookDB :: Edit " <> bookIsbn bk :: Text
