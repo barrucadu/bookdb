@@ -7,11 +7,12 @@ module Handler.List
     , restrictFuzzy
     ) where
 
+import Data.Char (isDigit)
 import Data.List (sortBy)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Ord (comparing)
-import Data.Text (Text)
+import Data.Text (Text, unpack)
 import Database.Esqueleto hiding ((==.))
 import Database.Persist hiding ((||.))
 
@@ -87,5 +88,7 @@ restrictFuzzy field contains = do
 -- | Sort a book list.
 sortBooks :: [Entity Book] -> [Book]
 sortBooks = sortBy cmp . map (\(Entity _ b) -> b) where
-  cmp a b = comparing key a b <> comparing bookTitle a b <> comparing bookVolume a b <> comparing bookFascicle a b
+  cmp a b = comparing key a b <> comparing bookTitle a b <> comparing (split . bookVolume) a b <> comparing (split . bookFascicle) a b
   key book = fromMaybe (bookAuthor book) $ bookSorting book
+  split txt = case span isDigit $ unpack txt of
+    (digits, str) -> (read ('0':digits) :: Int, str)
