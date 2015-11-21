@@ -145,14 +145,15 @@ label {
     color: #FF6666;
 }
 
-input, textarea {
+input, textarea, select {
     border: 1px solid #cccccc;
     border-radius: 3px;
     color: #555555;
     padding: 5px;
+    background-color: #fff;
 }
 
-input[type="text"], input[type="date"] {
+input[type="text"], input[type="date"], select {
     width: 250px;
 }
 

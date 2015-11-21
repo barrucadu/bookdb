@@ -3,7 +3,8 @@
 module Handler.Utils
     ( suggest
     , onReadWrite
-    , withBook) where
+    , withBook
+    , with) where
 
 import Prelude hiding (userError)
 
@@ -51,3 +52,8 @@ withBook handler isbn = do
   case book of
     Just b  -> handler b
     Nothing -> userError "No such book"
+
+-- | Combination of 'when', 'isJust', and 'fromJust'.
+with :: Monad m => Maybe a -> (a -> m ()) -> m ()
+with (Just a) f = f a
+with Nothing _  = pure ()

@@ -111,6 +111,7 @@ mutate book = do
   read       <- param' "read"       ""
   lastread   <- param' "lastread"   ""
   location   <- param' "location"   ""
+  category   <- param' "category"   "-"
   borrower   <- param' "borrower"   ""
 
   if null isbn || null title || null author || null location
@@ -123,15 +124,16 @@ mutate book = do
     let sorting'    = empty sorting
     let read'       = set read
 
-    case toDate lastread of
-      Just lastread' -> do
-        let newbook = Book cover' isbn title subtitle volume fascicle voltitle author' translator' editor' sorting' read' lastread' location borrower
+    case (toDate lastread, categoryOf category) of
+      (Just lastread', Just category') -> do
+        let newbook = Book cover' isbn title subtitle volume fascicle voltitle author' translator' editor' sorting' read' lastread' location borrower category'
 
         case book of
           Just (Entity bookId _) -> replace bookId newbook >> information "Book updated successfully"
           Nothing -> insert newbook >> information "Book added successfully"
 
-      Nothing -> userError "Invalid date format, expected yyyy-mm-dd"
+      (Nothing, _) -> userError "Invalid date format, expected yyyy-mm-dd"
+      (_, Nothing) -> userError "Invalid category selection"
 
   where sortAuthors = intercalate " & " . sort . splitOn " & "
 

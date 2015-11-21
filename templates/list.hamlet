@@ -14,6 +14,7 @@ Template vars:
     <th>Author
     <th>Read
     <th>Location
+    <th>Category
     <th>Borrower
     <th>
   <tbody>
@@ -54,6 +55,9 @@ Template vars:
               <a href="@{Unread}">✘
           <td>
             <a href="@{Location $ bookLocation book}">#{bookLocation book}
+          <td>
+            <a href="@{Category $ bookCategory book}">
+              <abbr title="#{categoryName $ bookCategory book}">#{categoryCode $ bookCategory book}</abbr>
           <td>
             <a href="@{Borrower $ bookBorrower book}">#{bookBorrower book}
           <td .meta>

@@ -5,6 +5,8 @@ module Routes where
 import Data.Text (Text)
 import Web.Routes (PathInfo(..), patternParse)
 
+import Types
+
 -- |The possible routes in bookdb
 data Sitemap = Booklist
              -- ^ The root book list, the site index
@@ -23,6 +25,8 @@ data Sitemap = Booklist
              -- ^ Filter by unread
              | Location Text
              -- ^ Filter by location
+             | Category BookCategory
+             -- ^ Filter by category
              | Borrower Text
              -- ^ Filter by borrower
 
@@ -55,6 +59,7 @@ instance PathInfo Sitemap where
     toPathSegments Read           = ["read"]
     toPathSegments Unread         = ["unread"]
     toPathSegments (Location l)   = ["location", l]
+    toPathSegments (Category c)   = ["category", categoryCode c]
     toPathSegments (Borrower b)   = ["borrower", b]
 
     toPathSegments (Image i)  = ["covers", i]
@@ -77,6 +82,7 @@ instance PathInfo Sitemap where
             parse' ["read"]          = Read
             parse' ["unread"]        = Unread
             parse' ["location", l]   = Location l
+            parse' ["category", c]   = maybe Error404 Category $ categoryOf c
             parse' ["borrower", b]   = Borrower b
 
             parse' ["covers", i] = Image i

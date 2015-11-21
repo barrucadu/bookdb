@@ -9,6 +9,7 @@ Template vars:
  - matchread :: Bool, the match read from the prior search
  - matchunread :: Bool, the match unread from the prior search
  - location :: Maybe Text, the location from the prior search
+ - category :: Maybe Text, the category from the prior search
  - borrower :: Maybe Text, the borrower from the prior search
  - books :: [Book], the books matching the prior search
  - authors :: Int, the number of authors matching the prior search
@@ -44,6 +45,25 @@ Template vars:
       <li>
         <label for="location">Location
         <input type="text" #location name="location" value="#{fromMaybe "" location}">
+      <li>
+        <label for="category">Category
+        <select #category name="category">
+          $if category == Nothing
+            <option value="">
+            
+          $forall cat <- allCategories
+            $if Just cat == category
+              <option value="#{categoryCode cat}" selected>
+                $if cat == Uncategorised
+                  #{categoryName cat}
+                $else
+                  #{categoryCode cat} - #{categoryName cat}
+            $else
+              <option value="#{categoryCode cat}">
+                $if cat == Uncategorised
+                  #{categoryName cat}
+                $else
+                  #{categoryCode cat} - #{categoryName cat}
       <li>
         <label for="borrower">Borrower
         <input type="text" #borrower name="borrower" value="#{fromMaybe "" borrower}">

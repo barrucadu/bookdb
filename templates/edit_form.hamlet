@@ -56,6 +56,22 @@ $with book <- fromMaybe emptyBook book
           <label for="location" .required>Location
           <input type="text" #location name="location" value="#{bookLocation book}" required>
         <li>
+          <label for="category" .required>Category
+          <select #category name="category" required>
+            $forall cat <- allCategories
+              $if cat == bookCategory book
+                <option value="#{categoryCode cat}" selected>
+                  $if cat == Uncategorised
+                    #{categoryName cat}
+                  $else
+                    #{categoryCode cat} - #{categoryName cat}
+              $else
+                <option value="#{categoryCode cat}">
+                  $if cat == Uncategorised
+                    #{categoryName cat}
+                  $else
+                    #{categoryCode cat} - #{categoryName cat}
+        <li>
           <label for="borrower">Borrower
           <input type="text" #borrower name="borrower" value="#{bookBorrower book}">
         <li>

@@ -75,6 +75,7 @@ route GET (Editor e)     = restrict BookEditor (Just e)
 route GET Read           = restrict BookRead True
 route GET Unread         = restrict BookRead False
 route GET (Location l)   = restrict BookLocation l
+route GET (Category c)   = restrict BookCategory c
 route GET (Borrower b)   = restrict BookBorrower b
 
 route GET Add        = add

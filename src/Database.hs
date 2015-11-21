@@ -7,11 +7,13 @@
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-module Database where
+module Database (module Database, module Types) where
 
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Database.Persist.TH
+
+import Types
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Book
@@ -54,6 +56,7 @@ Book
     -- multiple copies, things start to get a bit messy.
     location Text
     borrower Text
+    category BookCategory default=Uncategorised
 
     UniqueBookIsbn isbn
 

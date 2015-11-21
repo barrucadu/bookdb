@@ -7,9 +7,8 @@ module Handler.List
     , restrictFuzzy
     ) where
 
-import Control.Monad (when)
 import Data.List (sortBy)
-import Data.Maybe (isJust, fromJust, fromMaybe)
+import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Ord (comparing)
 import Data.Text (Text)
@@ -21,6 +20,7 @@ import Handler.Utils
 import Routes
 import Requests
 
+import qualified Database.Esqueleto as E
 import qualified Handler.Templates as T
 
 index :: Handler Sitemap
@@ -41,26 +41,29 @@ search = do
   matchread   <- hasParam "matchread"
   matchunread <- hasParam "matchunread"
   location    <- param "location"
+  category    <- (>>= categoryOf) <$> param "category"
   borrower    <- param "borrower"
 
   books <- fmap sortBooks . select $
           from $ \b -> do
-            when (isJust isbn) $
-              where_ (b ^. BookIsbn     `like` (%) ++. val (fromJust isbn) ++. (%))
-            when (isJust title) $
-              where_ (b ^. BookTitle    `like` (%) ++. val (fromJust title) ++. (%))
-            when (isJust subtitle) $
-              where_ (b ^. BookSubtitle `like` (%) ++. val (fromJust title) ++. (%))
-            when (isJust author) $
-              where_ (b ^. BookAuthor   `like` (%) ++. val (fromJust author) ++. (%))
-            when (isJust location) $
-              where_ (b ^. BookLocation `like` (%) ++. val (fromJust location) ++. (%))
-            when (isJust borrower) $
-              where_ (b ^. BookBorrower `like` (%) ++. val (fromJust borrower) ++. (%))
+            with isbn $ \isbn ->
+              where_ (b ^. BookIsbn     `like` (%) ++. val isbn ++. (%))
+            with title $ \title ->
+              where_ (b ^. BookTitle    `like` (%) ++. val title ++. (%))
+            with subtitle $ \subtitle ->
+              where_ (b ^. BookSubtitle `like` (%) ++. val subtitle ++. (%))
+            with author $ \author ->
+              where_ (b ^. BookAuthor   `like` (%) ++. val author ++. (%))
+            with location $ \location ->
+              where_ (b ^. BookLocation `like` (%) ++. val location ++. (%))
+            with borrower $ \borrower ->
+              where_ (b ^. BookBorrower `like` (%) ++. val borrower ++. (%))
+            with category $ \category ->
+              where_ (b ^. BookCategory E.==. val category)
             where_ ((b ^. BookRead &&. val matchread) ||. (not_ (b ^. BookRead) &&. val matchunread))
             return b
 
-  htmlUrlResponse $ T.search suggestion isbn title subtitle author matchread matchunread location borrower books
+  htmlUrlResponse $ T.search suggestion isbn title subtitle author matchread matchunread location borrower category books
 
 -- |Filter by exact field value
 restrict :: PersistField t

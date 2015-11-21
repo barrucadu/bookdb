@@ -48,9 +48,10 @@ search :: Maybe Book -- ^ A suggestion
        -> Bool -- ^ Whether to match unread
        -> Maybe Text -- ^ The location
        -> Maybe Text -- ^ The borrower
+       -> Maybe BookCategory -- ^ The category
        -> [Book] -- ^ Books matching the search
        -> HtmlUrl Sitemap
-search suggestion isbn btitle subtitle author matchread matchunread location borrower books = 
+search suggestion isbn btitle subtitle author matchread matchunread location borrower category books = 
   let authors = numAuthors books
       read    = numRead books
       title   = "BookDB :: Search" :: Text
@@ -150,7 +151,7 @@ pprint book = title <> subtitle <> volume <> voltitle
 
 -- |A null book
 emptyBook :: Book
-emptyBook = Book Nothing "" "" "" "" "" "" "" Nothing Nothing Nothing False Nothing "" ""
+emptyBook = Book Nothing "" "" "" "" "" "" "" Nothing Nothing Nothing False Nothing "" "" Uncategorised
 
 -- |Choice
 bool :: Bool -- ^ Condition
