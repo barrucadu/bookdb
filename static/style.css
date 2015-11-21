@@ -106,6 +106,7 @@ th {
 
 th, td {
     padding: 5px;
+    max-width: 500px;
 }
 
 .isbn {
