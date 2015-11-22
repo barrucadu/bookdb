@@ -36,14 +36,14 @@ stats = do
 
   readDates <- fmap (catMaybes . unValues) . select $
               from $ \b -> do
-                orderBy [desc (b ^. BookLastread)]
+                orderBy [asc (b ^. BookLastread)]
                 return $ b ^. BookLastread
 
-  let byYear  = groupBy' eqYear  readDates :: [[UTCTime]]
-  let byMonth = groupBy' eqMonth readDates :: [[UTCTime]]
+  let byYear  = groupBy' eqYear readDates
+  let byMonth = sortMonths readDates
 
-  let thisYear = map (length . filter (eqYear now)) byMonth
-  let lastYear = map (length . filter (eqYear ago)) byMonth
+  let thisYear = map (genericLength . filter (eqYear now)) byMonth
+  let lastYear = map (genericLength . filter (eqYear ago)) byMonth
   let avgYear  = map ((/genericLength byYear) . genericLength) byMonth
 
   htmlUrlResponse $ T.stats lastYearBooks leastRecentBooks thisYear lastYear avgYear
@@ -52,10 +52,6 @@ stats = do
 eqYear :: UTCTime -> UTCTime -> Bool
 eqYear = (==) `on` formatTime defaultTimeLocale "%Y"
 
--- | Check if two timestamps are from the same month
-eqMonth :: UTCTime -> UTCTime -> Bool
-eqMonth = (==) `on` formatTime defaultTimeLocale "%m"
-
 -- | @groupBy@ which groups non-adjacent things.
 groupBy' :: (a -> a -> Bool) -> [a] -> [[a]]
 groupBy' eq = foldl' go [] where
@@ -63,3 +59,10 @@ groupBy' eq = foldl' go [] where
   go (ys@(y:_):yss) x
     | x `eq` y  = (x:ys) : yss
     | otherwise = ys : go yss x
+
+-- | Group a list of month data by month.
+sortMonths :: [UTCTime] -> [[UTCTime]]
+sortMonths ds = map inMonth [1..12] where
+  inMonth m
+    | m < 10    = filter (\d -> formatTime defaultTimeLocale "%m" d == '0':show m) ds
+    | otherwise = filter (\d -> formatTime defaultTimeLocale "%m" d == show m)     ds
