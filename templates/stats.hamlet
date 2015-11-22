@@ -9,7 +9,10 @@
   - avgYear :: [Int], number of books read each month on average
 -->
 
-<canvas id="perMonth">
+<div class="chart">
+  <canvas #perMonth>
+  <div #perMonthLegend class="legend">
+  <div class="clear">
 
 <div>
   <div class="box left">
@@ -158,5 +161,6 @@
 \
 \    var ctx = $("#perMonth").get(0).getContext("2d");
 \    var perMonth = new Chart(ctx).Line(data, options);
+\    $("#perMonthLegend").html(perMonth.generateLegend());
 \});
 \</script>
