@@ -22,6 +22,7 @@ import Database.Persist.Sqlite (withSqlitePool)
 import Handler.Edit
 import Handler.Information
 import Handler.List
+import Handler.Stats
 import Network.HTTP.Types.Method (StdMethod(..), parseMethod)
 import Network.HTTP.Types.Status (notFound404, methodNotAllowed405, internalServerError500)
 import Network.Wai (requestMethod, queryString)
@@ -65,6 +66,7 @@ main = do
 route :: StdMethod -> Sitemap -> Handler Sitemap
 route GET Booklist = index
 route GET Search   = search
+route GET Stats    = stats
 
 -- Fuzzy matching is required for author because in general the author
 -- field contains a list, and we want to be able to match any one of

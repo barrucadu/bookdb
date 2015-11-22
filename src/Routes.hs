@@ -12,6 +12,8 @@ data Sitemap = Booklist
              -- ^ The root book list, the site index
              | Search
              -- ^ The search form and results
+             | Stats
+             -- ^ Reading statistics
 
              | Author Text
              -- ^ Filter by author
@@ -52,6 +54,7 @@ data Sitemap = Booklist
 instance PathInfo Sitemap where
     toPathSegments Booklist = []
     toPathSegments Search   = ["search"]
+    toPathSegments Stats    = ["stats"]
 
     toPathSegments (Author a)     = ["author", a]
     toPathSegments (Translator t) = ["translator", t]
@@ -75,6 +78,7 @@ instance PathInfo Sitemap where
 
             parse' []         = Booklist
             parse' ["search"] = Search
+            parse' ["stats"]  = Stats
 
             parse' ["author", a]     = Author a
             parse' ["translator", t] = Translator t

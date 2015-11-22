@@ -1,0 +1,162 @@
+<!-- Template vars:
+
+  - lastYearBooks :: [Book], list of books read in the prior year
+  - lastYearAuthors :: Int, number of authors in lastYearBooks
+  - leastRecentBooks :: [Book], list of least recently read books
+  - leastRecentAuthors :: Int, number of authors in leastRecentBooks
+  - thisYear :: [Int], number of books read each month this year
+  - lastYear :: [Int], number of books read each month last year
+  - avgYear :: [Int], number of books read each month on average
+-->
+
+<canvas id="perMonth">
+
+<div>
+  <div class="box left">
+    <h2>In The Last Year
+    <p>Showing #{length lastYearBooks} #{pluralise "book" "books" (length lastYearBooks)} by #{lastYearAuthors} #{pluralise "author" "authors" lastYearAuthors}.
+    <table>
+      <thead>
+        <th>
+        <th>ISBN/ID
+        <th>Title
+        <th>Author
+        <th>Read
+      <tbody>
+        $if length lastYearBooks == 0
+          <tr>
+            <td colspan="5">There are no books.
+        $else
+          $forall book <- lastYearBooks
+            <tr>
+              <td>
+                $maybe cover <- bookCover book
+                  <a href="@{Image cover}" .preview title="#{bookTitle book}">
+                    <img src="@{Image cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
+              <td .isbn>#{bookIsbn book}
+              <td>
+                #{pprint book}
+              <td>
+                <ol>
+                  $forall author <- splitOn " & " (bookAuthor book)
+                    $if elem author ["Anonymous", "Various"]
+                      <li .pseudo>#{author}
+                    $else
+                      <li>
+                        <a href="@{Author author}">#{author}
+
+                $maybe trans <- bookTranslator book
+                  (trans. <a href="@{Translator trans}">#{trans}</a>)
+
+                $maybe edit <- bookEditor book
+                  (edit. <a href="@{Editor edit}">#{edit}</a>)
+              <td>
+                $maybe read <- bookLastread book
+                  <a href="@{Read}">#{formatTime defaultTimeLocale "%F" read}
+                $nothing
+                  <a href="@{Read}">unknown
+
+  <div class="box right">
+    <h2>Least Recently Read
+    <p>Showing #{length leastRecentBooks} #{pluralise "book" "books" (length leastRecentBooks)} by #{leastRecentAuthors} #{pluralise "author" "authors" leastRecentAuthors}.
+    <table>
+      <thead>
+        <th>
+        <th>ISBN/ID
+        <th>Title
+        <th>Author
+        <th>Read
+      <tbody>
+        $if length leastRecentBooks == 0
+          <tr>
+            <td colspan="5">There are no books.
+        $else
+          $forall book <- leastRecentBooks
+            <tr>
+              <td>
+                $maybe cover <- bookCover book
+                  <a href="@{Image cover}" .preview title="#{bookTitle book}">
+                    <img src="@{Image cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
+              <td .isbn>#{bookIsbn book}
+              <td>
+                #{pprint book}
+              <td>
+                <ol>
+                  $forall author <- splitOn " & " (bookAuthor book)
+                    $if elem author ["Anonymous", "Various"]
+                      <li .pseudo>#{author}
+                    $else
+                      <li>
+                        <a href="@{Author author}">#{author}
+
+                $maybe trans <- bookTranslator book
+                  (trans. <a href="@{Translator trans}">#{trans}</a>)
+
+                $maybe edit <- bookEditor book
+                  (edit. <a href="@{Editor edit}">#{edit}</a>)
+              <td>
+                $maybe read <- bookLastread book
+                  <a href="@{Read}">#{formatTime defaultTimeLocale "%F" read}
+                $nothing
+                  <a href="@{Read}">unknown
+
+\<script>
+\$( document ).ready(function() {
+\var data = {
+\    labels: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+\    datasets: [
+\        {
+\            label: "This Year",
+\            fillColor: "rgba(151,187,205,0.2)",
+\            strokeColor: "rgba(151,187,205,1)",
+\            pointColor: "rgba(151,187,205,1)",
+\            pointStrokeColor: "#fff",
+\            pointHighlightFill: "#fff",
+\            pointHighlightStroke: "rgba(151,187,205,1)",
+\            data: #{pack (show thisYear)}
+\        },
+\        {
+\            label: "Last Year",
+\            fillColor: "rgba(205,157,151,0.2)",
+\            strokeColor: "rgba(205,157,151,1)",
+\            pointColor: "rgba(205,157,151,1)",
+\            pointStrokeColor: "#fff",
+\            pointHighlightFill: "#fff",
+\            pointHighlightStroke: "rgba(205,157,151,1)",
+\            data: #{pack (show lastYear)}
+\        },
+\        {
+\            label: "Average",
+\            fillColor: "rgba(75,75,75,0.2)",
+\            strokeColor: "rgba(75,75,75,0.5)",
+\            pointColor: "rgba(75,75,75,0.5)",
+\            pointStrokeColor: "#fff",
+\            pointHighlightFill: "#fff",
+\            pointHighlightStroke: "rgba(75,75,75,0.5)",
+\            data: #{pack (show avgYear)}
+\        }
+\    ]
+\};
+\
+\var options = {
+\    scaleShowGridLines : true,
+\    scaleGridLineColor : "rgba(0,0,0,.05)",
+\    scaleGridLineWidth : 1,
+\    scaleShowHorizontalLines: true,
+\    scaleShowVerticalLines: true,
+\    bezierCurve : true,
+\    bezierCurveTension : 0.4,
+\    pointDot : true,
+\    pointDotRadius : 4,
+\    pointDotStrokeWidth : 1,
+\    pointHitDetectionRadius : 20,
+\    datasetStroke : true,
+\    datasetStrokeWidth : 2,
+\    datasetFill : true,
+\    legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
+\};
+\
+\    var ctx = $("#perMonth").get(0).getContext("2d");
+\    var perMonth = new Chart(ctx).Line(data, options);
+\});
+\</script>

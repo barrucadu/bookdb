@@ -11,6 +11,7 @@ module Handler.Templates
     , noticeError
 
     -- * Browsing books
+    , stats
     , search
     , index
     ) where
@@ -20,7 +21,7 @@ import Prelude hiding (null)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Set (Set)
-import Data.Text (Text, splitOn, null, toLower)
+import Data.Text (Text, splitOn, null, toLower, pack)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Text.Hamlet (HtmlUrl, hamletFile)
 
@@ -61,6 +62,19 @@ list :: [Book] -- ^ The books
      -> Int    -- ^ The number of read books
      -> HtmlUrl Sitemap
 list books authors read = $(hamletFile "templates/list.hamlet")
+
+stats :: [Book]  -- ^ The books read in the prior year
+      -> [Book]  -- ^ The least recently read books
+      -> [Int]   -- ^ The number of books read each month this year
+      -> [Int]   -- ^ The number of books read each month last year
+      -> [Float] -- ^ The number of books read each month on average
+      -> HtmlUrl Sitemap
+stats lastYearBooks leastRecentBooks thisYear lastYear avgYear =
+  let title = "BookDB :: Stats" :: Text
+      lastYearAuthors    = numAuthors lastYearBooks
+      leastRecentAuthors = numAuthors leastRecentBooks
+      body = $(hamletFile "templates/stats.hamlet")
+  in $(hamletFile "templates/wrapper.hamlet")
 
 -------------------------
 

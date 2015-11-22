@@ -3,14 +3,15 @@
 module Handler.Utils
     ( onReadWrite
     , withBook
-    , with) where
+    , with
+    , unEntities
+    , unValues) where
 
 import Prelude hiding (userError)
 
-import Control.Monad.IO.Class (liftIO)
 import Data.Text (Text)
 import Database.Persist
-import System.Random (randomRIO)
+import Database.Esqueleto (Value(..))
 
 import Configuration
 import Database
@@ -44,3 +45,11 @@ withBook handler isbn = do
 with :: Monad m => Maybe a -> (a -> m ()) -> m ()
 with (Just a) f = f a
 with Nothing _  = pure ()
+
+-- | Turn a @[Entity a]@ into a @[a]@.
+unEntities :: [Entity a] -> [a]
+unEntities = map (\(Entity _ a) -> a)
+
+-- | Turn a @[Value a]@ into a @[a]@.
+unValues :: [Value a] -> [a]
+unValues = map (\(Value a) -> a)

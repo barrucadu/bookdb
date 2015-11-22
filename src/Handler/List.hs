@@ -87,7 +87,7 @@ restrictFuzzy field contains = do
 
 -- | Sort a book list.
 sortBooks :: [Entity Book] -> [Book]
-sortBooks = sortBy cmp . map (\(Entity _ b) -> b) where
+sortBooks = sortBy cmp . unEntities where
   cmp a b = comparing key a b <> comparing bookTitle a b <> comparing (split . bookVolume) a b <> comparing (split . bookFascicle) a b
   key book = fromMaybe (bookAuthor book) $ bookSorting book
   split txt = case span isDigit $ unpack txt of
