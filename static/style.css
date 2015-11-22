@@ -117,6 +117,7 @@ footer {
     font-size: 0.9em;
     text-align: right;
     margin-top: 16px;
+    clear: both;
 }
 
 fieldset {
@@ -236,11 +237,11 @@ blockquote {
 canvas {
     width: 100%;
     height: 400px;
-    margin-bottom: 24px;
 }
 
 .legend {
     float: right;
+    height: 0;
 }
 
 .legend span {
@@ -255,8 +256,4 @@ canvas {
     font-size: 1.5em;
     display: inline-block;
     margin-left: 3em;
-}
-
-.clear, footer {
-    clear: both;
 }

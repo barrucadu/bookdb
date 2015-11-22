@@ -10,9 +10,8 @@
 -->
 
 <div class="chart">
-  <canvas #perMonth>
   <div #perMonthLegend class="legend">
-  <div class="clear">
+  <canvas #perMonth>
 
 <div>
   <div class="box left">
