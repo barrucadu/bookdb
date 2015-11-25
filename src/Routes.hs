@@ -1,100 +1,60 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Routes where
 
-import Data.Text (Text)
-import Web.Routes (PathInfo(..), patternParse)
+import Data.Maybe (fromMaybe)
+import Data.Text (Text, toLower)
+import Web.Routes (PathInfo(..), pToken)
+import Web.Routes.TH (derivePathInfo', standard)
 
 import Types
 
 -- |The possible routes in bookdb
-data Sitemap = Booklist
-             -- ^ The root book list, the site index
-             | Search
-             -- ^ The search form and results
-             | Stats
-             -- ^ Reading statistics
+data Sitemap =
+    List
+  -- ^ The full book list
+  | Search
+  -- ^ The search form and results
+  | Stats
+  -- ^ Reading statistics
 
-             | Author Text
-             -- ^ Filter by author
-             | Translator Text
-             -- ^ Filter by translator
-             | Editor Text
-             -- ^ Filter by editor
-             | Read
-             -- ^ Filter by read
-             | Unread
-             -- ^ Filter by unread
-             | Location Text
-             -- ^ Filter by location
-             | Category BookCategory
-             -- ^ Filter by category
-             | Borrower Text
-             -- ^ Filter by borrower
+  | Author Text
+  -- ^ Filter by author
+  | Translator Text
+  -- ^ Filter by translator
+  | Editor Text
+  -- ^ Filter by editor
+  | Read
+  -- ^ Filter by read
+  | Unread
+  -- ^ Filter by unread
+  | Location Text
+  -- ^ Filter by location
+  | Category BookCategory
+  -- ^ Filter by category
+  | Borrower Text
+  -- ^ Filter by borrower
 
-             | Image Text
-             -- ^ A book cover image
-             | Stylesheet
-             -- ^ The stylesheet
-             | Javascript
-             -- ^ The javascript
+  | Covers Text
+  -- ^ A book cover image
+  | Stylesheet
+  -- ^ The stylesheet
+  | Javascript
+  -- ^ The javascript
 
-             | Add
-             -- ^ Add a new book
-             | Edit Text
-             -- ^ Edit a book by ISBN
-             | Delete Text
-             -- ^ Delete a book by ISBN
+  | Add
+  -- ^ Add a new book
+  | Edit Text
+  -- ^ Edit a book by ISBN
+  | Delete Text
+  -- ^ Delete a book by ISBN
 
-             | Error404
-             -- ^ Catch-all route
+  deriving (Read, Show)
 
-               deriving (Read, Show)
+-- Orphan, but I think keeping ALL the URL encoding/decoding code in
+-- this one file is best.
+instance PathInfo BookCategory where
+  toPathSegments c = [toLower $ categoryCode c]
+  fromPathSegments = pToken () categoryOf
 
-instance PathInfo Sitemap where
-    toPathSegments Booklist = []
-    toPathSegments Search   = ["search"]
-    toPathSegments Stats    = ["stats"]
-
-    toPathSegments (Author a)     = ["author", a]
-    toPathSegments (Translator t) = ["translator", t]
-    toPathSegments (Editor e)     = ["editor", e]
-    toPathSegments Read           = ["read"]
-    toPathSegments Unread         = ["unread"]
-    toPathSegments (Location l)   = ["location", l]
-    toPathSegments (Category c)   = ["category", categoryCode c]
-    toPathSegments (Borrower b)   = ["borrower", b]
-
-    toPathSegments (Image i)  = ["covers", i]
-    toPathSegments Stylesheet = ["style.css"]
-    toPathSegments Javascript = ["script.js"]
-
-    toPathSegments Add        = ["add"]
-    toPathSegments (Edit e)   = ["edit", e]
-    toPathSegments (Delete d) = ["delete", d]
-
-    fromPathSegments = patternParse parse
-      where parse = Right . parse'
-
-            parse' []         = Booklist
-            parse' ["search"] = Search
-            parse' ["stats"]  = Stats
-
-            parse' ["author", a]     = Author a
-            parse' ["translator", t] = Translator t
-            parse' ["editor", e]     = Editor e
-            parse' ["read"]          = Read
-            parse' ["unread"]        = Unread
-            parse' ["location", l]   = Location l
-            parse' ["category", c]   = maybe Error404 Category $ categoryOf c
-            parse' ["borrower", b]   = Borrower b
-
-            parse' ["covers", i] = Image i
-            parse' ["style.css"] = Stylesheet
-            parse' ["script.js"] = Javascript
-
-            parse' ["add"]       = Add
-            parse' ["edit", e]   = Edit e
-            parse' ["delete", d] = Delete d
-
-            parse' _ = Error404
+$(derivePathInfo' (\str -> standard str `fromMaybe` lookup str [("Stylesheet", "style.css"), ("Javascript", "script.js")]) ''Sitemap)

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Handler.List
-    ( index
+    ( list
     , search
     , restrict
     , restrictFuzzy
@@ -24,8 +24,8 @@ import Requests
 import qualified Database.Esqueleto as E
 import qualified Handler.Templates as T
 
-index :: Handler Sitemap
-index = do
+list :: Handler Sitemap
+list = do
   books <- sortBooks <$> selectList [] []
 
   htmlUrlResponse $ T.index books

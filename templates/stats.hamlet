@@ -33,8 +33,8 @@
             <tr>
               <td>
                 $maybe cover <- bookCover book
-                  <a href="@{Image cover}" .preview title="#{bookTitle book}">
-                    <img src="@{Image cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
+                  <a href="@{Covers cover}" .preview title="#{bookTitle book}">
+                    <img src="@{Covers cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
               <td .isbn>#{bookIsbn book}
               <td>
                 #{pprint book}
@@ -77,8 +77,8 @@
             <tr>
               <td>
                 $maybe cover <- bookCover book
-                  <a href="@{Image cover}" .preview title="#{bookTitle book}">
-                    <img src="@{Image cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
+                  <a href="@{Covers cover}" .preview title="#{bookTitle book}">
+                    <img src="@{Covers cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
               <td .isbn>#{bookIsbn book}
               <td>
                 #{pprint book}

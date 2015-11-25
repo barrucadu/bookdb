@@ -11,7 +11,7 @@ $with title <- bool error "Error" "Information"
 
       $if error
       $else
-        <meta http-equiv="refresh" content="2;URL='@{Booklist}'">
+        <meta http-equiv="refresh" content="2;URL='@{List}'">
 
       <link rel="stylesheet" href="@{Stylesheet}" type="text/css">
 
@@ -22,7 +22,7 @@ $with title <- bool error "Error" "Information"
 
       <p>#{message}
       <p>
-        <a href="@{Booklist}">Click here to continue.
+        <a href="@{List}">Click here to continue.
 
       <footer>
         <a href="https://github.com/barrucadu/bookdb">Github

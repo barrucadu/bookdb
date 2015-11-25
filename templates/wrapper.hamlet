@@ -25,7 +25,7 @@ $doctype 5
         <nav>
           <ul>
             <li>
-              <a href="@{Booklist}">List
+              <a href="@{List}">List
             <li>
               <a href="@{Add}">Add
             <li>

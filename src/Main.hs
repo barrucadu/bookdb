@@ -13,6 +13,7 @@ import Control.Monad.Trans.Reader (runReaderT)
 import Control.Monad.Trans.Resource (runResourceT)
 import Data.Either.Utils (forceEither)
 import Data.Maybe (fromMaybe)
+import Data.Monoid ((<>))
 import Data.String (fromString)
 import Data.Text (pack, replace)
 import Data.Text.Encoding (decodeUtf8)
@@ -34,8 +35,10 @@ import Routes
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
 import System.IO.Error (catchIOError)
-import Web.Routes.Wai (handleWai)
+import Web.Routes (fromPathInfo, toPathInfoParams)
+import Web.Routes.Wai (handleWai_)
 
+import qualified Data.ByteString.Char8 as B8
 import qualified Network.Wai.Handler.Warp as W
 
 -- |Run the server
@@ -55,7 +58,7 @@ main = do
       let connstr = get conf "bookdb" "database_file" 
           pool    = withSqlitePool (fromString connstr) 10
       in case head args of
-           "run"     -> serve route error500 pool conf
+           "run"     -> serve route error404 error500 pool conf
            "migrate" -> runNoLoggingT . pool $ liftIO . runSqlPersistMPool (runMigration migrateAll)
            _         -> die "Unknown command, expected 'run' or 'migrate'."
 
@@ -64,9 +67,9 @@ main = do
 -- |Route a request to a handler. These do not cover static files, as
 -- Seacat handles those.
 route :: StdMethod -> Sitemap -> Handler Sitemap
-route GET Booklist = index
-route GET Search   = search
-route GET Stats    = stats
+route GET List   = list
+route GET Search = search
+route GET Stats  = stats
 
 -- Fuzzy matching is required for author because in general the author
 -- field contains a list, and we want to be able to match any one of
@@ -88,11 +91,18 @@ route POST Add        = commitAdd
 route POST (Edit e)   = commitEdit e
 route POST (Delete d) = commitDelete d
 
-route _ Error404 = serverError notFound404 "File not found"
-
 route _ _ = serverError methodNotAllowed405 "Method not allowed"
 
--- |Top-level error handler
+-------------------------
+
+-- |404 handler.
+error404 :: String -> Handler Sitemap
+-- Haaacky! Figure out how to handle this in the template haskell
+-- code.
+error404 "/" = route GET List
+error404 uri = serverError notFound404 ("File not found: " <> pack uri)
+
+-- |500 handler.
 error500 :: String -> Handler Sitemap
 error500 = serverError internalServerError500 . pack
 
@@ -105,11 +115,12 @@ die err = putStrLn err >> exitFailure
 -- |Serve requests
 serve :: PathInfo r
       => (StdMethod -> r -> Handler r) -- ^ Routing function
-      -> (String -> Handler r) -- ^ Top-level error handling function
+      -> (String -> Handler r) -- ^ 404 handler.
+      -> (String -> Handler r) -- ^ 500 handler.
       -> ((ConnectionPool -> NoLoggingT IO ()) -> NoLoggingT IO ()) -- ^ Database connection pool runner
       -> ConfigParser -- ^ The configuration
       -> IO ()
-serve route on500 pool conf = do
+serve route on404 on500 pool conf = do
   let host = get conf "bookdb" "host"
   let port = get conf "bookdb" "port"
 
@@ -119,18 +130,26 @@ serve route on500 pool conf = do
   runNoLoggingT . pool $ liftIO . runSettings settings . runner
 
   where
-    runner p = handleWai (fromString webroot) $ \mkurl r ->
+    runner p = handleWai_ toPathInfo' fromPathInfo' (fromString webroot) $ \mkurl ->
       -- This is horrific, come up with a better way of doing it
-      let mkurl' r' args = replace "%23" "#" . mkurl r' $ map (\(a,b) -> (a, if b == "" then Nothing else Just b)) args
-      in staticPolicy (addBase fileroot) $ process p mkurl' r
+      let mkurl' r' args = replace "%23" "#" . mkurl (Right r') $ map (\(a,b) -> (a, if b == "" then Nothing else Just b)) args
+       in staticPolicy (addBase fileroot) . process p mkurl'
 
       where
+        toPathInfo' (Right p) = toPathInfoParams p
+
+        fromPathInfo' bs = case fromPathInfo bs of
+          Right url -> Right (Right url)
+          Left  _   -> Right (Left  bs)
+
         webroot  = get conf "bookdb" "web_root"
         fileroot = get conf "bookdb" "file_root"
 
     process p mkurl path req receiver = requestHandler `catchIOError` runError
       where
-        requestHandler = runHandler' $ route method path
+        requestHandler = case path of
+          Right uri -> runHandler' $ route method uri
+          Left  uri -> runHandler' $ on404 (B8.unpack uri)
         runError err   = runHandler' $ on500 (show err)
         runHandler' h  = runHandler h p mkurl req receiver 
         method         = forceEither . parseMethod . requestMethod $ req

@@ -96,6 +96,7 @@ executable bookdb
                      , wai-middleware-static
                      , warp
                      , web-routes
+                     , web-routes-th
                      , web-routes-wai
   
   -- Directories containing source files.
