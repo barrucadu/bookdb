@@ -48,8 +48,7 @@ Template vars:
       <li>
         <label for="category">Category
         <select #category name="category">
-          $if category == Nothing
-            <option value="">
+          <option value="">
             
           $forall cat <- allCategories
             $if Just cat == category
