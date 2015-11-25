@@ -15,7 +15,7 @@ import Data.Either.Utils (forceEither)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.String (fromString)
-import Data.Text (pack, replace)
+import Data.Text (pack)
 import Data.Text.Encoding (decodeUtf8)
 import Database
 import Database.Persist.Sql (ConnectionPool, runMigration, runSqlPool, runSqlPersistMPool)
@@ -131,8 +131,8 @@ serve route on404 on500 pool conf = do
 
   where
     runner p = handleWai_ toPathInfo' fromPathInfo' (fromString webroot) $ \mkurl ->
-      -- This is horrific, come up with a better way of doing it
-      let mkurl' r' args = replace "%23" "#" . mkurl (Right r') $ map (\(a,b) -> (a, if b == "" then Nothing else Just b)) args
+      -- Hamlet needs a slightly different @MkUrl@ type than what web-routes-wai gives us.
+      let mkurl' r = mkurl (Right r) . map (\(a,b) -> (a, if b == "" then Nothing else Just b))
        in staticPolicy (addBase fileroot) . process p mkurl'
 
       where
