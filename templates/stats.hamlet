@@ -108,7 +108,7 @@
 \    labels: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
 \    datasets: [
 \        {
-\            label: "This Year",
+\            label: "This Year (#{sum thisYear})",
 \            fillColor: "rgba(151,187,205,0.2)",
 \            strokeColor: "rgba(151,187,205,1)",
 \            pointColor: "rgba(151,187,205,1)",
@@ -118,7 +118,7 @@
 \            data: #{pack (show thisYear)}
 \        },
 \        {
-\            label: "Last Year",
+\            label: "Last Year (#{sum lastYear})",
 \            fillColor: "rgba(205,157,151,0.2)",
 \            strokeColor: "rgba(205,157,151,1)",
 \            pointColor: "rgba(205,157,151,1)",
@@ -128,7 +128,7 @@
 \            data: #{pack (show lastYear)}
 \        },
 \        {
-\            label: "Average",
+\            label: "Average (#{sum avgYear})",
 \            fillColor: "rgba(75,75,75,0.2)",
 \            strokeColor: "rgba(75,75,75,0.5)",
 \            pointColor: "rgba(75,75,75,0.5)",
