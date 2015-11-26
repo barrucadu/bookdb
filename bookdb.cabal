@@ -82,12 +82,14 @@ executable bookdb
                      , http-types
                      , monad-logger
                      , mtl
+                     , network
                      , persistent
                      , persistent-sqlite
                      , persistent-template
                      , random
                      , resourcet
                      , shakespeare
+                     , sockaddr
                      , text
                      , time
                      , transformers

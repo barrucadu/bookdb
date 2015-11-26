@@ -8,7 +8,7 @@ import Configuration (ConfigParser, defaults, get, loadConfigFile)
 import Control.Arrow ((***), first, second)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Logger (NoLoggingT, runNoLoggingT)
+import Control.Monad.Logger (LoggingT, runStderrLoggingT)
 import Control.Monad.Trans.Reader (runReaderT)
 import Control.Monad.Trans.Resource (runResourceT)
 import Data.Either.Utils (forceEither)
@@ -26,7 +26,7 @@ import Handler.List
 import Handler.Stats
 import Network.HTTP.Types.Method (StdMethod(..), parseMethod)
 import Network.HTTP.Types.Status (notFound404, methodNotAllowed405, internalServerError500)
-import Network.Wai (requestMethod, queryString)
+import Network.Wai (remoteHost, rawPathInfo, requestMethod, queryString)
 import Network.Wai.Handler.Warp (runSettings, setHost, setPort)
 import Network.Wai.Middleware.Static (addBase, staticPolicy)
 import Network.Wai.Parse (parseRequestBody, lbsBackEnd)
@@ -59,7 +59,7 @@ main = do
           pool    = withSqlitePool (fromString connstr) 10
       in case head args of
            "run"     -> serve route error404 error500 pool conf
-           "migrate" -> runNoLoggingT . pool $ liftIO . runSqlPersistMPool (runMigration migrateAll)
+           "migrate" -> runStderrLoggingT . pool $ liftIO . runSqlPersistMPool (runMigration migrateAll)
            _         -> die "Unknown command, expected 'run' or 'migrate'."
 
     Nothing -> die "Failed to read configuration"
@@ -117,7 +117,7 @@ serve :: PathInfo r
       => (StdMethod -> r -> Handler r) -- ^ Routing function
       -> (String -> Handler r) -- ^ 404 handler.
       -> (String -> Handler r) -- ^ 500 handler.
-      -> ((ConnectionPool -> NoLoggingT IO ()) -> NoLoggingT IO ()) -- ^ Database connection pool runner
+      -> ((ConnectionPool -> LoggingT IO ()) -> LoggingT IO ()) -- ^ Database connection pool runner
       -> ConfigParser -- ^ The configuration
       -> IO ()
 serve route on404 on500 pool conf = do
@@ -127,7 +127,7 @@ serve route on404 on500 pool conf = do
   let settings = setHost (fromString host) . setPort port $ W.defaultSettings
 
   putStrLn $ "Listening on " ++ host ++ ":" ++ show port
-  runNoLoggingT . pool $ liftIO . runSettings settings . runner
+  runStderrLoggingT . pool $ liftIO . runSettings settings . runner
 
   where
     runner p = handleWai_ toPathInfo' fromPathInfo' (fromString webroot) $ \mkurl ->
@@ -151,17 +151,20 @@ serve route on404 on500 pool conf = do
           Right uri -> runHandler' $ route method uri
           Left  uri -> runHandler' $ on404 (B8.unpack uri)
         runError err   = runHandler' $ on500 (show err)
-        runHandler' h  = runHandler h p mkurl req receiver 
+        runHandler' h  = runHandler h p mkurl req receiver
         method         = forceEither . parseMethod . requestMethod $ req
 
     runHandler h p mkurl req receiver = do
       (ps, fs) <- parseRequestBody lbsBackEnd req
       let ps' = map (second $ fromMaybe "") $ queryString req
       let cry = Request
-                  { _params = map (decodeUtf8 *** decodeUtf8) (ps ++ ps')
+                  { _remoteHost = remoteHost req
+                  , _uri    = pack . B8.unpack $ rawPathInfo req
+                  , _method = requestMethod req
+                  , _params = map (decodeUtf8 *** decodeUtf8) (ps ++ ps')
                   , _files  = map (first decodeUtf8) fs
                   , _conf   = conf
                   , _mkurl  = mkurl
                   }
 
-      (runResourceT . runNoLoggingT . flip runReaderT cry $ runSqlPool h p) >>= receiver
+      (runResourceT . runStderrLoggingT . flip runReaderT cry $ runSqlPool h p) >>= receiver
