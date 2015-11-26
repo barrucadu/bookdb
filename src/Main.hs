@@ -8,7 +8,7 @@ import Configuration (ConfigParser, defaults, get, loadConfigFile)
 import Control.Arrow ((***), first, second)
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Logger (LoggingT, runStderrLoggingT)
+import Control.Monad.Logger (LoggingT, LogLevel(..), filterLogger, runStderrLoggingT)
 import Control.Monad.Trans.Reader (runReaderT)
 import Control.Monad.Trans.Resource (runResourceT)
 import Data.Either.Utils (forceEither)
@@ -59,7 +59,7 @@ main = do
           pool    = withSqlitePool (fromString connstr) 10
       in case head args of
            "run"     -> serve route error404 error500 pool conf
-           "migrate" -> runStderrLoggingT . pool $ liftIO . runSqlPersistMPool (runMigration migrateAll)
+           "migrate" -> runStderrLoggingT . filterLog conf . pool $ liftIO . runSqlPersistMPool (runMigration migrateAll)
            _         -> die "Unknown command, expected 'run' or 'migrate'."
 
     Nothing -> die "Failed to read configuration"
@@ -127,7 +127,7 @@ serve route on404 on500 pool conf = do
   let settings = setHost (fromString host) . setPort port $ W.defaultSettings
 
   putStrLn $ "Listening on " ++ host ++ ":" ++ show port
-  runStderrLoggingT . pool $ liftIO . runSettings settings . runner
+  runStderrLoggingT . filterLog conf . pool $ liftIO . runSettings settings . runner
 
   where
     runner p = handleWai_ toPathInfo' fromPathInfo' (fromString webroot) $ \mkurl ->
@@ -167,4 +167,11 @@ serve route on404 on500 pool conf = do
                   , _mkurl  = mkurl
                   }
 
-      (runResourceT . runStderrLoggingT . flip runReaderT cry $ runSqlPool h p) >>= receiver
+      (runResourceT . runStderrLoggingT . filterLog conf . flip runReaderT cry $ runSqlPool h p) >>= receiver
+
+-- |Filter out log messages below the threshold.
+filterLog :: ConfigParser -> LoggingT m a -> LoggingT m a
+filterLog conf = case get conf "bookdb" "log_level" :: String of
+  "2" -> filterLogger $ \_ lvl -> lvl >= LevelWarn
+  "1" -> filterLogger $ \_ lvl -> lvl >= LevelInfo
+  _   -> filterLogger $ \_ _ -> True
