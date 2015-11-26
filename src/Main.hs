@@ -55,7 +55,7 @@ main = do
 
   case config of
     Just conf ->
-      let connstr = get conf "bookdb" "database_file" 
+      let connstr = get conf "database_file" 
           pool    = withSqlitePool (fromString connstr) 10
       in case head args of
            "run"     -> serve route error404 error500 pool conf
@@ -121,8 +121,8 @@ serve :: PathInfo r
       -> ConfigParser -- ^ The configuration
       -> IO ()
 serve route on404 on500 pool conf = do
-  let host = get conf "bookdb" "host"
-  let port = get conf "bookdb" "port"
+  let host = get conf "host"
+  let port = get conf "port"
 
   let settings = setHost (fromString host) . setPort port $ W.defaultSettings
 
@@ -142,8 +142,8 @@ serve route on404 on500 pool conf = do
           Right url -> Right (Right url)
           Left  _   -> Right (Left  bs)
 
-        webroot  = get conf "bookdb" "web_root"
-        fileroot = get conf "bookdb" "file_root"
+        webroot  = get conf "web_root"
+        fileroot = get conf "file_root"
 
     process p mkurl path req receiver = requestHandler `catchIOError` runError
       where
@@ -171,7 +171,7 @@ serve route on404 on500 pool conf = do
 
 -- |Filter out log messages below the threshold.
 filterLog :: ConfigParser -> LoggingT m a -> LoggingT m a
-filterLog conf = case get conf "bookdb" "log_level" :: String of
+filterLog conf = case get conf "log_level" :: String of
   "2" -> filterLogger $ \_ lvl -> lvl >= LevelWarn
   "1" -> filterLogger $ \_ lvl -> lvl >= LevelInfo
   _   -> filterLogger $ \_ _ -> True

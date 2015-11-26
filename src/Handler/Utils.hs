@@ -24,7 +24,7 @@ import Requests
 onReadWrite :: Handler Sitemap -- ^ The handler
             -> Handler Sitemap
 onReadWrite handler = do
-  readonly <- conf "bookdb" "readonly"
+  readonly <- conf "readonly"
 
   if readonly
   then userError "Database is read-only"

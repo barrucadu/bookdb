@@ -51,8 +51,7 @@ loadConfigFileUnsafe filename = do
 -- - Use a database called bookdb.sqlite
 defaults :: ConfigParser
 defaults = forceEither . readstring emptyCP $ unlines
-  [ "[bookdb]"
-  , "host          = *"
+  [ "host          = *"
   , "port          = 3000"
   , "web_root      = http://localhost:3000"
   , "file_root     = /tmp"
@@ -63,10 +62,10 @@ defaults = forceEither . readstring emptyCP $ unlines
 
 -- |Get a value from the configuration, throwing an 'IOException' if
 -- the value can't be found.
-get :: Get_C a => ConfigParser -> SectionSpec -> OptionSpec -> a
-get cp ss os = forceEither $ C.get cp ss os
+get :: Get_C a => ConfigParser -> OptionSpec -> a
+get cp os = forceEither $ C.get cp "" os
 
 -- |Get a value from the configuration in a handler, throwing an
 -- 'IOException' if the value can't be found.
-conf :: Get_C a => SectionSpec -> OptionSpec -> RequestProcessor r a
-conf ss os = askConf >>= \config -> return $ get config ss os
+conf :: Get_C a => OptionSpec -> RequestProcessor r a
+conf os = askConf >>= \config -> return $ get config os
