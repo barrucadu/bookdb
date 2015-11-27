@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module Main where
 
@@ -7,8 +8,8 @@ import Prelude hiding (userError)
 import Configuration (ConfigParser, defaults, get, loadConfigFile)
 import Control.Arrow ((***), first, second)
 import Control.Monad (when)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Logger (LoggingT, LogLevel(..), filterLogger, runStderrLoggingT)
+import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.Logger (LoggingT, LogLevel(..), logInfo, logError, filterLogger, runStderrLoggingT)
 import Control.Monad.Trans.Reader (runReaderT)
 import Control.Monad.Trans.Resource (runResourceT)
 import Data.Either.Utils (forceEither)
@@ -18,7 +19,7 @@ import Data.String (fromString)
 import Data.Text (pack)
 import Data.Text.Encoding (decodeUtf8)
 import Database
-import Database.Persist.Sql (ConnectionPool, runMigration, runSqlPool, runSqlPersistMPool)
+import Database.Persist.Sql (ConnectionPool, runMigration, runSqlPool)
 import Database.Persist.Sqlite (withSqlitePool)
 import Handler.Edit
 import Handler.Information
@@ -43,26 +44,25 @@ import qualified Network.Wai.Handler.Warp as W
 
 -- |Run the server
 main :: IO ()
-main = do
-  args <- getArgs
+main = runLogging defaults $ do
+  args <- liftIO getArgs
 
   when (length args < 1) $
-    die "Expected at least one argument"
+    $(logError) "Expected at least one argument" >> liftIO exitFailure
 
   config <- case args of
-             (_:conffile:_) -> loadConfigFile conffile
+             (_:conffile:_) -> liftIO $ loadConfigFile conffile
              _ -> return $ Just defaults
 
   case config of
     Just conf ->
-      let connstr = get conf "database_file" 
-          pool    = withSqlitePool (fromString connstr) 10
-      in case head args of
-           "run"     -> serve route error404 error500 pool conf
-           "migrate" -> runStderrLoggingT . filterLog conf . pool $ liftIO . runSqlPersistMPool (runMigration migrateAll)
-           _         -> die "Unknown command, expected 'run' or 'migrate'."
+      let connstr = get conf "database_file"
+       in liftIO . runLogging conf . withSqlitePool (fromString connstr) 10 $ case head args of
+           "run"     -> serve route error404 error500 conf
+           "migrate" -> runSqlPool (runMigration migrateAll)
+           _         -> const $ $(logError) "Unknown command, expected 'run' or 'migrate'." >> liftIO exitFailure
 
-    Nothing -> die "Failed to read configuration"
+    Nothing -> $(logError) "Failed to read configuration" >> liftIO exitFailure
 
 -- |Route a request to a handler. These do not cover static files, as
 -- Seacat handles those.
@@ -106,10 +106,6 @@ error404 uri = serverError notFound404 ("File not found: " <> pack uri)
 error500 :: String -> Handler Sitemap
 error500 = serverError internalServerError500 . pack
 
--- |Die with a fatal error
-die :: String -> IO ()
-die err = putStrLn err >> exitFailure
-
 -------------------------
 
 -- |Serve requests
@@ -117,17 +113,17 @@ serve :: PathInfo r
       => (StdMethod -> r -> Handler r) -- ^ Routing function
       -> (String -> Handler r) -- ^ 404 handler.
       -> (String -> Handler r) -- ^ 500 handler.
-      -> ((ConnectionPool -> LoggingT IO ()) -> LoggingT IO ()) -- ^ Database connection pool runner
       -> ConfigParser -- ^ The configuration
-      -> IO ()
-serve route on404 on500 pool conf = do
+      -> ConnectionPool -> LoggingT IO ()
+serve route on404 on500 conf pool = do
   let host = get conf "host"
   let port = get conf "port"
 
   let settings = setHost (fromString host) . setPort port $ W.defaultSettings
 
-  putStrLn $ "Listening on " ++ host ++ ":" ++ show port
-  runStderrLoggingT . filterLog conf . pool $ liftIO . runSettings settings . runner
+  $(logInfo) $ "Listening on " <> pack host <> ":" <> (pack . show) port
+
+  liftIO . runSettings settings $ runner pool
 
   where
     runner p = handleWai_ toPathInfo' fromPathInfo' (fromString webroot) $ \mkurl ->
@@ -167,7 +163,14 @@ serve route on404 on500 pool conf = do
                   , _mkurl  = mkurl
                   }
 
-      (runResourceT . runStderrLoggingT . filterLog conf . flip runReaderT cry $ runSqlPool h p) >>= receiver
+      (runResourceT . runLogging conf . flip runReaderT cry $ runSqlPool h p) >>= receiver
+
+-------------------------
+
+-- |Run the logging to stderr, cutting off messages below the
+-- threshold.
+runLogging :: MonadIO m => ConfigParser -> LoggingT m a -> m a
+runLogging conf = runStderrLoggingT . filterLog conf
 
 -- |Filter out log messages below the threshold.
 filterLog :: ConfigParser -> LoggingT m a -> LoggingT m a
