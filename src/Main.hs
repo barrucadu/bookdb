@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 
 module Main where
 
@@ -9,7 +8,7 @@ import Configuration (ConfigParser, defaults, get, loadConfigFile)
 import Control.Arrow ((***), first, second)
 import Control.Monad (when)
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Logger (LoggingT, LogLevel(..), logInfo, logError, filterLogger, runStderrLoggingT)
+import Control.Monad.Logger (LoggingT, LogLevel(..), logInfoN, logErrorN, filterLogger, runStderrLoggingT)
 import Control.Monad.Trans.Reader (runReaderT)
 import Control.Monad.Trans.Resource (runResourceT)
 import Data.Either.Utils (forceEither)
@@ -48,7 +47,7 @@ main = runLogging defaults $ do
   args <- liftIO getArgs
 
   when (length args < 1) $
-    $(logError) "Expected at least one argument" >> liftIO exitFailure
+    logErrorN "Expected at least one argument" >> liftIO exitFailure
 
   config <- case args of
              (_:conffile:_) -> liftIO $ loadConfigFile conffile
@@ -60,9 +59,9 @@ main = runLogging defaults $ do
        in liftIO . runLogging conf . withSqlitePool (fromString connstr) 10 $ case head args of
            "run"     -> serve route error404 error500 conf
            "migrate" -> runSqlPool (runMigration migrateAll)
-           _         -> const $ $(logError) "Unknown command, expected 'run' or 'migrate'." >> liftIO exitFailure
+           _         -> const $ logErrorN "Unknown command, expected 'run' or 'migrate'." >> liftIO exitFailure
 
-    Nothing -> $(logError) "Failed to read configuration" >> liftIO exitFailure
+    Nothing -> logErrorN "Failed to read configuration" >> liftIO exitFailure
 
 -- |Route a request to a handler. These do not cover static files, as
 -- Seacat handles those.
@@ -121,7 +120,7 @@ serve route on404 on500 conf pool = do
 
   let settings = setHost (fromString host) . setPort port $ W.defaultSettings
 
-  $(logInfo) $ "Listening on " <> pack host <> ":" <> (pack . show) port
+  logInfoN $ "Listening on " <> pack host <> ":" <> (pack . show) port
 
   liftIO . runSettings settings $ runner pool
 

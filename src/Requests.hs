@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- |Building up responses.
@@ -30,7 +29,7 @@ import Prelude hiding (writeFile)
 
 import Blaze.ByteString.Builder (Builder)
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Logger (LoggingT, logError, logInfo, logDebug)
+import Control.Monad.Logger (LoggingT, logErrorN, logInfoN, logDebugN)
 import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Reader (ReaderT, ask)
 import Control.Monad.Trans.Resource (ResourceT)
@@ -157,9 +156,9 @@ logResponse (Status code _) = do
   let message = "[" <> (pack . show) code <> "] " <> ip <> " | " <> time <> " | " <> method <> " | " <> uri
 
   case () of
-    _ | code >= 500 -> $(logError) message
-      | code >= 400 -> $(logInfo)  message
-      | otherwise -> $(logDebug) message
+    _ | code >= 500 -> logErrorN message
+      | code >= 400 -> logInfoN  message
+      | otherwise -> logDebugN message
 
 -------------------------
 
