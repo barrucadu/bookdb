@@ -3,7 +3,4 @@ packages:
 - '.'
 extra-deps:
 - sockaddr-0.0.0
-- web-routes-0.27.9
-- web-routes-th-0.22.3
-- web-routes-wai-0.24.1
-resolver: nightly-2015-11-19
+resolver: lts-5.5
