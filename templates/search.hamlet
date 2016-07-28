@@ -49,7 +49,7 @@ Template vars:
         <label for="category">Category
         <select #category name="category">
           <option value="">
-            
+
           $forall cat <- allCategories
             $if Just cat == category
               <option value="#{categoryCode cat}" selected>
@@ -69,4 +69,4 @@ Template vars:
       <li>
         <input type="submit" value="Search">
 
-^{list books authors read}
+^{list books authors (Just read) False}

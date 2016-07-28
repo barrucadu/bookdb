@@ -37,8 +37,8 @@ import qualified Data.Set as S
 index :: [Book]     -- ^ The list of all books
       -> HtmlUrl Sitemap
 index books =
-  let title   = "BookDB" :: Text
-      body    = list books (numAuthors books) (numRead books)
+  let title = "BookDB" :: Text
+      body  = list books (numAuthors books) (Just $ numRead books) False
   in $(hamletFile "templates/wrapper.hamlet")
 
 search :: Maybe Text -- ^ The ISBN
@@ -52,18 +52,19 @@ search :: Maybe Text -- ^ The ISBN
        -> Maybe BookCategory -- ^ The category
        -> [Book] -- ^ Books matching the search
        -> HtmlUrl Sitemap
-search isbn btitle subtitle author matchread matchunread location borrower category books = 
+search isbn btitle subtitle author matchread matchunread location borrower category books =
   let authors = numAuthors books
       read    = numRead books
       title   = "BookDB :: Search" :: Text
       body    = $(hamletFile "templates/search.hamlet")
   in $(hamletFile "templates/wrapper.hamlet")
 
-list :: [Book] -- ^ The books
-     -> Int    -- ^ The number of authors
-     -> Int    -- ^ The number of read books
+list :: [Book]    -- ^ The books
+     -> Int       -- ^ The number of authors
+     -> Maybe Int -- ^ The number of read books
+     -> Bool      -- ^ Whether to display in \"thin\" mode
      -> HtmlUrl Sitemap
-list books authors read = $(hamletFile "templates/list.hamlet")
+list books authors read thin = $(hamletFile "templates/list.hamlet")
 
 stats :: [Book]  -- ^ The books read in the prior year
       -> [Book]  -- ^ The least recently read books

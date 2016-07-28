@@ -2,9 +2,14 @@
 Template vars:
  - books :: [Book], list of books
  - authors :: Int, the number of authors
- - read :: Int, the number of read books
+ - read :: Maybe Int, the number of read books
+ - thin :: Bool, if true, only show the first five columns (cover, ISBN/ID, title, author, read)
 -->
-<p> Showing #{length books} #{pluralise "book" "books" (length books)} by #{authors} #{pluralise "author" "authors" authors}, of which #{read} (#{percent read (length books)}%) #{pluralise "has" "have" read} been read.
+<p>
+  Showing #{length books} #{pluralise "book" "books" (length books)} by #{authors} #{pluralise "author" "authors" authors}
+  $maybe nread <- read
+    , of which #{nread} (#{percent nread (length books)}%) #{pluralise "has" "have" nread} been read
+  .
 
 <table>
   <thead>
@@ -13,14 +18,18 @@ Template vars:
     <th>Title
     <th>Author
     <th>Read
-    <th>Location
-    <th>Category
-    <th>Borrower
-    <th>
+    $if not thin
+      <th>Location
+      <th>Category
+      <th>Borrower
+      <th>
   <tbody>
     $if length books == 0
       <tr>
-        <td colspan="8">There are no books.
+        $if thin
+          <td colspan="5">There are no books.
+        $else
+          <td colspan="8">There are no books.
     $else
       $forall book <- books
         <tr>
@@ -53,12 +62,13 @@ Template vars:
                 <a href="@{Read}">✔
             $else
               <a href="@{Unread}">✘
-          <td>
-            <a href="@{Location $ bookLocation book}">#{bookLocation book}
-          <td>
-            <a href="@{Category $ bookCategory book}">
-              <abbr title="#{categoryName $ bookCategory book}">#{categoryCode $ bookCategory book}</abbr>
-          <td>
-            <a href="@{Borrower $ bookBorrower book}">#{bookBorrower book}
-          <td .meta>
-            [&nbsp;<a href="@{Edit $ bookIsbn book}">e</a>&nbsp;/&nbsp;<a href="@{Delete $ bookIsbn book}">d</a>&nbsp;]
+          $if not thin
+            <td>
+              <a href="@{Location $ bookLocation book}">#{bookLocation book}
+            <td>
+              <a href="@{Category $ bookCategory book}">
+                <abbr title="#{categoryName $ bookCategory book}">#{categoryCode $ bookCategory book}</abbr>
+            <td>
+              <a href="@{Borrower $ bookBorrower book}">#{bookBorrower book}
+            <td .meta>
+              [&nbsp;<a href="@{Edit $ bookIsbn book}">e</a>&nbsp;/&nbsp;<a href="@{Delete $ bookIsbn book}">d</a>&nbsp;]

@@ -16,91 +16,11 @@
 <div>
   <div class="box left">
     <h2>In The Last Year
-    <p>Showing #{length lastYearBooks} #{pluralise "book" "books" (length lastYearBooks)} by #{lastYearAuthors} #{pluralise "author" "authors" lastYearAuthors}.
-    <table>
-      <thead>
-        <th>
-        <th>ISBN/ID
-        <th>Title
-        <th>Author
-        <th>Read
-      <tbody>
-        $if length lastYearBooks == 0
-          <tr>
-            <td colspan="5">There are no books.
-        $else
-          $forall book <- lastYearBooks
-            <tr>
-              <td>
-                $maybe cover <- bookCover book
-                  <a href="@{Covers cover}" .preview title="#{bookTitle book}">
-                    <img src="@{Covers cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
-              <td .isbn>#{bookIsbn book}
-              <td>
-                #{pprint book}
-              <td>
-                <ol>
-                  $forall author <- splitOn " & " (bookAuthor book)
-                    $if elem author ["Anonymous", "Various"]
-                      <li .pseudo>#{author}
-                    $else
-                      <li>
-                        <a href="@{Author author}">#{author}
-
-                $maybe trans <- bookTranslator book
-                  (trans. <a href="@{Translator trans}">#{trans}</a>)
-
-                $maybe edit <- bookEditor book
-                  (edit. <a href="@{Editor edit}">#{edit}</a>)
-              <td>
-                $maybe read <- bookLastread book
-                  <a href="@{Read}">#{formatTime defaultTimeLocale "%F" read}
-                $nothing
-                  <a href="@{Read}">unknown
+    ^{list lastYearBooks lastYearAuthors Nothing True}
 
   <div class="box right">
     <h2>Least Recently Read
-    <p>Showing #{length leastRecentBooks} #{pluralise "book" "books" (length leastRecentBooks)} by #{leastRecentAuthors} #{pluralise "author" "authors" leastRecentAuthors}.
-    <table>
-      <thead>
-        <th>
-        <th>ISBN/ID
-        <th>Title
-        <th>Author
-        <th>Read
-      <tbody>
-        $if length leastRecentBooks == 0
-          <tr>
-            <td colspan="5">There are no books.
-        $else
-          $forall book <- leastRecentBooks
-            <tr>
-              <td>
-                $maybe cover <- bookCover book
-                  <a href="@{Covers cover}" .preview title="#{bookTitle book}">
-                    <img src="@{Covers cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
-              <td .isbn>#{bookIsbn book}
-              <td>
-                #{pprint book}
-              <td>
-                <ol>
-                  $forall author <- splitOn " & " (bookAuthor book)
-                    $if elem author ["Anonymous", "Various"]
-                      <li .pseudo>#{author}
-                    $else
-                      <li>
-                        <a href="@{Author author}">#{author}
-
-                $maybe trans <- bookTranslator book
-                  (trans. <a href="@{Translator trans}">#{trans}</a>)
-
-                $maybe edit <- bookEditor book
-                  (edit. <a href="@{Editor edit}">#{edit}</a>)
-              <td>
-                $maybe read <- bookLastread book
-                  <a href="@{Read}">#{formatTime defaultTimeLocale "%F" read}
-                $nothing
-                  <a href="@{Read}">unknown
+    ^{list leastRecentBooks leastRecentAuthors Nothing True}
 
 \<script>
 \$( document ).ready(function() {
