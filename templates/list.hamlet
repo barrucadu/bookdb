@@ -41,7 +41,7 @@ Template vars:
           <td>
             #{pprint book}
           <td>
-            <ol>
+            <ol class="authors">
               $forall author <- splitOn " & " (bookAuthor book)
                 $if elem author ["Anonymous", "Various"]
                   <li .pseudo>#{author}
@@ -50,10 +50,20 @@ Template vars:
                     <a href="@{Author author}">#{author}
 
             $maybe trans <- bookTranslator book
-              (trans. <a href="@{Translator trans}">#{trans}</a>)
+              (trans.
+                <ol class="translators">
+                  $forall translator <- splitOn " & " trans
+                    <li>
+                      <a href="@{Translator translator}">#{translator}</a>
+              )
 
             $maybe edit <- bookEditor book
-              (edit. <a href="@{Editor edit}">#{edit}</a>)
+              (edit.
+                <ol class="editors">
+                  $forall editor <- splitOn " & " edit
+                    <li>
+                      <a href="@{Editor editor}">#{editor}</a>
+              )
           <td>
             $if bookRead book
               $maybe read <- bookLastread book
