@@ -83,8 +83,13 @@ td ol, td ol li {
     display: inline;
 }
 
-td ol li {
-    display: block;
+.translators, .editors {
+    margin-left: 3px;
+    margin-right: -3px;
+}
+
+td ol li + li :before {
+    content: " & ";
 }
 
 th {
