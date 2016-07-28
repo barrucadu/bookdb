@@ -6,7 +6,7 @@
   - leastRecentAuthors :: Int, number of authors in leastRecentBooks
   - thisYear :: [Int], number of books read each month this year
   - lastYear :: [Int], number of books read each month last year
-  - avgYear :: [Int], number of books read each month on average
+  - avgYear :: [Float], number of books read each month on average
 -->
 
 <div class="chart">
@@ -128,14 +128,14 @@
 \            data: #{pack (show lastYear)}
 \        },
 \        {
-\            label: "Average (#{sum avgYear})",
+\            label: "Average (#{showFloat (sum avgYear)})",
 \            fillColor: "rgba(75,75,75,0.2)",
 \            strokeColor: "rgba(75,75,75,0.5)",
 \            pointColor: "rgba(75,75,75,0.5)",
 \            pointStrokeColor: "#fff",
 \            pointHighlightFill: "#fff",
 \            pointHighlightStroke: "rgba(75,75,75,0.5)",
-\            data: #{pack (show avgYear)}
+\            data: #{pack (showListWith showFloat avgYear)}
 \        }
 \    ]
 \};

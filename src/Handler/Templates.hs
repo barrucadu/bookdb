@@ -23,7 +23,9 @@ import Data.Monoid ((<>))
 import Data.Set (Set)
 import Data.Text (Text, splitOn, null, toLower, pack)
 import Data.Time.Format (defaultTimeLocale, formatTime)
+import Numeric (showFFloat)
 import Text.Hamlet (HtmlUrl, hamletFile)
+import qualified Text.Show (showListWith)
 
 import Database
 import Routes
@@ -170,3 +172,11 @@ bool :: Bool -- ^ Condition
      -> Text
 bool True  t _ = t
 bool False _ f = f
+
+-- |Show a float to two decimal places at most.
+showFloat :: Float -> String
+showFloat n = showFFloat (Just 2) n ""
+
+-- |Show a list, with a function to show the elements.
+showListWith :: (a -> String) -> [a] -> String
+showListWith f xs = Text.Show.showListWith ((++) . f) xs ""
