@@ -41,6 +41,12 @@ $with book <- fromMaybe emptyBook book
           <label for="sorting">Sorting Key
           <input type="text" #sorting name="sorting" value="#{fromMaybe "" $ bookSorting book}">
         <li>
+          <label for="nowreading">Now Reading
+          $if bookNowreading book
+            <input type="checkbox" #read name="nowreading" checked>
+          $else
+            <input type="checkbox" #read name="nowreading">
+        <li>
           <label for="read">Read
           $if bookRead book
             <input type="checkbox" #read name="read" checked>
