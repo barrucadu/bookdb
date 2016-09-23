@@ -49,8 +49,9 @@ Book
     -- for all my books: only those since I first made bookdb. Really,
     -- I should re-read those books which I haven't touched for that
     -- long.
-    read     Bool
-    lastread UTCTime Maybe
+    read       Bool
+    lastread   UTCTime Maybe
+    nowreading Bool default=0
 
     -- These work, if I only have one copy of each book. If I have
     -- multiple copies, things start to get a bit messy.

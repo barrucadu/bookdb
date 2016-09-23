@@ -106,6 +106,7 @@ mutate book = do
   sorting    <- param' "sorting"    ""
   read       <- param' "read"       ""
   lastread   <- param' "lastread"   ""
+  nowreading <- param' "nowreading" ""
   location   <- param' "location"   ""
   category   <- param' "category"   "-"
   borrower   <- param' "borrower"   ""
@@ -119,10 +120,11 @@ mutate book = do
     let editor'     = empty editor
     let sorting'    = empty sorting
     let read'       = set read
+    let nowreading' = set nowreading
 
     case (toDate lastread, categoryOf category) of
       (Just lastread', Just category') -> do
-        let newbook = Book cover' isbn title subtitle volume fascicle voltitle author' translator' editor' sorting' read' lastread' location borrower category'
+        let newbook = Book cover' isbn title subtitle volume fascicle voltitle author' translator' editor' sorting' read' lastread' nowreading' location borrower category'
 
         case book of
           Just (Entity bookId _) -> replace bookId newbook >> information "Book updated successfully"
