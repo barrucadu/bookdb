@@ -17,7 +17,7 @@ Template vars:
     <th>ISBN/ID
     <th>Title
     <th>Author
-    <th>Read
+    <th style="min-width:7em">Read
     $if not thin
       <th>Location
       <th>Category
