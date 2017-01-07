@@ -12,7 +12,7 @@ import Data.List (sortBy)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Ord (Down(..), comparing)
-import Data.Text (Text, unpack)
+import Data.Text (Text, unpack, toLower)
 import Database.Esqueleto hiding ((==.))
 import Database.Persist hiding ((||.))
 
@@ -89,7 +89,7 @@ restrictFuzzy field contains = do
 sortBooks :: [Entity Book] -> [Book]
 sortBooks = sortBy cmp . unEntities where
   cmp = (Down . bookNowreading) <>: key <>: bookTitle <>: (split . bookVolume) <>: comparing (split . bookFascicle)
-  key book = fromMaybe (bookAuthor book) $ bookSorting book
+  key book = toLower . fromMaybe (bookAuthor book) $ bookSorting book
 
   split txt = case span isDigit $ unpack txt of
     (digits, str) -> (read ('0':digits) :: Int, str)
