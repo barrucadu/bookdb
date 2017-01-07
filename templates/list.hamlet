@@ -19,9 +19,9 @@ Template vars:
     <th>Author
     <th style="min-width:7em">Read
     $if not thin
-      <th>Location
-      <th>Category
-      <th>Borrower
+      <th>Where?
+      <th>What?
+      <th>Who?
       <th>
   <tbody>
     $if length books == 0
