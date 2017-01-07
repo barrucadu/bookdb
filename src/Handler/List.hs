@@ -11,7 +11,7 @@ import Data.Char (isDigit)
 import Data.List (sortBy)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
-import Data.Ord (comparing)
+import Data.Ord (Down(..), comparing)
 import Data.Text (Text, unpack)
 import Database.Esqueleto hiding ((==.))
 import Database.Persist hiding ((||.))
@@ -88,7 +88,11 @@ restrictFuzzy field contains = do
 -- | Sort a book list.
 sortBooks :: [Entity Book] -> [Book]
 sortBooks = sortBy cmp . unEntities where
-  cmp a b = comparing key a b <> comparing bookTitle a b <> comparing (split . bookVolume) a b <> comparing (split . bookFascicle) a b
+  cmp = (Down . bookNowreading) <>: key <>: bookTitle <>: (split . bookVolume) <>: comparing (split . bookFascicle)
   key book = fromMaybe (bookAuthor book) $ bookSorting book
+
   split txt = case span isDigit $ unpack txt of
     (digits, str) -> (read ('0':digits) :: Int, str)
+
+  infixr <>:
+  cmp1 <>: cmp2 = \a b -> comparing cmp1 a b <> cmp2 a b
