@@ -43,7 +43,7 @@ Template vars:
           <td>
             <ol class="authors">
               $forall author <- splitOn " & " (bookAuthor book)
-                $if elem author ["Anonymous", "Various"]
+                $if elem author ["Anonymous", "Unknown", "Various"]
                   <li .pseudo>#{author}
                 $else
                   <li>
