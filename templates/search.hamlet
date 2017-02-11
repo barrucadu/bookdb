@@ -37,7 +37,7 @@ Template vars:
         $else
           <input type="checkbox" #matchread name="matchread" value="yes">
       <li>
-        <label for="matchread">Match Unread
+        <label for="matchunread">Match Unread
         $if matchunread
           <input type="checkbox" #matchunread name="matchunread" value="yes" checked>
         $else
