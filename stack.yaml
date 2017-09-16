@@ -6,4 +6,4 @@ extra-deps:
 resolver: lts-5.5
 nix:
   enable: true
-  packages: [zlib]
+  packages: [gcc zlib]
