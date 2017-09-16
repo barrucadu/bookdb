@@ -2,7 +2,6 @@
 Template vars:
 
  - title :: Text, the title
- - suggestion :: Maybe Book, a suggestion for a book to read
  - body :: HtmlUrl r, the body template to render within
 -->
 $doctype 5
@@ -12,9 +11,9 @@ $doctype 5
 
     <link rel="stylesheet" href="@{Static "style.css"}" type="text/css">
 
-    <script src="https://code.jquery.com/jquery-1.9.1.min.js">
-    <script src="https://code.jquery.com/ui/1.10.2/jquery-ui.js">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js">
+    <script src="@{Static "vendor/jquery-1.9.1.min.js"}">
+    <script src="@{Static "vendor/jquery-ui-1.10.2.js"}">
+    <script src="@{Static "vendor/Chart-1.0.2.min.js"}">
     <script src="@{Static "script.js"}">
 
   <body>
