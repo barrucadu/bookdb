@@ -6,7 +6,7 @@ $doctype 5
 <html>
   <head>
     <title>Confirm Delete
-    <link rel="stylesheet" href="@{Stylesheet}" type="text/css">
+    <link rel="stylesheet" href="@{Static "style.css"}" type="text/css">
 
   <body>
     <div .information>

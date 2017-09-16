@@ -37,10 +37,8 @@ data Sitemap =
 
   | Covers Text
   -- ^ A book cover image
-  | Stylesheet
-  -- ^ The stylesheet
-  | Javascript
-  -- ^ The javascript
+  | Static Text
+  -- ^ A static file
 
   | Add
   -- ^ Add a new book
@@ -57,4 +55,4 @@ instance PathInfo BookCategory where
   toPathSegments c = [toLower $ categoryCode c]
   fromPathSegments = pToken () categoryOf
 
-$(derivePathInfo' (\str -> standard str `fromMaybe` lookup str [("Stylesheet", "style.css"), ("Javascript", "script.js")]) ''Sitemap)
+$(derivePathInfo' standard ''Sitemap)

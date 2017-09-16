@@ -13,7 +13,7 @@ $with title <- bool error "Error" "Information"
       $else
         <meta http-equiv="refresh" content="2;URL='@{List}'">
 
-      <link rel="stylesheet" href="@{Stylesheet}" type="text/css">
+      <link rel="stylesheet" href="@{Static "style.css"}" type="text/css">
 
   <body class="#{toLower title}">
     <div .information>
