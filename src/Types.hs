@@ -11,7 +11,7 @@ import Database.Persist.TH
 --------------------------------------------------------------------------------
 -- Book Categories
 
-data BookCategory = ComputerScience | Programming | Philosophy | Politics | History | ReligionAndMythology | Folklore | Poetry | Manga | MiscFiction | MiscNonFiction | Uncategorised
+data BookCategory = ComputerScience | Programming | Philosophy | Politics | History | ReligionAndMythology | Poetry | Manga | MiscFiction | MiscNonFiction | Uncategorised
   deriving (Eq, Enum, Bounded, Read, Show)
 
 derivePersistField "BookCategory"
@@ -29,7 +29,6 @@ categoryCode Philosophy      = "PH"
 categoryCode Politics        = "PO"
 categoryCode History         = "HI"
 categoryCode ReligionAndMythology = "RM"
-categoryCode Folklore        = "FO"
 categoryCode Poetry          = "P"
 categoryCode Manga           = "M"
 categoryCode MiscFiction     = "F"
@@ -43,8 +42,7 @@ categoryName Programming     = "Programming"
 categoryName Philosophy      = "Philosophy"
 categoryName Politics        = "Politics"
 categoryName History         = "History"
-categoryName ReligionAndMythology = "Religion & Mythology"
-categoryName Folklore        = "Folklore"
+categoryName ReligionAndMythology = "Religion, Mythology, & Folklore"
 categoryName Poetry          = "Poetry"
 categoryName Manga           = "Manga"
 categoryName MiscFiction     = "Miscellaneous Fiction"
