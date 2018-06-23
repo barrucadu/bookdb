@@ -3,6 +3,13 @@ BookDB
 
 A database and web app to keep track of all my books.
 
+Building
+--------
+
+Build with stack:
+
+    stack build
+
 Running
 -------
 
