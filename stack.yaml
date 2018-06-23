@@ -5,5 +5,4 @@ resolver: lts-12.0
 extra-deps:
 - web-routes-th-0.22.6.3
 nix:
-  enable: true
   packages: [gcc zlib]
