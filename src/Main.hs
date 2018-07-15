@@ -1,43 +1,53 @@
-{-# LANGUAGE OverloadedStrings, TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module Main where
 
-import Prelude hiding (userError)
+import           Prelude                              hiding (userError)
 
-import Configuration
-import Control.Arrow ((***), first, second)
-import Control.Monad (when)
-import Control.Monad.Trans.Reader (runReaderT)
-import Data.Maybe (fromMaybe)
-import Data.Monoid ((<>))
-import Data.String (fromString)
-import Data.Text (pack)
-import Data.Text.Encoding (decodeUtf8)
-import Database
-import Database.Selda ((!), (.==), like, literal, not_)
-import Database.Selda.Backend (SeldaConnection, seldaClose, runSeldaT)
-import Database.Selda.SQLite (sqliteOpen)
-import Handler.Edit
-import Handler.Information
-import Handler.List
-import Handler.Stats
-import Network.HTTP.Types.Method (StdMethod(..), parseMethod)
-import Network.HTTP.Types.Status (notFound404, methodNotAllowed405, internalServerError500)
-import Network.Wai (requestMethod, queryString)
-import Network.Wai.Handler.Warp (runSettings, setHost, setPort)
-import Network.Wai.Middleware.RequestLogger (logStdout)
-import Network.Wai.Middleware.Static (addBase, staticPolicy)
-import Network.Wai.Parse (parseRequestBody, lbsBackEnd)
-import Requests
-import Routes
-import System.Environment (getArgs)
-import System.Exit (exitFailure)
-import System.IO.Error (catchIOError)
-import Web.Routes (fromPathInfo, toPathInfoParams)
-import Web.Routes.Wai (handleWai_)
+import           Configuration
+import           Control.Arrow                        (first, second, (***))
+import           Control.Monad                        (when)
+import           Control.Monad.Trans.Reader           (runReaderT)
+import           Data.Maybe                           (fromMaybe)
+import           Data.Monoid                          ((<>))
+import           Data.String                          (fromString)
+import           Data.Text                            (pack)
+import           Data.Text.Encoding                   (decodeUtf8)
+import           Database
+import           Database.Selda                       (like, literal, not_, (!),
+                                                       (.==))
+import           Database.Selda.Backend               (SeldaConnection,
+                                                       runSeldaT, seldaClose)
+import           Database.Selda.SQLite                (sqliteOpen)
+import           Handler.Edit
+import           Handler.Information
+import           Handler.List
+import           Handler.Stats
+import           Network.HTTP.Types.Method            (StdMethod (..),
+                                                       parseMethod)
+import           Network.HTTP.Types.Status            (internalServerError500,
+                                                       methodNotAllowed405,
+                                                       notFound404)
+import           Network.Wai                          (queryString,
+                                                       requestMethod)
+import           Network.Wai.Handler.Warp             (runSettings, setHost,
+                                                       setPort)
+import           Network.Wai.Middleware.RequestLogger (logStdout)
+import           Network.Wai.Middleware.Static        (addBase, staticPolicy)
+import           Network.Wai.Parse                    (lbsBackEnd,
+                                                       parseRequestBody)
+import           Requests
+import           Routes
+import           System.Environment                   (getArgs)
+import           System.Exit                          (exitFailure)
+import           System.IO.Error                      (catchIOError)
+import           Web.Routes                           (fromPathInfo,
+                                                       toPathInfoParams)
+import           Web.Routes.Wai                       (handleWai_)
 
-import qualified Data.ByteString.Char8 as B8
-import qualified Network.Wai.Handler.Warp as W
+import qualified Data.ByteString.Char8                as B8
+import qualified Network.Wai.Handler.Warp             as W
 
 -- |Run the server
 main :: IO ()
@@ -50,7 +60,7 @@ main = do
 
   config <- case args of
              (_:conffile:_) -> loadConfigFile conffile
-             _ -> return $ Just defaults
+             _              -> return $ Just defaults
 
   case config of
     Just conf -> do

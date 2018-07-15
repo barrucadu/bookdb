@@ -1,18 +1,18 @@
 module Handler.Stats (stats) where
 
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.Class (lift)
-import Data.Function (on)
-import Data.List (foldl', genericLength)
-import Data.Maybe (mapMaybe)
-import Data.Time.Clock (UTCTime, addUTCTime, getCurrentTime)
-import Data.Time.Format (defaultTimeLocale, formatTime)
+import           Control.Monad.IO.Class    (liftIO)
+import           Control.Monad.Trans.Class (lift)
+import           Data.Function             (on)
+import           Data.List                 (foldl', genericLength)
+import           Data.Maybe                (mapMaybe)
+import           Data.Time.Clock           (UTCTime, addUTCTime, getCurrentTime)
+import           Data.Time.Format          (defaultTimeLocale, formatTime)
 
-import Database
-import Requests
-import Routes
+import           Database
+import           Requests
+import           Routes
 
-import qualified Handler.Templates as T
+import qualified Handler.Templates         as T
 
 stats :: Handler Sitemap
 stats = do

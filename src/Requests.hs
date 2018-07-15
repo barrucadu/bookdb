@@ -25,20 +25,20 @@ module Requests
     , param'
     , hasParam) where
 
-import Blaze.ByteString.Builder (Builder)
-import Control.Monad.Trans.Reader (ReaderT, ask)
-import Data.ByteString.Lazy (ByteString)
-import Data.Maybe (isJust, fromMaybe)
-import Data.Text (Text)
-import Database.Selda (SeldaM)
-import Network.HTTP.Types.Status (Status(..), ok200)
-import Network.Wai (Response, responseBuilder)
-import Network.Wai.Parse (FileInfo(..))
-import Text.Blaze.Html (Html)
-import Text.Blaze.Html.Renderer.Utf8 (renderHtmlBuilder)
-import Web.Routes.PathInfo (PathInfo(..))
+import           Blaze.ByteString.Builder      (Builder)
+import           Control.Monad.Trans.Reader    (ReaderT, ask)
+import           Data.ByteString.Lazy          (ByteString)
+import           Data.Maybe                    (fromMaybe, isJust)
+import           Data.Text                     (Text)
+import           Database.Selda                (SeldaM)
+import           Network.HTTP.Types.Status     (Status (..), ok200)
+import           Network.Wai                   (Response, responseBuilder)
+import           Network.Wai.Parse             (FileInfo (..))
+import           Text.Blaze.Html               (Html)
+import           Text.Blaze.Html.Renderer.Utf8 (renderHtmlBuilder)
+import           Web.Routes.PathInfo           (PathInfo (..))
 
-import Configuration (Configuration)
+import           Configuration                 (Configuration)
 
 -- |Type to represent a Seacat request
 data Request r = Request
@@ -50,10 +50,10 @@ data Request r = Request
     -- ^ The files, stored in memory as lazy bytestrings, and parsed
     -- out of the request once at the beginning.
 
-    , _conf :: Configuration
+    , _conf   :: Configuration
     -- ^ The contents of the configuration file
 
-    , _mkurl :: MkUrl r
+    , _mkurl  :: MkUrl r
     -- ^ The URL building function
     }
 

@@ -12,29 +12,31 @@ module Handler.Edit
     , commitDelete
     ) where
 
-import Prelude hiding (null, userError)
+import           Prelude                   hiding (null, userError)
 
-import Control.Applicative ((<|>))
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.Class (lift)
-import Data.Char (chr)
-import Data.List (sort)
-import Data.Text (Text, null, intercalate, splitOn, unpack, pack)
-import Data.Time.Calendar (fromGregorian)
-import Data.Time.Clock (UTCTime(..))
-import System.FilePath (joinPath, takeExtension, takeFileName)
-import Text.Read (readMaybe)
-import Database
+import           Control.Applicative       ((<|>))
+import           Control.Monad.IO.Class    (liftIO)
+import           Control.Monad.Trans.Class (lift)
+import           Data.Char                 (chr)
+import           Data.List                 (sort)
+import           Data.Text                 (Text, intercalate, null, pack,
+                                            splitOn, unpack)
+import           Data.Time.Calendar        (fromGregorian)
+import           Data.Time.Clock           (UTCTime (..))
+import           Database
+import           System.FilePath           (joinPath, takeExtension,
+                                            takeFileName)
+import           Text.Read                 (readMaybe)
 
-import Configuration
-import Handler.Information
-import Handler.Utils
-import Routes
-import Requests
+import           Configuration
+import           Handler.Information
+import           Handler.Utils
+import           Requests
+import           Routes
 
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy as BL
-import qualified Handler.Templates as T
+import qualified Data.ByteString           as B
+import qualified Data.ByteString.Lazy      as BL
+import qualified Handler.Templates         as T
 
 -- |Display an add form, or an error if in read-only mode
 add :: Handler Sitemap

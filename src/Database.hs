@@ -3,15 +3,15 @@
 
 module Database (module Database, module Types) where
 
-import Control.Monad (unless)
-import Data.Maybe (listToMaybe)
-import Data.Monoid ((<>))
-import Data.Text (Text)
-import Data.Time.Clock (UTCTime)
-import Database.Selda
-import Database.Selda.Generic
+import           Control.Monad          (unless)
+import           Data.Maybe             (listToMaybe)
+import           Data.Monoid            ((<>))
+import           Data.Text              (Text)
+import           Data.Time.Clock        (UTCTime)
+import           Database.Selda
+import           Database.Selda.Generic
 
-import Types
+import           Types
 
 -- | The table of books.
 books :: GenTable Book

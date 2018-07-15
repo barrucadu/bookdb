@@ -2,8 +2,8 @@
 
 module Routes where
 
-import Data.Text (Text)
-import Web.Routes.TH (derivePathInfo', standard)
+import           Data.Text     (Text)
+import           Web.Routes.TH (derivePathInfo', standard)
 
 -- |The possible routes in bookdb
 data Sitemap =

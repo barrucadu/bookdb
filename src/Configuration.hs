@@ -4,20 +4,20 @@
 module Configuration where
 
 import qualified Data.HashMap.Strict as M
-import qualified Data.Text as T
-import System.IO.Error (catchIOError, ioError, userError)
-import Text.Parsec.Error (errorMessages, messageString)
-import Text.Toml
-import Text.Toml.Types
+import qualified Data.Text           as T
+import           System.IO.Error     (catchIOError, ioError, userError)
+import           Text.Parsec.Error   (errorMessages, messageString)
+import           Text.Toml
+import           Text.Toml.Types
 
 -- | The configuration record.
 data Configuration = Configuration
-  { cfgHost :: String
-  , cfgPort :: Int
-  , cfgWebRoot :: String
-  , cfgFileRoot :: String
+  { cfgHost         :: String
+  , cfgPort         :: Int
+  , cfgWebRoot      :: String
+  , cfgFileRoot     :: String
   , cfgDatabaseFile :: String
-  , cfgReadOnly :: Bool
+  , cfgReadOnly     :: Bool
   } deriving Show
 
 -- | Default configuration.
@@ -56,20 +56,20 @@ toConfiguration :: Maybe Table -> Configuration
 toConfiguration tbl = Configuration
   { cfgHost = case M.lookup "host" =<< tbl of
       Just (VString val) -> T.unpack val
-      _ -> "*"
+      _                  -> "*"
   , cfgPort = case M.lookup "port" =<< tbl of
       Just (VInteger val) -> fromIntegral val
-      _ -> 3000
+      _                   -> 3000
   , cfgWebRoot = case M.lookup "web_root" =<< tbl of
       Just (VString val) -> T.unpack val
-      _ -> "http://localhost:3000"
+      _                  -> "http://localhost:3000"
   , cfgFileRoot = case M.lookup "file_root" =<< tbl of
       Just (VString val) -> T.unpack val
-      _ -> "/tmp"
+      _                  -> "/tmp"
   , cfgDatabaseFile = case M.lookup "database_file" =<< tbl of
       Just (VString val) -> T.unpack val
-      _ -> "bookdb.sqlite"
+      _                  -> "bookdb.sqlite"
   , cfgReadOnly = case M.lookup "read_only" =<< tbl of
       Just (VBoolean val) -> val
-      _ -> False
+      _                   -> False
   }

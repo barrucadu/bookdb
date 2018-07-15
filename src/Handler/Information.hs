@@ -4,15 +4,15 @@ module Handler.Information
     , serverError
     ) where
 
-import Prelude hiding (userError)
+import           Prelude                   hiding (userError)
 
-import Data.Text (Text)
-import Network.HTTP.Types.Status (Status)
+import           Data.Text                 (Text)
+import           Network.HTTP.Types.Status (Status)
 
-import Routes
-import Requests
+import           Requests
+import           Routes
 
-import qualified Handler.Templates as T
+import qualified Handler.Templates         as T
 
 -- |Display an informational dialogue
 information :: Text -- ^ The message to display

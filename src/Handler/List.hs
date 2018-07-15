@@ -6,21 +6,21 @@ module Handler.List
     , restrict
     ) where
 
-import Control.Monad.Trans.Class (lift)
-import Data.Char (isDigit)
-import Data.List (sortBy)
-import Data.Maybe (fromMaybe)
-import Data.Monoid ((<>))
-import Data.Ord (Down(..), comparing)
-import Data.Text (unpack, toLower)
-import Database.Selda (Col, Cols)
-import Database.Selda.Generic (Relation)
+import           Control.Monad.Trans.Class (lift)
+import           Data.Char                 (isDigit)
+import           Data.List                 (sortBy)
+import           Data.Maybe                (fromMaybe)
+import           Data.Monoid               ((<>))
+import           Data.Ord                  (Down (..), comparing)
+import           Data.Text                 (toLower, unpack)
+import           Database.Selda            (Col, Cols)
+import           Database.Selda.Generic    (Relation)
 
-import Database
-import Routes
-import Requests
+import           Database
+import           Requests
+import           Routes
 
-import qualified Handler.Templates as T
+import qualified Handler.Templates         as T
 
 list :: Handler Sitemap
 list = do

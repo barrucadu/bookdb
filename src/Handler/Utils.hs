@@ -2,16 +2,16 @@
 
 module Handler.Utils where
 
-import Prelude hiding (userError)
+import           Prelude                   hiding (userError)
 
-import Control.Monad.Trans.Class (lift)
-import Data.Text (Text)
+import           Control.Monad.Trans.Class (lift)
+import           Data.Text                 (Text)
 
-import Configuration
-import Database
-import Handler.Information
-import Routes
-import Requests
+import           Configuration
+import           Database
+import           Handler.Information
+import           Requests
+import           Routes
 
 -- |Run the given handler if in read-write mode, otherwise display an
 -- error page.

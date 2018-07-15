@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module Handler.Templates
     ( -- * Modifying books
@@ -16,21 +17,21 @@ module Handler.Templates
     , index
     ) where
 
-import Prelude hiding (null)
+import           Prelude          hiding (null)
 
-import Data.Maybe (fromMaybe)
-import Data.Monoid ((<>))
-import Data.Set (Set)
-import Data.Text (Text, splitOn, null, toLower, pack)
-import Data.Time.Format (defaultTimeLocale, formatTime)
-import Numeric (showFFloat)
-import Text.Hamlet (HtmlUrl, hamletFile)
-import qualified Text.Show (showListWith)
+import           Data.Maybe       (fromMaybe)
+import           Data.Monoid      ((<>))
+import           Data.Set         (Set)
+import           Data.Text        (Text, null, pack, splitOn, toLower)
+import           Data.Time.Format (defaultTimeLocale, formatTime)
+import           Numeric          (showFFloat)
+import           Text.Hamlet      (HtmlUrl, hamletFile)
+import qualified Text.Show        (showListWith)
 
-import Database
-import Routes
+import           Database
+import           Routes
 
-import qualified Data.Set as S
+import qualified Data.Set         as S
 
 -------------------------
 
