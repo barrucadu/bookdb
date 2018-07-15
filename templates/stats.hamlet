@@ -1,5 +1,6 @@
 <!-- Template vars:
 
+  - categories :: [BookCategory], the list of all categories
   - lastYearBooks :: [Book], list of books read in the prior year
   - lastYearAuthors :: Int, number of authors in lastYearBooks
   - leastRecentBooks :: [Book], list of least recently read books
@@ -16,11 +17,11 @@
 <div>
   <div class="box left">
     <h2>In The Last Year
-    ^{list lastYearBooks lastYearAuthors Nothing True}
+    ^{list categories lastYearBooks lastYearAuthors Nothing True}
 
   <div class="box right">
     <h2>Least Recently Read
-    ^{list leastRecentBooks leastRecentAuthors Nothing True}
+    ^{list categories leastRecentBooks leastRecentAuthors Nothing True}
 
 \<script>
 \$( document ).ready(function() {

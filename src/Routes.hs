@@ -2,12 +2,8 @@
 
 module Routes where
 
-import Data.Maybe (fromMaybe)
-import Data.Text (Text, toLower)
-import Web.Routes (PathInfo(..), pToken)
+import Data.Text (Text)
 import Web.Routes.TH (derivePathInfo', standard)
-
-import Types
 
 -- |The possible routes in bookdb
 data Sitemap =
@@ -30,7 +26,7 @@ data Sitemap =
   -- ^ Filter by unread
   | Location Text
   -- ^ Filter by location
-  | Category BookCategory
+  | Category Text
   -- ^ Filter by category
   | Borrower Text
   -- ^ Filter by borrower
@@ -48,11 +44,5 @@ data Sitemap =
   -- ^ Delete a book by ISBN
 
   deriving (Read, Show)
-
--- Orphan, but I think keeping ALL the URL encoding/decoding code in
--- this one file is best.
-instance PathInfo BookCategory where
-  toPathSegments c = [toLower $ categoryCode c]
-  fromPathSegments = pToken () categoryOf
 
 $(derivePathInfo' standard ''Sitemap)

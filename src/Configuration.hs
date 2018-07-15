@@ -1,22 +1,28 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 
--- |Configuration file handling. This module re-exports `ConfgParser`
--- and `get` from `Data.ConfigFile`, as pretty much all applications
--- will want to use those in conjunction with this module.
-module Configuration
-    ( ConfigParser
-    , loadConfigFile
-    , defaults
-    , get
-    , conf) where
+-- |Configuration file handling.
+module Configuration where
 
-import Data.ConfigFile hiding (get)
-import Data.Either.Utils (forceEither)
-import System.IO.Error (catchIOError)
+import qualified Data.HashMap.Strict as M
+import qualified Data.Text as T
+import System.IO.Error (catchIOError, ioError, userError)
+import Text.Parsec.Error (errorMessages, messageString)
+import Text.Toml
+import Text.Toml.Types
 
-import Requests
+-- | The configuration record.
+data Configuration = Configuration
+  { cfgHost :: String
+  , cfgPort :: Int
+  , cfgWebRoot :: String
+  , cfgFileRoot :: String
+  , cfgDatabaseFile :: String
+  , cfgReadOnly :: Bool
+  } deriving Show
 
-import qualified Data.ConfigFile as C
+-- | Default configuration.
+defaults :: Configuration
+defaults = toConfiguration Nothing
 
 -- |Load a configuration file by name.
 -- All errors (syntax, file access, etc) are squashed together,
@@ -32,40 +38,38 @@ import qualified Data.ConfigFile as C
 -- This sets all of the configuration values expected by the main
 -- application to their defaults if they weren't present already, but
 -- other values are left as they are in the file.
-loadConfigFile :: FilePath -> IO (Maybe ConfigParser)
+loadConfigFile :: FilePath -> IO (Maybe Configuration)
 loadConfigFile filename = (Just <$> loadConfigFileUnsafe filename) `catchIOError` const (return Nothing)
 
 -- |Load a configuration file unsafely. This may throw an IO
 -- exception.
-loadConfigFileUnsafe :: FilePath -> IO ConfigParser
+loadConfigFileUnsafe :: FilePath -> IO Configuration
 loadConfigFileUnsafe filename = do
-  let base = emptyCP { accessfunc = interpolatingAccess 10 }
-  cp <- readfile base filename
-  return . merge defaults $ forceEither cp
+  cfg <- readFile filename
+  let config = parseTomlDoc filename (T.pack cfg)
+  let formatError = unlines . map messageString . errorMessages
+  either (ioError . userError . formatError) (pure . toConfiguration . Just) config
 
--- |Default configuration values:
---
--- - Listen on *:3000
--- - Use http://localhost:3000 as the basis for all URLs
--- - Use /tmp as the basis for all file look-ups
--- - Use a database called bookdb.sqlite
-defaults :: ConfigParser
-defaults = forceEither . readstring emptyCP $ unlines
-  [ "host          = *"
-  , "port          = 3000"
-  , "web_root      = http://localhost:3000"
-  , "file_root     = /tmp"
-  , "database_file = bookdb.sqlite"
-  , "readonly      = false"
-  , "log_level     = 1"
-  ]
-
--- |Get a value from the configuration, throwing an 'IOException' if
--- the value can't be found.
-get :: Get_C a => ConfigParser -> OptionSpec -> a
-get cp os = forceEither $ C.get cp "" os
-
--- |Get a value from the configuration in a handler, throwing an
--- 'IOException' if the value can't be found.
-conf :: Get_C a => OptionSpec -> RequestProcessor r a
-conf os = askConf >>= \config -> return $ get config os
+-- | Convert a TOML 'Table' to a 'Coniguration' value, filling in the
+-- blanks with default values.
+toConfiguration :: Maybe Table -> Configuration
+toConfiguration tbl = Configuration
+  { cfgHost = case M.lookup "host" =<< tbl of
+      Just (VString val) -> T.unpack val
+      _ -> "*"
+  , cfgPort = case M.lookup "port" =<< tbl of
+      Just (VInteger val) -> fromIntegral val
+      _ -> 3000
+  , cfgWebRoot = case M.lookup "web_root" =<< tbl of
+      Just (VString val) -> T.unpack val
+      _ -> "http://localhost:3000"
+  , cfgFileRoot = case M.lookup "file_root" =<< tbl of
+      Just (VString val) -> T.unpack val
+      _ -> "/tmp"
+  , cfgDatabaseFile = case M.lookup "database_file" =<< tbl of
+      Just (VString val) -> T.unpack val
+      _ -> "bookdb.sqlite"
+  , cfgReadOnly = case M.lookup "read_only" =<< tbl of
+      Just (VBoolean val) -> val
+      _ -> False
+  }

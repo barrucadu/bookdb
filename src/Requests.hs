@@ -25,44 +25,24 @@ module Requests
     , param'
     , hasParam) where
 
-import Prelude hiding (writeFile)
-
 import Blaze.ByteString.Builder (Builder)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Logger (LoggingT, logErrorN, logInfoN, logDebugN)
-import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Reader (ReaderT, ask)
-import Control.Monad.Trans.Resource (ResourceT)
 import Data.ByteString.Lazy (ByteString)
-import Data.ConfigFile (ConfigParser)
 import Data.Maybe (isJust, fromMaybe)
-import Data.Monoid ((<>))
-import Data.Text (Text, pack)
-import Data.Time.Clock (getCurrentTime)
-import Data.Time.Format (formatTime, defaultTimeLocale)
-import Database.Persist.Sql (SqlPersistT)
-import Network.HTTP.Types.Method (Method)
+import Data.Text (Text)
+import Database.Selda (SeldaM)
 import Network.HTTP.Types.Status (Status(..), ok200)
-import Network.SockAddr (showSockAddr)
-import Network.Socket (SockAddr)
 import Network.Wai (Response, responseBuilder)
 import Network.Wai.Parse (FileInfo(..))
 import Text.Blaze.Html (Html)
 import Text.Blaze.Html.Renderer.Utf8 (renderHtmlBuilder)
 import Web.Routes.PathInfo (PathInfo(..))
 
+import Configuration (Configuration)
+
 -- |Type to represent a Seacat request
 data Request r = Request
-    { _remoteHost :: SockAddr
-    -- ^ The remote host
-
-    , _uri :: Text
-    -- ^ The request URI
-
-    , _method :: Method
-    -- ^ The request method
-
-    , _params :: [(Text, Text)]
+    { _params :: [(Text, Text)]
     -- ^ The parameters, parsed once before the top-level handler is
     -- called.
 
@@ -70,7 +50,7 @@ data Request r = Request
     -- ^ The files, stored in memory as lazy bytestrings, and parsed
     -- out of the request once at the beginning.
 
-    , _conf :: ConfigParser
+    , _conf :: Configuration
     -- ^ The contents of the configuration file
 
     , _mkurl :: MkUrl r
@@ -81,7 +61,7 @@ data Request r = Request
 type MkUrl r = r -> [(Text, Text)] -> Text
 
 -- |Function which handles a request
-type RequestProcessor r = SqlPersistT (ReaderT (Request r) (LoggingT (ResourceT IO)))
+type RequestProcessor r = ReaderT (Request r) SeldaM
 
 -- |`RequestProcessor` specialised to producing a `Response`. All
 -- routes should go to a function of type `PathInfo r => Handler r`.
@@ -89,20 +69,8 @@ type Handler r = RequestProcessor r Response
 
 -------------------------
 
--- | Get the remote host from a 'RequestProcessor'
-askRemoteHost :: RequestProcessor r SockAddr
-askRemoteHost = _remoteHost <$> request
-
--- | Get the request URI from a 'RequestProcessor'
-askUri :: RequestProcessor r Text
-askUri = _uri <$> request
-
--- | Get the request method from a 'RequestProcessor'
-askMethod :: RequestProcessor r Method
-askMethod = _method <$> request
-
 -- |Get the configuration from a `RequestProcessor`
-askConf :: RequestProcessor r ConfigParser
+askConf :: RequestProcessor r Configuration
 askConf = _conf <$> request
 
 -- |Get the URL maker from a `RequestProcessor`
@@ -119,7 +87,7 @@ askFiles = _files <$> request
 
 -- |Get the request from a `RequestProcessor`
 request :: RequestProcessor r (Request r)
-request = lift ask
+request = ask
 
 -------------------------
 
@@ -141,24 +109,8 @@ htmlUrlResponse' status html = do
 -- |Produce a response from the given status and ByteString
 -- builder. This sets a content-type of UTF-8 HTML.
 respond :: Status -> Builder -> Handler r
-respond status builder = do
-  logResponse status
-  return $ responseBuilder status [("Content-Type", "text/html; charset=utf-8")] builder
-
--- | Log the handling of a response.
-logResponse :: Status -> RequestProcessor r ()
-logResponse (Status code _) = do
-  ip     <- pack . showSockAddr <$> askRemoteHost
-  time   <- pack . formatTime defaultTimeLocale "%c" <$> liftIO getCurrentTime
-  method <- pack . show <$> askMethod
-  uri    <- askUri
-
-  let message = "[" <> (pack . show) code <> "] " <> ip <> " | " <> time <> " | " <> method <> " | " <> uri
-
-  case () of
-    _ | code >= 500 -> logErrorN message
-      | code >= 400 -> logInfoN  message
-      | otherwise -> logDebugN message
+respond status =
+  pure . responseBuilder status [("Content-Type", "text/html; charset=utf-8")]
 
 -------------------------
 

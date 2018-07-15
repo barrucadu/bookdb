@@ -34,45 +34,49 @@ import qualified Data.Set as S
 
 -------------------------
 
-index :: [Book]     -- ^ The list of all books
+index :: [BookCategory] -- ^ List of all categories
+      -> [Book] -- ^ The list of all books
       -> HtmlUrl Sitemap
-index books =
+index categories books =
   let title = "BookDB" :: Text
-      body  = list books (numAuthors books) (Just $ numRead books) False
+      body  = list categories books (numAuthors books) (Just $ numRead books) False
   in $(hamletFile "templates/wrapper.hamlet")
 
-search :: Maybe Text -- ^ The ISBN
-       -> Maybe Text -- ^ The title
-       -> Maybe Text -- ^ The subtitle
-       -> Maybe Text -- ^ The author
+search :: [BookCategory] -- ^ List of all categories
+       -> Text -- ^ The ISBN
+       -> Text -- ^ The title
+       -> Text -- ^ The subtitle
+       -> Text -- ^ The author
        -> Bool -- ^ Whether to match read
        -> Bool -- ^ Whether to match unread
-       -> Maybe Text -- ^ The location
-       -> Maybe Text -- ^ The borrower
-       -> Maybe BookCategory -- ^ The category
+       -> Text -- ^ The location
+       -> Text -- ^ The borrower
+       -> BookCategory -- ^ The category
        -> [Book] -- ^ Books matching the search
        -> HtmlUrl Sitemap
-search isbn btitle subtitle author matchread matchunread location borrower category books =
+search categories isbn btitle subtitle author matchread matchunread location borrower category books =
   let authors = numAuthors books
       read    = numRead books
       title   = "BookDB :: Search" :: Text
       body    = $(hamletFile "templates/search.hamlet")
   in $(hamletFile "templates/wrapper.hamlet")
 
-list :: [Book]    -- ^ The books
+list :: [BookCategory] -- ^ List of all categories
+     -> [Book]    -- ^ The books
      -> Int       -- ^ The number of authors
      -> Maybe Int -- ^ The number of read books
      -> Bool      -- ^ Whether to display in \"thin\" mode
      -> HtmlUrl Sitemap
-list books authors read thin = $(hamletFile "templates/list.hamlet")
+list categories books authors read thin = $(hamletFile "templates/list.hamlet")
 
-stats :: [Book]  -- ^ The books read in the prior year
+stats :: [BookCategory] -- ^ List of all categories
+      -> [Book]  -- ^ The books read in the prior year
       -> [Book]  -- ^ The least recently read books
       -> [Int]   -- ^ The number of books read each month this year
       -> [Int]   -- ^ The number of books read each month last year
       -> [Float] -- ^ The number of books read each month on average
       -> HtmlUrl Sitemap
-stats lastYearBooks leastRecentBooks thisYear lastYear avgYear =
+stats categories lastYearBooks leastRecentBooks thisYear lastYear avgYear =
   let title = "BookDB :: Stats" :: Text
       lastYearAuthors    = numAuthors lastYearBooks
       leastRecentAuthors = numAuthors leastRecentBooks
@@ -81,17 +85,19 @@ stats lastYearBooks leastRecentBooks thisYear lastYear avgYear =
 
 -------------------------
 
-addForm :: HtmlUrl Sitemap
-addForm =
+addForm :: [BookCategory]  -- ^ List of all categories
+        -> HtmlUrl Sitemap
+addForm categories =
   let book   = Nothing
       target = Add
       title  = "BookDB :: Add" :: Text
       body   = $(hamletFile "templates/edit_form.hamlet")
   in $(hamletFile "templates/wrapper.hamlet")
 
-editForm :: Book -- ^ The book to edit
+editForm :: [BookCategory] -- ^ List of all categories
+         -> Book -- ^ The book to edit
          -> HtmlUrl Sitemap
-editForm bk =
+editForm categories bk =
   let book   = Just bk
       target = Edit $ bookIsbn bk
       title  = "BookDB :: Edit " <> bookIsbn bk :: Text
@@ -161,10 +167,6 @@ pprint book = title <> subtitle <> volume <> voltitle
         voltitle
           | not . null $ bookVoltitle book = " " <> bookVoltitle book
           | otherwise = ""
-
--- |A null book
-emptyBook :: Book
-emptyBook = Book Nothing "" "" "" "" "" "" "" Nothing Nothing Nothing False Nothing False "" "" Uncategorised
 
 -- |Choice
 bool :: Bool -- ^ Condition

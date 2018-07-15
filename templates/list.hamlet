@@ -1,5 +1,6 @@
 <!--
 Template vars:
+ - categories :: [BookCategory], the list of all categories
  - books :: [Book], list of books
  - authors :: Int, the number of authors
  - read :: Maybe Int, the number of read books
@@ -32,7 +33,7 @@ Template vars:
           <td colspan="8">There are no books.
     $else
       $forall book <- books
-        <tr class="#{bool (bookNowreading book) "nowreading" ""}">
+        <tr class="#{bool (bookNowReading book) "nowreading" ""}">
           <td>
             $maybe cover <- bookCover book
               <a href="@{Covers cover}" .preview title="#{bookTitle book}">
@@ -66,7 +67,7 @@ Template vars:
               )
           <td>
             $if bookRead book
-              $maybe read <- bookLastread book
+              $maybe read <- bookLastRead book
                 <a href="@{Read}">✔ (#{formatTime defaultTimeLocale "%F" read})
               $nothing
                 <a href="@{Read}">✔
@@ -76,8 +77,8 @@ Template vars:
             <td>
               <a href="@{Location $ bookLocation book}">#{bookLocation book}
             <td>
-              <a href="@{Category $ bookCategory book}">
-                <abbr title="#{categoryName $ bookCategory book}">#{categoryCode $ bookCategory book}</abbr>
+              <a href="@{Category $ bookCategoryCode book}">
+                <abbr title="#{categoryName (bookCategory book categories)}">#{bookCategoryCode book}</abbr>
             <td>
               <a href="@{Borrower $ bookBorrower book}">#{bookBorrower book}
             <td .meta>

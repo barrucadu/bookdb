@@ -2,15 +2,16 @@
 TODO: Use digestive-functors to generate this form
 
 Template vars:
- - isbn :: Maybe Text, the isbn from the prior search
- - btitle :: Maybe Text, the title from the prior search
- - subtitle :: Maybe Text, the subtitle from the prior search
- - author :: Maybe Text, the author from the prior search
+ - categories :: [BookCategory], the list of categories
+ - isbn :: Text, the isbn from the prior search
+ - btitle :: Text, the title from the prior search
+ - subtitle :: Text, the subtitle from the prior search
+ - author :: Text, the author from the prior search
  - matchread :: Bool, the match read from the prior search
  - matchunread :: Bool, the match unread from the prior search
- - location :: Maybe Text, the location from the prior search
- - category :: Maybe Text, the category from the prior search
- - borrower :: Maybe Text, the borrower from the prior search
+ - location :: Text, the location from the prior search
+ - category :: BookCategory, the category from the prior search
+ - borrower :: Text, the borrower from the prior search
  - books :: [Book], the books matching the prior search
  - authors :: Int, the number of authors matching the prior search
  - read :: Int, the number of read books matching the prior search
@@ -20,16 +21,16 @@ Template vars:
     <ol>
       <li>
         <label for="isbn">ISBN/ID
-        <input type="text" #isbn name="isbn" value="#{fromMaybe "" isbn}">
+        <input type="text" #isbn name="isbn" value="#{isbn}">
       <li>
         <label for="title">Title
-        <input type="text" #title name="title" value="#{fromMaybe "" btitle}">
+        <input type="text" #title name="title" value="#{btitle}">
       <li>
         <label for="subtitle">Subtitle
-        <input type="text" #subtitle name="subtitle" value="#{fromMaybe "" subtitle}">
+        <input type="text" #subtitle name="subtitle" value="#{subtitle}">
       <li>
         <label for="author">Author
-        <input type="text" #author name="author" value="#{fromMaybe "" author}">
+        <input type="text" #author name="author" value="#{author}">
       <li>
         <label for="matchread">Match Read
         $if matchread
@@ -44,29 +45,29 @@ Template vars:
           <input type="checkbox" #matchunread name="matchunread" value="yes">
       <li>
         <label for="location">Location
-        <input type="text" #location name="location" value="#{fromMaybe "" location}">
+        <input type="text" #location name="location" value="#{location}">
       <li>
         <label for="category">Category
         <select #category name="category">
           <option value="">
 
-          $forall cat <- allCategories
-            $if Just cat == category
+          $forall cat <- categories
+            $if cat == category
               <option value="#{categoryCode cat}" selected>
-                $if cat == Uncategorised
+                $if categoryName cat == "Uncategorised"
                   #{categoryName cat}
                 $else
                   #{categoryCode cat} - #{categoryName cat}
             $else
               <option value="#{categoryCode cat}">
-                $if cat == Uncategorised
+                $if categoryName cat == "Uncategorised"
                   #{categoryName cat}
                 $else
                   #{categoryCode cat} - #{categoryName cat}
       <li>
         <label for="borrower">Borrower
-        <input type="text" #borrower name="borrower" value="#{fromMaybe "" borrower}">
+        <input type="text" #borrower name="borrower" value="#{borrower}">
       <li>
         <input type="submit" value="Search">
 
-^{list books authors (Just read) False}
+^{list categories books authors (Just read) False}

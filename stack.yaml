@@ -1,9 +1,9 @@
 flags: {}
 packages:
 - '.'
+resolver: lts-12.0
 extra-deps:
-- sockaddr-0.0.0
-resolver: lts-5.5
+- web-routes-th-0.22.6.3
 nix:
   enable: true
   packages: [gcc zlib]
