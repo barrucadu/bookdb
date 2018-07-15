@@ -25,22 +25,14 @@ module Requests
     , param'
     , hasParam) where
 
-import Prelude hiding (writeFile)
-
 import Blaze.ByteString.Builder (Builder)
-import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Reader (ReaderT, ask)
 import Data.ByteString.Lazy (ByteString)
 import Data.ConfigFile (ConfigParser)
 import Data.Maybe (isJust, fromMaybe)
-import Data.Monoid ((<>))
-import Data.Text (Text, pack)
-import Data.Time.Clock (getCurrentTime)
-import Data.Time.Format (formatTime, defaultTimeLocale)
+import Data.Text (Text)
 import Database.Selda (SeldaM)
-import Network.HTTP.Types.Method (Method)
 import Network.HTTP.Types.Status (Status(..), ok200)
-import Network.Socket (SockAddr)
 import Network.Wai (Response, responseBuilder)
 import Network.Wai.Parse (FileInfo(..))
 import Text.Blaze.Html (Html)
@@ -49,16 +41,7 @@ import Web.Routes.PathInfo (PathInfo(..))
 
 -- |Type to represent a Seacat request
 data Request r = Request
-    { _remoteHost :: SockAddr
-    -- ^ The remote host
-
-    , _uri :: Text
-    -- ^ The request URI
-
-    , _method :: Method
-    -- ^ The request method
-
-    , _params :: [(Text, Text)]
+    { _params :: [(Text, Text)]
     -- ^ The parameters, parsed once before the top-level handler is
     -- called.
 
@@ -84,18 +67,6 @@ type RequestProcessor r = ReaderT (Request r) SeldaM
 type Handler r = RequestProcessor r Response
 
 -------------------------
-
--- | Get the remote host from a 'RequestProcessor'
-askRemoteHost :: RequestProcessor r SockAddr
-askRemoteHost = _remoteHost <$> request
-
--- | Get the request URI from a 'RequestProcessor'
-askUri :: RequestProcessor r Text
-askUri = _uri <$> request
-
--- | Get the request method from a 'RequestProcessor'
-askMethod :: RequestProcessor r Method
-askMethod = _method <$> request
 
 -- |Get the configuration from a `RequestProcessor`
 askConf :: RequestProcessor r ConfigParser
@@ -137,7 +108,7 @@ htmlUrlResponse' status html = do
 -- |Produce a response from the given status and ByteString
 -- builder. This sets a content-type of UTF-8 HTML.
 respond :: Status -> Builder -> Handler r
-respond status = do
+respond status =
   pure . responseBuilder status [("Content-Type", "text/html; charset=utf-8")]
 
 -------------------------

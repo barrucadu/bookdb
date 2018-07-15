@@ -24,7 +24,7 @@ import Handler.List
 import Handler.Stats
 import Network.HTTP.Types.Method (StdMethod(..), parseMethod)
 import Network.HTTP.Types.Status (notFound404, methodNotAllowed405, internalServerError500)
-import Network.Wai (remoteHost, rawPathInfo, requestMethod, queryString)
+import Network.Wai (requestMethod, queryString)
 import Network.Wai.Handler.Warp (runSettings, setHost, setPort)
 import Network.Wai.Middleware.RequestLogger (logStdout)
 import Network.Wai.Middleware.Static (addBase, staticPolicy)
@@ -156,10 +156,7 @@ serve route on404 on500 conf conn = do
       (ps, fs) <- parseRequestBody lbsBackEnd req
       let ps' = map (second $ fromMaybe "") $ queryString req
       let cry = Request
-                  { _remoteHost = remoteHost req
-                  , _uri    = pack . B8.unpack $ rawPathInfo req
-                  , _method = requestMethod req
-                  , _params = map (decodeUtf8 *** decodeUtf8) (ps ++ ps')
+                  { _params = map (decodeUtf8 *** decodeUtf8) (ps ++ ps')
                   , _files  = map (first decodeUtf8) fs
                   , _conf   = conf
                   , _mkurl  = mkurl

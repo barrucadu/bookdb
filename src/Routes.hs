@@ -2,7 +2,6 @@
 
 module Routes where
 
-import Data.Maybe (fromMaybe)
 import Data.Text (Text, toLower)
 import Web.Routes (PathInfo(..), pToken)
 import Web.Routes.TH (derivePathInfo', standard)
