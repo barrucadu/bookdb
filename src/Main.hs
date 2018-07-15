@@ -4,11 +4,10 @@ module Main where
 
 import Prelude hiding (userError)
 
-import Configuration (ConfigParser, defaults, get, loadConfigFile)
+import Configuration
 import Control.Arrow ((***), first, second)
 import Control.Monad (when)
 import Control.Monad.Trans.Reader (runReaderT)
-import Data.Either.Utils (forceEither)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.String (fromString)
@@ -55,7 +54,7 @@ main = do
 
   case config of
     Just conf -> do
-      let connstr = get conf "database_file"
+      let connstr = cfgDatabaseFile conf
       conn <- sqliteOpen connstr
       case head args of
            "run"    -> serve route error404 error500 conf conn
@@ -117,12 +116,12 @@ serve :: PathInfo r
       => (StdMethod -> r -> Handler r) -- ^ Routing function
       -> (String -> Handler r) -- ^ 404 handler.
       -> (String -> Handler r) -- ^ 500 handler.
-      -> ConfigParser -- ^ The configuration
+      -> Configuration -- ^ The configuration
       -> SeldaConnection
       -> IO ()
 serve route on404 on500 conf conn = do
-  let host = get conf "host"
-  let port = get conf "port"
+  let host = cfgHost conf
+  let port = cfgPort conf
   let settings = setHost (fromString host) . setPort port $ W.defaultSettings
   putStrLn $ "Listening on " <> host <> ":" <> show port
   runSettings settings runner
@@ -140,8 +139,8 @@ serve route on404 on500 conf conn = do
           Right url -> Right (Right url)
           Left  _   -> Right (Left  bs)
 
-        webroot  = get conf "web_root"
-        fileroot = get conf "file_root"
+        webroot  = cfgWebRoot conf
+        fileroot = cfgFileRoot conf
 
     process mkurl path req receiver = requestHandler `catchIOError` runError
       where
@@ -150,7 +149,7 @@ serve route on404 on500 conf conn = do
           Left  uri -> runHandler' $ on404 (B8.unpack uri)
         runError err   = runHandler' $ on500 (show err)
         runHandler' h  = runHandler h mkurl req receiver
-        method         = forceEither . parseMethod . requestMethod $ req
+        method         = either (error . show) id . parseMethod . requestMethod $ req
 
     runHandler h mkurl req receiver = do
       (ps, fs) <- parseRequestBody lbsBackEnd req

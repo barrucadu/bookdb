@@ -173,7 +173,7 @@ uploadCover = do
 
   where
   save fbits (FileInfo name _ content) = do
-    fileroot <- conf "file_root"
+    fileroot <- cfgFileRoot <$> askConf
     let ext    = takeExtension (map (chr . fromIntegral) $ B.unpack name)
     let path   = joinPath $ fileroot : fbits
     let fname' = path ++ ext

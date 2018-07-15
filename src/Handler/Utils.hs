@@ -18,7 +18,7 @@ import Requests
 onReadWrite :: Handler Sitemap -- ^ The handler
             -> Handler Sitemap
 onReadWrite handler = do
-  readonly <- conf "readonly"
+  readonly <- cfgReadOnly <$> askConf
 
   if readonly
   then userError "Database is read-only"

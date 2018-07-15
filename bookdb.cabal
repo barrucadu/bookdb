@@ -71,21 +71,24 @@ executable bookdb
   
   -- Other library packages from which modules are imported.
   build-depends:       base                  >=4.8 && <5
-                     , ConfigFile
-                     , MissingH
                      , blaze-builder
                      , blaze-html
                      , bytestring
                      , containers
                      , filepath
+                     , htoml
                      , http-types
                      , mtl
                      , network
+                     , parsec
                      , random
+                     , selda
+                     , selda-sqlite
                      , shakespeare
                      , text
                      , time
                      , transformers
+                     , unordered-containers
                      , wai
                      , wai-extra
                      , wai-middleware-static
@@ -93,9 +96,7 @@ executable bookdb
                      , web-routes
                      , web-routes-th
                      , web-routes-wai
-                     , selda
-                     , selda-sqlite
-  
+
   -- Directories containing source files.
   hs-source-dirs:      src
   

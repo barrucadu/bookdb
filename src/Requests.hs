@@ -28,7 +28,6 @@ module Requests
 import Blaze.ByteString.Builder (Builder)
 import Control.Monad.Trans.Reader (ReaderT, ask)
 import Data.ByteString.Lazy (ByteString)
-import Data.ConfigFile (ConfigParser)
 import Data.Maybe (isJust, fromMaybe)
 import Data.Text (Text)
 import Database.Selda (SeldaM)
@@ -38,6 +37,8 @@ import Network.Wai.Parse (FileInfo(..))
 import Text.Blaze.Html (Html)
 import Text.Blaze.Html.Renderer.Utf8 (renderHtmlBuilder)
 import Web.Routes.PathInfo (PathInfo(..))
+
+import Configuration (Configuration)
 
 -- |Type to represent a Seacat request
 data Request r = Request
@@ -49,7 +50,7 @@ data Request r = Request
     -- ^ The files, stored in memory as lazy bytestrings, and parsed
     -- out of the request once at the beginning.
 
-    , _conf :: ConfigParser
+    , _conf :: Configuration
     -- ^ The contents of the configuration file
 
     , _mkurl :: MkUrl r
@@ -69,7 +70,7 @@ type Handler r = RequestProcessor r Response
 -------------------------
 
 -- |Get the configuration from a `RequestProcessor`
-askConf :: RequestProcessor r ConfigParser
+askConf :: RequestProcessor r Configuration
 askConf = _conf <$> request
 
 -- |Get the URL maker from a `RequestProcessor`
