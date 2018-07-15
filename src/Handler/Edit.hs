@@ -16,12 +16,12 @@ import Prelude hiding (null, userError)
 
 import Control.Applicative ((<|>))
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Class (lift)
 import Data.Char (chr)
 import Data.List (sort)
 import Data.Text (Text, null, intercalate, splitOn, unpack, pack)
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Clock (UTCTime(..))
-import Database.Persist (Entity(..), insert, replace, delete)
 import System.FilePath (joinPath, takeExtension, takeFileName)
 import Text.Read (readMaybe)
 import Database
@@ -69,27 +69,29 @@ commitDelete = onReadWrite . withBook commitDelete'
 add' :: Handler Sitemap
 add' = htmlUrlResponse T.addForm
 
-edit' :: Entity Book -> Handler Sitemap
-edit' (Entity _ book) = htmlUrlResponse $ T.editForm book
+edit' :: Book -> Handler Sitemap
+edit' book = htmlUrlResponse $ T.editForm book
 
-delete' :: Entity Book -> Handler Sitemap
-delete' (Entity _ book) = htmlUrlResponse $ T.confirmDelete book
+delete' :: Book -> Handler Sitemap
+delete' book = htmlUrlResponse $ T.confirmDelete book
 
 -------------------------
 
 commitAdd' :: Handler Sitemap
 commitAdd' = mutate Nothing
 
-commitEdit' :: Entity Book -> Handler Sitemap
+commitEdit' :: Book -> Handler Sitemap
 commitEdit' = mutate . Just
 
-commitDelete' :: Entity Book -> Handler Sitemap
-commitDelete' (Entity bookId _) = Database.Persist.delete bookId >> information "Book deleted successfully"
+commitDelete' :: Book -> Handler Sitemap
+commitDelete' book = do
+  lift (lift (deleteBook (bookIsbn book)))
+  information "Book deleted successfully"
 
 -------------------------
 
 -- |Mutate a book, and display a notification when done.
-mutate :: Maybe (Entity Book) -- ^ The book to mutate, or Nothing to insert
+mutate :: Maybe Book -- ^ The book to mutate, or Nothing to insert
        -> Handler Sitemap
 mutate book = do
   -- do cover upload
@@ -114,7 +116,7 @@ mutate book = do
   if null isbn || null title || null author || null location
   then userError "Missing required fields"
   else do
-    let cover'      = cover <|> (book >>= \(Entity _ b) -> bookCover b)
+    let cover'      = cover <|> (book >>= bookCover)
     let author'     = sortAuthors author
     let translator' = empty translator
     let editor'     = empty editor
@@ -124,11 +126,15 @@ mutate book = do
 
     case (toDate lastread, categoryOf category) of
       (Just lastread', Just category') -> do
-        let newbook = Book cover' isbn title subtitle volume fascicle voltitle author' translator' editor' sorting' read' lastread' nowreading' location borrower category'
+        let newbook = Book isbn title subtitle cover' volume fascicle voltitle author' translator' editor' sorting' read' lastread' nowreading' location borrower category'
 
         case book of
-          Just (Entity bookId _) -> replace bookId newbook >> information "Book updated successfully"
-          Nothing -> insert newbook >> information "Book added successfully"
+          Just b -> do
+            lift (lift (replaceBook (bookIsbn b) newbook))
+            information "Book updated successfully"
+          Nothing -> do
+            lift (lift (insertBook newbook))
+            information "Book added successfully"
 
       (Nothing, _) -> userError "Invalid date format, expected yyyy-mm-dd"
       (_, Nothing) -> userError "Invalid category selection"

@@ -10,7 +10,7 @@ name:                bookdb
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.1.0.0
+version:             1.0.0.0
 
 -- A short (one-line) description of the package.
 synopsis:            Web app to keep track of a personal library
@@ -77,17 +77,12 @@ executable bookdb
                      , blaze-html
                      , bytestring
                      , containers
-                     , esqueleto
                      , filepath
                      , http-types
                      , monad-logger
                      , mtl
                      , network
-                     , persistent
-                     , persistent-sqlite
-                     , persistent-template
                      , random
-                     , resourcet
                      , shakespeare
                      , sockaddr
                      , text
@@ -100,6 +95,8 @@ executable bookdb
                      , web-routes
                      , web-routes-th
                      , web-routes-wai
+                     , selda
+                     , selda-sqlite
   
   -- Directories containing source files.
   hs-source-dirs:      src

@@ -30,9 +30,7 @@ import Prelude hiding (writeFile)
 import Blaze.ByteString.Builder (Builder)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Logger (LoggingT, logErrorN, logInfoN, logDebugN)
-import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Reader (ReaderT, ask)
-import Control.Monad.Trans.Resource (ResourceT)
 import Data.ByteString.Lazy (ByteString)
 import Data.ConfigFile (ConfigParser)
 import Data.Maybe (isJust, fromMaybe)
@@ -40,7 +38,7 @@ import Data.Monoid ((<>))
 import Data.Text (Text, pack)
 import Data.Time.Clock (getCurrentTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
-import Database.Persist.Sql (SqlPersistT)
+import Database.Selda (SeldaM)
 import Network.HTTP.Types.Method (Method)
 import Network.HTTP.Types.Status (Status(..), ok200)
 import Network.SockAddr (showSockAddr)
@@ -81,7 +79,7 @@ data Request r = Request
 type MkUrl r = r -> [(Text, Text)] -> Text
 
 -- |Function which handles a request
-type RequestProcessor r = SqlPersistT (ReaderT (Request r) (LoggingT (ResourceT IO)))
+type RequestProcessor r = ReaderT (Request r) (LoggingT SeldaM)
 
 -- |`RequestProcessor` specialised to producing a `Response`. All
 -- routes should go to a function of type `PathInfo r => Handler r`.
@@ -119,7 +117,7 @@ askFiles = _files <$> request
 
 -- |Get the request from a `RequestProcessor`
 request :: RequestProcessor r (Request r)
-request = lift ask
+request = ask
 
 -------------------------
 

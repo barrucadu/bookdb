@@ -1,66 +1,115 @@
-{-# LANGUAGE EmptyDataDecls             #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE QuasiQuotes                #-}
-{-# LANGUAGE TemplateHaskell            #-}
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-missing-signatures -fsimplifier-phases=0 #-}
+
 module Database (module Database, module Types) where
 
+import Control.Monad (unless)
+import Data.Maybe (listToMaybe)
+import Data.Monoid ((<>))
 import Data.Text (Text)
-import Data.Time (UTCTime)
-import Database.Persist.TH
+import Data.Time.Clock (UTCTime)
+import Database.Selda
+import Database.Selda.Generic
 
 import Types
 
-share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
-Book
-    -- The filename of the cover image
-    cover Text Maybe
+-- | The table of books.
+books :: GenTable Book
+books = genTable "book" [bookIsbn :- primaryGen]
 
-    isbn     Text
-    title    Text
-    subtitle Text
+-- | Create the table.
+migrate :: SeldaM ()
+migrate = createTable (gen books)
 
-    -- It might appear odd not to have the volume and fascicle numbers
-    -- as ints, but then that would prevent things like "4a" being a
-    -- valid volume number. For something as flexible as books, using
-    -- Text is probably the most future-proof.
-    volume   Text
-    fascicle Text
-    voltitle Text
+-- selectors
+dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: dbVoltitle :*: dbAuthor :*: dbTranslator :*: dbEditor :*: dbSorting :*: dbRead :*: dbLastRead :*: dbNowReading :*: dbLocation :*: dbBorrower :*: dbCategory = selectors (gen books)
 
-    -- Multiple authors can be sepaarted by " & ", and they will be
-    -- displayed in a list on the book list page. Perhaps a [Text]
-    -- would be more appropriate here, but then it would need to be
-    -- serialised when editing and unserialised when adding. Just
-    -- using a Text means it only has to be unserialised in one place.
-    author     Text
-    translator Text Maybe
-    editor     Text Maybe
+-------------------------------------------------------------------------------
+-- * Queries
 
-    -- Optional sorting key field. If this is Nothing, the author is
-    -- used instead.
-    sorting Text Maybe
+-- | All books.
+allBooks :: SeldaM [Book]
+allBooks = map fromRel <$> query (select (gen books))
 
-    -- lastread is only a Maybe because I don't have last read dates
-    -- for all my books: only those since I first made bookdb. Really,
-    -- I should re-read those books which I haven't touched for that
-    -- long.
-    read       Bool
-    lastread   UTCTime Maybe
-    nowreading Bool default=0
+-- | Find a book by ISBN.
+findBook :: Text -> SeldaM (Maybe Book)
+findBook isbn = do
+  results <- query $ do
+    b <- select (gen books)
+    restrict (b ! dbIsbn .== literal isbn)
+    pure b
+  pure (listToMaybe (map fromRel results))
 
-    -- These work, if I only have one copy of each book. If I have
-    -- multiple copies, things start to get a bit messy.
-    location Text
-    borrower Text
-    category BookCategory default=Uncategorised
+-- | Insert a book.
+insertBook :: Book -> SeldaM ()
+insertBook b = insertGen_ books [b]
 
-    UniqueBookIsbn isbn
+-- | Replace a book by ISBN.
+replaceBook :: Text -> Book -> SeldaM ()
+replaceBook isbn b = transaction $ do
+  deleteBook isbn
+  insertBook b
 
-    deriving Read
-    deriving Show
-|]
+-- | Delete a book by ISBN.
+deleteBook :: Text -> SeldaM ()
+deleteBook isbn = deleteFrom_ (gen books) (\b -> b ! dbIsbn .== literal isbn)
+
+-- | List books read since a given time.
+readSince :: UTCTime -> SeldaM [Book]
+readSince lastRead = do
+  results <- query $ do
+    b <- select (gen books)
+    restrict (b ! dbRead)
+    restrict (b ! dbLastRead .>= literal (Just lastRead))
+    order (b ! dbLastRead) descending
+    pure b
+  pure (map fromRel results)
+
+-- | List read books, least recently read first
+leastRecent :: SeldaM [Book]
+leastRecent = do
+  results <- query $ do
+    b <- select (gen books)
+    restrict (b ! dbRead)
+    order (b ! dbLastRead) ascending
+    pure b
+  pure (map fromRel results)
+
+-- | Search the books.
+searchBooks
+  :: Text -- ^ ISBN
+  -> Text -- ^ Title
+  -> Text -- ^ Subtitle
+  -> Text -- ^ Author
+  -> Text -- ^ Location
+  -> Text -- ^ Borrower
+  -> BookCategory -- ^ Category (exact match)
+  -> Bool -- ^ Permit read books
+  -> Bool -- ^ Permit unread books
+  -> SeldaM [Book]
+searchBooks isbn title subtitle author location borrower category matchread matchunread = do
+  results <- query $ do
+    b <- select (gen books)
+    let l s = literal ("%" <> s <> "%")
+    restrict (b ! dbIsbn     `like` l isbn)
+    restrict (b ! dbTitle    `like` l title)
+    restrict (b ! dbSubtitle `like` l subtitle)
+    restrict (b ! dbAuthor   `like` l author)
+    restrict (b ! dbLocation `like` l location)
+    restrict (b ! dbBorrower `like` l borrower)
+    restrict (b ! dbCategory .== literal category)
+    unless matchread $
+      restrict (not_ (b ! dbRead))
+    unless matchunread $
+      restrict (b ! dbRead)
+    pure b
+  pure (map fromRel results)
+
+-- | Limited form of search: use the given restriction.
+restrictBooks :: (Cols s (Relation Book) -> Col s Bool) -> SeldaM [Book]
+restrictBooks f = do
+  results <- query $ do
+    b <- select (gen books)
+    restrict (f b)
+    pure b
+  pure (map fromRel results)

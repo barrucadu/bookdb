@@ -41,15 +41,15 @@ index books =
       body  = list books (numAuthors books) (Just $ numRead books) False
   in $(hamletFile "templates/wrapper.hamlet")
 
-search :: Maybe Text -- ^ The ISBN
-       -> Maybe Text -- ^ The title
-       -> Maybe Text -- ^ The subtitle
-       -> Maybe Text -- ^ The author
+search :: Text -- ^ The ISBN
+       -> Text -- ^ The title
+       -> Text -- ^ The subtitle
+       -> Text -- ^ The author
        -> Bool -- ^ Whether to match read
        -> Bool -- ^ Whether to match unread
-       -> Maybe Text -- ^ The location
-       -> Maybe Text -- ^ The borrower
-       -> Maybe BookCategory -- ^ The category
+       -> Text -- ^ The location
+       -> Text -- ^ The borrower
+       -> BookCategory -- ^ The category
        -> [Book] -- ^ Books matching the search
        -> HtmlUrl Sitemap
 search isbn btitle subtitle author matchread matchunread location borrower category books =
@@ -161,10 +161,6 @@ pprint book = title <> subtitle <> volume <> voltitle
         voltitle
           | not . null $ bookVoltitle book = " " <> bookVoltitle book
           | otherwise = ""
-
--- |A null book
-emptyBook :: Book
-emptyBook = Book Nothing "" "" "" "" "" "" "" Nothing Nothing Nothing False Nothing False "" "" Uncategorised
 
 -- |Choice
 bool :: Bool -- ^ Condition
