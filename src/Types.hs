@@ -4,8 +4,9 @@
 module Types where
 
 import GHC.Generics (Generic)
-import Data.Maybe (listToMaybe)
-import Data.Text (Text, toLower)
+import Data.List (find)
+import Data.Maybe (fromMaybe)
+import Data.Text (Text)
 import Data.Time (UTCTime)
 
 -------------------------------------------------------------------------------
@@ -49,55 +50,42 @@ data Book = Book
 
   -- These work, if I only have one copy of each book. If I have
   -- multiple copies, things start to get a bit messy.
-  , bookLocation :: Text
-  , bookBorrower :: Text
-  , bookCategory :: BookCategory
+  , bookLocation     :: Text
+  , bookBorrower     :: Text
+  , bookCategoryCode :: Text
   }
   deriving (Generic, Show)
 
 -- |A null book
 emptyBook :: Book
-emptyBook = Book "" "" "" Nothing "" "" "" "" Nothing Nothing Nothing False Nothing False "" "" Uncategorised
+emptyBook = Book "" "" "" Nothing "" "" "" "" Nothing Nothing Nothing False Nothing False "" "" "-"
+
+-- | A book's category.  Returns the "Uncategorised" category if
+-- there's no match.
+bookCategory :: Book -> [BookCategory] -> BookCategory
+bookCategory = categoryByCode . bookCategoryCode
 
 --------------------------------------------------------------------------------
 -- Book Categories
 
-data BookCategory = ComputerScience | Programming | Philosophy | Politics | History | ReligionAndMythology | Poetry | Manga | MiscFiction | MiscNonFiction | Uncategorised
-  deriving (Eq, Enum, Bounded, Generic, Read, Show)
+data BookCategory = BookCategory
+  { categoryCode :: Text
+  , categoryName :: Text
+  }
+  deriving (Generic, Eq, Show)
 
--- | All categories, in the order they appear in lists in the
--- front-end.
-allCategories :: [BookCategory]
-allCategories = [ComputerScience .. Uncategorised]
+-- | Find a category by code.  Returns 'uncategorised' if there's no
+-- match.
+categoryByCode :: Text -> [BookCategory] -> BookCategory
+categoryByCode code = fromMaybe uncategorised . categoryByCode' code
 
--- | Get the short code name for each category
-categoryCode :: BookCategory -> Text
-categoryCode ComputerScience = "CS"
-categoryCode Programming     = "PR"
-categoryCode Philosophy      = "PH"
-categoryCode Politics        = "PO"
-categoryCode History         = "HI"
-categoryCode ReligionAndMythology = "RM"
-categoryCode Poetry          = "P"
-categoryCode Manga           = "M"
-categoryCode MiscFiction     = "F"
-categoryCode MiscNonFiction  = "NF"
-categoryCode Uncategorised   = "-"
+-- | Find a category by code.
+categoryByCode' :: Text -> [BookCategory] -> Maybe BookCategory
+categoryByCode' code = find (\c -> categoryCode c == code)
 
--- | Get the long name for each category
-categoryName :: BookCategory -> Text
-categoryName ComputerScience = "Computer Science"
-categoryName Programming     = "Programming"
-categoryName Philosophy      = "Philosophy"
-categoryName Politics        = "Politics"
-categoryName History         = "History"
-categoryName ReligionAndMythology = "Religion, Mythology, & Folklore"
-categoryName Poetry          = "Poetry"
-categoryName Manga           = "Manga"
-categoryName MiscFiction     = "Miscellaneous Fiction"
-categoryName MiscNonFiction  = "Miscellaneous Nonfiction"
-categoryName Uncategorised   = "Uncategorised"
-
--- | Category code reverse lookup (case insensitive)
-categoryOf :: Text -> Maybe BookCategory
-categoryOf code = listToMaybe [cat | cat <- allCategories, toLower (categoryCode cat) == toLower code]
+-- | The "uncategorised" category.
+uncategorised :: BookCategory
+uncategorised = BookCategory
+  { categoryCode = "-"
+  , categoryName = "Uncategorised"
+  }

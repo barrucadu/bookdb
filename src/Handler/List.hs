@@ -24,33 +24,37 @@ import qualified Handler.Templates as T
 
 list :: Handler Sitemap
 list = do
+  categories <- lift allCategories
   books <- sortBooks <$> lift allBooks
 
-  htmlUrlResponse $ T.index books
+  htmlUrlResponse $ T.index categories books
 
 search :: Handler Sitemap
 search = do
-  isbn        <- fromMaybe "" <$> param "isbn"
-  title       <- fromMaybe "" <$> param "title"
-  subtitle    <- fromMaybe "" <$> param "subtitle"
-  author      <- fromMaybe "" <$> param "author"
+  isbn        <- param' "isbn" ""
+  title       <- param' "title" ""
+  subtitle    <- param' "subtitle" ""
+  author      <- param' "author" ""
   matchread   <- hasParam "matchread"
   matchunread <- hasParam "matchunread"
-  location    <- fromMaybe "" <$> param "location"
-  category    <- fromMaybe Uncategorised <$> ((>>= categoryOf) <$> param "category")
-  borrower    <- fromMaybe "" <$> param "borrower"
+  location    <- param' "location" ""
+  code        <- param' "category" "-"
+  borrower    <- param' "borrower" ""
 
+  categories <- lift allCategories
+  let category = categoryByCode code categories
   books <- sortBooks <$> lift (searchBooks isbn title subtitle author location borrower category matchread matchunread)
 
-  htmlUrlResponse $ T.search isbn title subtitle author matchread matchunread location borrower category books
+  htmlUrlResponse $ T.search categories isbn title subtitle author matchread matchunread location borrower category books
 
 -- |Filter by field value
 restrict :: (Cols s (Relation Book) -> Col s Bool) -- ^ The filter
          -> Handler Sitemap
 restrict by = do
+  categories <- lift allCategories
   books <- sortBooks <$> lift (restrictBooks by)
 
-  htmlUrlResponse $ T.index books
+  htmlUrlResponse $ T.index categories books
 
 -- | Sort a book list.
 sortBooks :: [Book] -> [Book]

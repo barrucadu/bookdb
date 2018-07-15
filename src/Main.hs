@@ -83,7 +83,7 @@ route GET (Editor e)     = restrict (\b -> b ! dbEditor .== literal (Just e))
 route GET Read           = restrict (\b -> b ! dbRead)
 route GET Unread         = restrict (\b -> not_ (b ! dbRead))
 route GET (Location l)   = restrict (\b -> b ! dbLocation .== literal l)
-route GET (Category c)   = restrict (\b -> b ! dbCategory .== literal c)
+route GET (Category c)   = restrict (\b -> b ! dbCategoryCode .== literal c)
 route GET (Borrower w)   = restrict (\b -> b ! dbBorrower .== literal w)
 
 route GET Add        = add

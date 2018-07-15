@@ -15,14 +15,22 @@ import Types
 
 -- | The table of books.
 books :: GenTable Book
-books = genTable "book" [bookIsbn :- primaryGen]
+books = genTable "books" [bookIsbn :- primaryGen, bookCategoryCode :- fkGen (gen categories) dbCode]
 
--- | Create the table.
+-- | The table of categories
+categories :: GenTable BookCategory
+categories = genTable "book_categories" [categoryCode :- primaryGen]
+
+-- | Create the tables
 migrate :: SeldaM ()
-migrate = createTable (gen books)
+migrate = do
+  createTable (gen books)
+  createTable (gen categories)
 
 -- selectors
-dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: dbVoltitle :*: dbAuthor :*: dbTranslator :*: dbEditor :*: dbSorting :*: dbRead :*: dbLastRead :*: dbNowReading :*: dbLocation :*: dbBorrower :*: dbCategory = selectors (gen books)
+dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: dbVoltitle :*: dbAuthor :*: dbTranslator :*: dbEditor :*: dbSorting :*: dbRead :*: dbLastRead :*: dbNowReading :*: dbLocation :*: dbBorrower :*: dbCategoryCode = selectors (gen books)
+
+dbCode :*: dbName = selectors (gen categories)
 
 -------------------------------------------------------------------------------
 -- * Queries
@@ -30,6 +38,10 @@ dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: db
 -- | All books.
 allBooks :: SeldaM [Book]
 allBooks = map fromRel <$> query (select (gen books))
+
+-- | All categories.
+allCategories :: SeldaM [BookCategory]
+allCategories = map fromRel <$> query (select (gen categories))
 
 -- | Find a book by ISBN.
 findBook :: Text -> SeldaM (Maybe Book)
@@ -97,7 +109,7 @@ searchBooks isbn title subtitle author location borrower category matchread matc
     restrict (b ! dbAuthor   `like` l author)
     restrict (b ! dbLocation `like` l location)
     restrict (b ! dbBorrower `like` l borrower)
-    restrict (b ! dbCategory .== literal category)
+    restrict (b ! dbCategoryCode .== literal (categoryCode category))
     unless matchread $
       restrict (not_ (b ! dbRead))
     unless matchunread $

@@ -2,6 +2,7 @@
 TODO: Use digestive-functors to generate this form
 
 Template vars:
+ - categories :: [BookCategory], the list of categories
  - isbn :: Text, the isbn from the prior search
  - btitle :: Text, the title from the prior search
  - subtitle :: Text, the subtitle from the prior search
@@ -9,7 +10,7 @@ Template vars:
  - matchread :: Bool, the match read from the prior search
  - matchunread :: Bool, the match unread from the prior search
  - location :: Text, the location from the prior search
- - category :: Text, the category from the prior search
+ - category :: BookCategory, the category from the prior search
  - borrower :: Text, the borrower from the prior search
  - books :: [Book], the books matching the prior search
  - authors :: Int, the number of authors matching the prior search
@@ -50,16 +51,16 @@ Template vars:
         <select #category name="category">
           <option value="">
 
-          $forall cat <- allCategories
+          $forall cat <- categories
             $if cat == category
               <option value="#{categoryCode cat}" selected>
-                $if cat == Uncategorised
+                $if categoryName cat == "Uncategorised"
                   #{categoryName cat}
                 $else
                   #{categoryCode cat} - #{categoryName cat}
             $else
               <option value="#{categoryCode cat}">
-                $if cat == Uncategorised
+                $if categoryName cat == "Uncategorised"
                   #{categoryName cat}
                 $else
                   #{categoryCode cat} - #{categoryName cat}
@@ -69,4 +70,4 @@ Template vars:
       <li>
         <input type="submit" value="Search">
 
-^{list books authors (Just read) False}
+^{list categories books authors (Just read) False}

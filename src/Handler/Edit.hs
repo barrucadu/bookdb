@@ -67,10 +67,14 @@ commitDelete = onReadWrite . withBook commitDelete'
 -------------------------
 
 add' :: Handler Sitemap
-add' = htmlUrlResponse T.addForm
+add' = do
+  categories <- lift allCategories
+  htmlUrlResponse $ T.addForm categories
 
 edit' :: Book -> Handler Sitemap
-edit' book = htmlUrlResponse $ T.editForm book
+edit' book = do
+  categories <- lift allCategories
+  htmlUrlResponse $ T.editForm categories book
 
 delete' :: Book -> Handler Sitemap
 delete' book = htmlUrlResponse $ T.confirmDelete book
@@ -110,12 +114,14 @@ mutate book = do
   lastread   <- param' "lastread"   ""
   nowreading <- param' "nowreading" ""
   location   <- param' "location"   ""
-  category   <- param' "category"   "-"
+  code       <- param' "category"   "-"
   borrower   <- param' "borrower"   ""
 
   if null isbn || null title || null author || null location
   then userError "Missing required fields"
   else do
+    categories <- lift allCategories
+
     let cover'      = cover <|> (book >>= bookCover)
     let author'     = sortAuthors author
     let translator' = empty translator
@@ -124,9 +130,9 @@ mutate book = do
     let read'       = set read
     let nowreading' = set nowreading
 
-    case (toDate lastread, categoryOf category) of
-      (Just lastread', Just category') -> do
-        let newbook = Book isbn title subtitle cover' volume fascicle voltitle author' translator' editor' sorting' read' lastread' nowreading' location borrower category'
+    case (toDate lastread, categoryByCode' code categories) of
+      (Just lastread', Just _) -> do
+        let newbook = Book isbn title subtitle cover' volume fascicle voltitle author' translator' editor' sorting' read' lastread' nowreading' location borrower code
 
         case book of
           Just b -> do

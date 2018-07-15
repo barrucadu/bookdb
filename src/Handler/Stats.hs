@@ -19,6 +19,7 @@ stats = do
   now <- liftIO getCurrentTime
   let ago = addUTCTime (-31536000) now
 
+  categories <- lift allCategories
   lastYearBooks <- lift $ readSince ago
   leastRecentBooks <- lift $ leastRecent
   let readDates = mapMaybe bookLastRead leastRecentBooks
@@ -30,7 +31,7 @@ stats = do
   let lastYear = map (genericLength . filter (eqYear ago)) byMonth
   let avgYear  = map ((/genericLength byYear) . genericLength) byMonth
 
-  htmlUrlResponse $ T.stats lastYearBooks leastRecentBooks thisYear lastYear avgYear
+  htmlUrlResponse $ T.stats categories lastYearBooks leastRecentBooks thisYear lastYear avgYear
 
 -- | Check if two timestamps are from the same year
 eqYear :: UTCTime -> UTCTime -> Bool

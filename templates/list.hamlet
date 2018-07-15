@@ -1,5 +1,6 @@
 <!--
 Template vars:
+ - categories :: [BookCategory], the list of all categories
  - books :: [Book], list of books
  - authors :: Int, the number of authors
  - read :: Maybe Int, the number of read books
@@ -76,8 +77,8 @@ Template vars:
             <td>
               <a href="@{Location $ bookLocation book}">#{bookLocation book}
             <td>
-              <a href="@{Category $ bookCategory book}">
-                <abbr title="#{categoryName $ bookCategory book}">#{categoryCode $ bookCategory book}</abbr>
+              <a href="@{Category $ bookCategoryCode book}">
+                <abbr title="#{categoryName (bookCategory book categories)}">#{bookCategoryCode book}</abbr>
             <td>
               <a href="@{Borrower $ bookBorrower book}">#{bookBorrower book}
             <td .meta>
