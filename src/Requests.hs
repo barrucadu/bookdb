@@ -126,10 +126,10 @@ param' :: PathInfo r
        => Text -- ^ The parameter name
        -> Text -- ^ The default value
        -> RequestProcessor r Text
-param' p d = fromMaybe d <$> lookup p <$> askParams
+param' p d = fromMaybe d . lookup p <$> askParams
 
 -- |Check if a parameter is set
 hasParam :: PathInfo r
          => Text -- ^ The parameter name
          -> RequestProcessor r Bool
-hasParam p = isJust <$> lookup p <$> askParams
+hasParam p = isJust . lookup p <$> askParams

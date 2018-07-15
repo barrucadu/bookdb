@@ -21,7 +21,7 @@ stats = do
 
   categories <- lift allCategories
   lastYearBooks <- lift $ readSince ago
-  leastRecentBooks <- lift $ leastRecent
+  leastRecentBooks <- lift leastRecent
   let readDates = mapMaybe bookLastRead leastRecentBooks
 
   let byYear  = groupBy' eqYear readDates

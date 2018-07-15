@@ -3,8 +3,6 @@
 
 module Main where
 
-import           Prelude                              hiding (userError)
-
 import           Configuration
 import           Control.Arrow                        (first, second, (***))
 import           Control.Monad                        (when)
@@ -90,7 +88,7 @@ route GET Stats  = stats
 route GET (Author a)     = restrict (\b -> b ! dbAuthor `like` literal ("%" <> a <> "%"))
 route GET (Translator t) = restrict (\b -> b ! dbTranslator .== literal (Just t))
 route GET (Editor e)     = restrict (\b -> b ! dbEditor .== literal (Just e))
-route GET Read           = restrict (\b -> b ! dbRead)
+route GET Read           = restrict (! dbRead)
 route GET Unread         = restrict (\b -> not_ (b ! dbRead))
 route GET (Location l)   = restrict (\b -> b ! dbLocation .== literal l)
 route GET (Category c)   = restrict (\b -> b ! dbCategoryCode .== literal c)
