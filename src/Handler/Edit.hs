@@ -85,7 +85,7 @@ commitEdit' = mutate . Just
 
 commitDelete' :: Book -> Handler Sitemap
 commitDelete' book = do
-  lift (lift (deleteBook (bookIsbn book)))
+  lift (deleteBook (bookIsbn book))
   information "Book deleted successfully"
 
 -------------------------
@@ -130,10 +130,10 @@ mutate book = do
 
         case book of
           Just b -> do
-            lift (lift (replaceBook (bookIsbn b) newbook))
+            lift (replaceBook (bookIsbn b) newbook)
             information "Book updated successfully"
           Nothing -> do
-            lift (lift (insertBook newbook))
+            lift (insertBook newbook)
             information "Book added successfully"
 
       (Nothing, _) -> userError "Invalid date format, expected yyyy-mm-dd"

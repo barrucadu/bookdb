@@ -30,7 +30,7 @@ withBook :: (Book -> Handler Sitemap) -- ^ The handler
          -> Text -- ^ The ISBN
          -> Handler Sitemap
 withBook handler isbn = do
-  book <- lift $ lift $ findBook isbn
+  book <- lift $ findBook isbn
   case book of
     Just b  -> handler b
     Nothing -> userError "No such book"

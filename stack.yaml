@@ -1,8 +1,6 @@
 flags: {}
 packages:
 - '.'
-extra-deps:
-- sockaddr-0.0.0
 resolver: lts-10.10
 nix:
   enable: true

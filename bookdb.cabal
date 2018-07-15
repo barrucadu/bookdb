@@ -79,12 +79,10 @@ executable bookdb
                      , containers
                      , filepath
                      , http-types
-                     , monad-logger
                      , mtl
                      , network
                      , random
                      , shakespeare
-                     , sockaddr
                      , text
                      , time
                      , transformers

@@ -9,7 +9,6 @@ import Data.Time.Clock (UTCTime, addUTCTime, getCurrentTime)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 
 import Database
-import Handler.Utils
 import Requests
 import Routes
 
@@ -20,8 +19,8 @@ stats = do
   now <- liftIO getCurrentTime
   let ago = addUTCTime (-31536000) now
 
-  lastYearBooks <- lift $ lift $ readSince ago
-  leastRecentBooks <- lift $ lift $ leastRecent
+  lastYearBooks <- lift $ readSince ago
+  leastRecentBooks <- lift $ leastRecent
   let readDates = mapMaybe bookLastRead leastRecentBooks
 
   let byYear  = groupBy' eqYear readDates

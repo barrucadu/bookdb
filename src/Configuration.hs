@@ -57,7 +57,6 @@ defaults = forceEither . readstring emptyCP $ unlines
   , "file_root     = /tmp"
   , "database_file = bookdb.sqlite"
   , "readonly      = false"
-  , "log_level     = 1"
   ]
 
 -- |Get a value from the configuration, throwing an 'IOException' if

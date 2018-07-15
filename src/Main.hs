@@ -7,8 +7,6 @@ import Prelude hiding (userError)
 import Configuration (ConfigParser, defaults, get, loadConfigFile)
 import Control.Arrow ((***), first, second)
 import Control.Monad (when)
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Logger (LoggingT, LogLevel(..), logInfoN, logErrorN, filterLogger, runStderrLoggingT)
 import Control.Monad.Trans.Reader (runReaderT)
 import Data.Either.Utils (forceEither)
 import Data.Maybe (fromMaybe)
@@ -28,6 +26,7 @@ import Network.HTTP.Types.Method (StdMethod(..), parseMethod)
 import Network.HTTP.Types.Status (notFound404, methodNotAllowed405, internalServerError500)
 import Network.Wai (remoteHost, rawPathInfo, requestMethod, queryString)
 import Network.Wai.Handler.Warp (runSettings, setHost, setPort)
+import Network.Wai.Middleware.RequestLogger (logStdout)
 import Network.Wai.Middleware.Static (addBase, staticPolicy)
 import Network.Wai.Parse (parseRequestBody, lbsBackEnd)
 import Requests
@@ -43,29 +42,31 @@ import qualified Network.Wai.Handler.Warp as W
 
 -- |Run the server
 main :: IO ()
-main = runLogging defaults $ do
-  args <- liftIO getArgs
+main = do
+  args <- getArgs
 
-  when (length args < 1) $
-    logErrorN "Expected at least one argument" >> liftIO exitFailure
+  when (length args < 1) $ do
+    putStrLn "Expected at least one argument"
+    exitFailure
 
   config <- case args of
-             (_:conffile:_) -> liftIO $ loadConfigFile conffile
+             (_:conffile:_) -> loadConfigFile conffile
              _ -> return $ Just defaults
 
   case config of
     Just conf -> do
       let connstr = get conf "database_file"
       conn <- sqliteOpen connstr
-      liftIO . runLogging conf $ case head args of
+      case head args of
            "run"    -> serve route error404 error500 conf conn
-           "makedb" -> liftIO (runSeldaT migrate conn)
+           "makedb" -> runSeldaT migrate conn
            _  -> do
-             logErrorN "Unknown command, expected 'run' or 'makedb'."
-             liftIO exitFailure
+             putStrLn "Unknown command, expected 'run' or 'makedb'."
+             exitFailure
       seldaClose conn
-
-    Nothing -> logErrorN "Failed to read configuration" >> liftIO exitFailure
+    Nothing -> do
+      putStrLn "Failed to read configuration"
+      exitFailure
 
 -- |Route a request to a handler. These do not cover static files, as
 -- Seacat handles those.
@@ -118,22 +119,19 @@ serve :: PathInfo r
       -> (String -> Handler r) -- ^ 500 handler.
       -> ConfigParser -- ^ The configuration
       -> SeldaConnection
-      -> LoggingT IO ()
+      -> IO ()
 serve route on404 on500 conf conn = do
   let host = get conf "host"
   let port = get conf "port"
-
   let settings = setHost (fromString host) . setPort port $ W.defaultSettings
-
-  logInfoN $ "Listening on " <> pack host <> ":" <> (pack . show) port
-
-  liftIO $ runSettings settings runner
+  putStrLn $ "Listening on " <> host <> ":" <> show port
+  runSettings settings runner
 
   where
     runner = handleWai_ toPathInfo' fromPathInfo' (fromString webroot) $ \mkurl ->
       -- Hamlet needs a slightly different @MkUrl@ type than what web-routes-wai gives us.
       let mkurl' r = mkurl (Right r) . map (\(a,b) -> (a, if b == "" then Nothing else Just b))
-       in staticPolicy (addBase fileroot) . process mkurl'
+       in logStdout . staticPolicy (addBase fileroot) . process mkurl'
 
       where
         toPathInfo' (Right p) = toPathInfoParams p
@@ -167,18 +165,4 @@ serve route on404 on500 conf conn = do
                   , _mkurl  = mkurl
                   }
 
-      (flip runSeldaT conn . runLogging conf . flip runReaderT cry $ h) >>= receiver
-
--------------------------
-
--- |Run the logging to stderr, cutting off messages below the
--- threshold.
-runLogging :: MonadIO m => ConfigParser -> LoggingT m a -> m a
-runLogging conf = runStderrLoggingT . filterLog conf
-
--- |Filter out log messages below the threshold.
-filterLog :: ConfigParser -> LoggingT m a -> LoggingT m a
-filterLog conf = case get conf "log_level" :: String of
-  "2" -> filterLogger $ \_ lvl -> lvl >= LevelWarn
-  "1" -> filterLogger $ \_ lvl -> lvl >= LevelInfo
-  _   -> filterLogger $ \_ _ -> True
+      (flip runSeldaT conn . flip runReaderT cry $ h) >>= receiver

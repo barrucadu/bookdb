@@ -29,7 +29,6 @@ import Prelude hiding (writeFile)
 
 import Blaze.ByteString.Builder (Builder)
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Logger (LoggingT, logErrorN, logInfoN, logDebugN)
 import Control.Monad.Trans.Reader (ReaderT, ask)
 import Data.ByteString.Lazy (ByteString)
 import Data.ConfigFile (ConfigParser)
@@ -41,7 +40,6 @@ import Data.Time.Format (formatTime, defaultTimeLocale)
 import Database.Selda (SeldaM)
 import Network.HTTP.Types.Method (Method)
 import Network.HTTP.Types.Status (Status(..), ok200)
-import Network.SockAddr (showSockAddr)
 import Network.Socket (SockAddr)
 import Network.Wai (Response, responseBuilder)
 import Network.Wai.Parse (FileInfo(..))
@@ -79,7 +77,7 @@ data Request r = Request
 type MkUrl r = r -> [(Text, Text)] -> Text
 
 -- |Function which handles a request
-type RequestProcessor r = ReaderT (Request r) (LoggingT SeldaM)
+type RequestProcessor r = ReaderT (Request r) SeldaM
 
 -- |`RequestProcessor` specialised to producing a `Response`. All
 -- routes should go to a function of type `PathInfo r => Handler r`.
@@ -139,24 +137,8 @@ htmlUrlResponse' status html = do
 -- |Produce a response from the given status and ByteString
 -- builder. This sets a content-type of UTF-8 HTML.
 respond :: Status -> Builder -> Handler r
-respond status builder = do
-  logResponse status
-  return $ responseBuilder status [("Content-Type", "text/html; charset=utf-8")] builder
-
--- | Log the handling of a response.
-logResponse :: Status -> RequestProcessor r ()
-logResponse (Status code _) = do
-  ip     <- pack . showSockAddr <$> askRemoteHost
-  time   <- pack . formatTime defaultTimeLocale "%c" <$> liftIO getCurrentTime
-  method <- pack . show <$> askMethod
-  uri    <- askUri
-
-  let message = "[" <> (pack . show) code <> "] " <> ip <> " | " <> time <> " | " <> method <> " | " <> uri
-
-  case () of
-    _ | code >= 500 -> logErrorN message
-      | code >= 400 -> logInfoN  message
-      | otherwise -> logDebugN message
+respond status = do
+  pure . responseBuilder status [("Content-Type", "text/html; charset=utf-8")]
 
 -------------------------
 

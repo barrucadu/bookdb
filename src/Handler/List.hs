@@ -12,12 +12,11 @@ import Data.List (sortBy)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Ord (Down(..), comparing)
-import Data.Text (Text, unpack, toLower)
+import Data.Text (unpack, toLower)
 import Database.Selda (Col, Cols)
 import Database.Selda.Generic (Relation)
 
 import Database
-import Handler.Utils
 import Routes
 import Requests
 
@@ -25,7 +24,7 @@ import qualified Handler.Templates as T
 
 list :: Handler Sitemap
 list = do
-  books <- sortBooks <$> lift (lift allBooks)
+  books <- sortBooks <$> lift allBooks
 
   htmlUrlResponse $ T.index books
 
@@ -41,7 +40,7 @@ search = do
   category    <- fromMaybe Uncategorised <$> ((>>= categoryOf) <$> param "category")
   borrower    <- fromMaybe "" <$> param "borrower"
 
-  books <- sortBooks <$> lift (lift (searchBooks isbn title subtitle author location borrower category matchread matchunread))
+  books <- sortBooks <$> lift (searchBooks isbn title subtitle author location borrower category matchread matchunread)
 
   htmlUrlResponse $ T.search isbn title subtitle author matchread matchunread location borrower category books
 
@@ -49,7 +48,7 @@ search = do
 restrict :: (Cols s (Relation Book) -> Col s Bool) -- ^ The filter
          -> Handler Sitemap
 restrict by = do
-  books <- sortBooks <$> lift (lift (restrictBooks by))
+  books <- sortBooks <$> lift (restrictBooks by)
 
   htmlUrlResponse $ T.index books
 
