@@ -38,11 +38,11 @@ search = do
   matchread   <- hasParam "matchread"
   matchunread <- hasParam "matchunread"
   location    <- param' "location" ""
-  code        <- param' "category" "-"
+  code        <- param' "category" ""
   borrower    <- param' "borrower" ""
 
   categories <- lift allCategories
-  let category = categoryByCode code categories
+  let category = categoryByCode' code categories
   books <- sortBooks <$> lift (searchBooks isbn title subtitle author location borrower category matchread matchunread)
 
   htmlUrlResponse $ T.search categories isbn title subtitle author matchread matchunread location borrower category books

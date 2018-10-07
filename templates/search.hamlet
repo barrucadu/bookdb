@@ -10,7 +10,7 @@ Template vars:
  - matchread :: Bool, the match read from the prior search
  - matchunread :: Bool, the match unread from the prior search
  - location :: Text, the location from the prior search
- - category :: BookCategory, the category from the prior search
+ - category :: Maybe BookCategory, the category from the prior search
  - borrower :: Text, the borrower from the prior search
  - books :: [Book], the books matching the prior search
  - authors :: Int, the number of authors matching the prior search
@@ -49,10 +49,13 @@ Template vars:
       <li>
         <label for="category">Category
         <select #category name="category">
-          <option value="">
+          $if category == Nothing
+            <option value="" selected>
+          $else
+            <option value="">
 
           $forall cat <- categories
-            $if cat == category
+            $if Just cat == category
               <option value="#{categoryCode cat}" selected>
                 $if categoryName cat == "Uncategorised"
                   #{categoryName cat}

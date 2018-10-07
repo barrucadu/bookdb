@@ -95,7 +95,7 @@ searchBooks
   -> Text -- ^ Author
   -> Text -- ^ Location
   -> Text -- ^ Borrower
-  -> BookCategory -- ^ Category (exact match)
+  -> Maybe BookCategory -- ^ Category (exact match)
   -> Bool -- ^ Permit read books
   -> Bool -- ^ Permit unread books
   -> SeldaM [Book]
@@ -109,7 +109,11 @@ searchBooks isbn title subtitle author location borrower category matchread matc
     restrict (b ! dbAuthor   `like` l author)
     restrict (b ! dbLocation `like` l location)
     restrict (b ! dbBorrower `like` l borrower)
-    restrict (b ! dbCategoryCode .== literal (categoryCode category))
+    case category of
+      Just cat ->
+        restrict (b ! dbCategoryCode .== literal (categoryCode cat))
+      Nothing ->
+        pure ()
     unless matchread $
       restrict (not_ (b ! dbRead))
     unless matchunread $

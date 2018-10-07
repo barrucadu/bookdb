@@ -52,7 +52,7 @@ search :: [BookCategory] -- ^ List of all categories
        -> Bool -- ^ Whether to match unread
        -> Text -- ^ The location
        -> Text -- ^ The borrower
-       -> BookCategory -- ^ The category
+       -> Maybe BookCategory -- ^ The category
        -> [Book] -- ^ Books matching the search
        -> HtmlUrl Sitemap
 search categories isbn btitle subtitle author matchread matchunread location borrower category books =
