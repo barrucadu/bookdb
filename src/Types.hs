@@ -4,11 +4,12 @@
 -- | Additional types and type utilities.
 module Types where
 
-import           Data.List    (find)
-import           Data.Maybe   (fromMaybe)
-import           Data.Text    (Text)
-import           Data.Time    (UTCTime)
-import           GHC.Generics (Generic)
+import           Data.List      (find)
+import           Data.Maybe     (fromMaybe)
+import           Data.Text      (Text)
+import           Data.Time      (UTCTime)
+import           Database.Selda (SqlRow)
+import           GHC.Generics   (Generic)
 
 -------------------------------------------------------------------------------
 -- Books
@@ -57,6 +58,8 @@ data Book = Book
   }
   deriving (Generic, Show)
 
+instance SqlRow Book
+
 -- |A null book
 emptyBook :: Book
 emptyBook = Book "" "" "" Nothing "" "" "" "" Nothing Nothing Nothing False Nothing False "" "" "-"
@@ -74,6 +77,8 @@ data BookCategory = BookCategory
   , categoryName :: Text
   }
   deriving (Generic, Eq, Show)
+
+instance SqlRow BookCategory
 
 -- | Find a category by code.  Returns 'uncategorised' if there's no
 -- match.

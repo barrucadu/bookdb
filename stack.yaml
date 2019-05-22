@@ -1,8 +1,8 @@
 flags: {}
 packages:
 - '.'
-resolver: lts-12.0
+resolver: lts-13.16
 extra-deps:
-- web-routes-th-0.22.6.3
+- web-routes-th-0.22.6.4
 nix:
   packages: [gcc zlib]

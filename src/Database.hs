@@ -1,5 +1,6 @@
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-missing-signatures -fsimplifier-phases=0 #-}
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module Database (module Database, module Types) where
 
@@ -9,52 +10,51 @@ import           Data.Monoid            ((<>))
 import           Data.Text              (Text)
 import           Data.Time.Clock        (UTCTime)
 import           Database.Selda
-import           Database.Selda.Generic
 
 import           Types
 
 -- | The table of books.
-books :: GenTable Book
-books = genTable "books" [bookIsbn :- primaryGen, bookCategoryCode :- fkGen (gen categories) dbCode]
+books :: Table Book
+books = table "books" [#bookIsbn :- primary, #bookCategoryCode :- foreignKey categories dbCode]
 
 -- | The table of categories
-categories :: GenTable BookCategory
-categories = genTable "book_categories" [categoryCode :- primaryGen]
+categories :: Table BookCategory
+categories = table "book_categories" [#categoryCode :- primary]
 
 -- | Create the tables
 migrate :: SeldaM ()
 migrate = do
-  createTable (gen books)
-  createTable (gen categories)
+  createTable books
+  createTable categories
 
 -- selectors
-dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: dbVoltitle :*: dbAuthor :*: dbTranslator :*: dbEditor :*: dbSorting :*: dbRead :*: dbLastRead :*: dbNowReading :*: dbLocation :*: dbBorrower :*: dbCategoryCode = selectors (gen books)
+dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: dbVoltitle :*: dbAuthor :*: dbTranslator :*: dbEditor :*: dbSorting :*: dbRead :*: dbLastRead :*: dbNowReading :*: dbLocation :*: dbBorrower :*: dbCategoryCode = selectors books
 
-dbCode :*: dbName = selectors (gen categories)
+dbCode :*: dbName = selectors categories
 
 -------------------------------------------------------------------------------
 -- * Queries
 
 -- | All books.
 allBooks :: SeldaM [Book]
-allBooks = map fromRel <$> query (select (gen books))
+allBooks = query (select books)
 
 -- | All categories.
 allCategories :: SeldaM [BookCategory]
-allCategories = map fromRel <$> query (select (gen categories))
+allCategories = query (select categories)
 
 -- | Find a book by ISBN.
 findBook :: Text -> SeldaM (Maybe Book)
 findBook isbn = do
   results <- query $ do
-    b <- select (gen books)
+    b <- select books
     restrict (b ! dbIsbn .== literal isbn)
     pure b
-  pure (listToMaybe (map fromRel results))
+  pure (listToMaybe results)
 
 -- | Insert a book.
 insertBook :: Book -> SeldaM ()
-insertBook b = insertGen_ books [b]
+insertBook b = insert_ books [b]
 
 -- | Replace a book by ISBN.
 replaceBook :: Text -> Book -> SeldaM ()
@@ -64,28 +64,24 @@ replaceBook isbn b = transaction $ do
 
 -- | Delete a book by ISBN.
 deleteBook :: Text -> SeldaM ()
-deleteBook isbn = deleteFrom_ (gen books) (\b -> b ! dbIsbn .== literal isbn)
+deleteBook isbn = deleteFrom_ books (\b -> b ! dbIsbn .== literal isbn)
 
 -- | List books read since a given time.
 readSince :: UTCTime -> SeldaM [Book]
-readSince lastRead = do
-  results <- query $ do
-    b <- select (gen books)
-    restrict (b ! dbRead)
-    restrict (b ! dbLastRead .>= literal (Just lastRead))
-    order (b ! dbLastRead) descending
-    pure b
-  pure (map fromRel results)
+readSince lastRead = query $ do
+  b <- select books
+  restrict (b ! dbRead)
+  restrict (b ! dbLastRead .>= literal (Just lastRead))
+  order (b ! dbLastRead) descending
+  pure b
 
 -- | List read books, least recently read first
 leastRecent :: SeldaM [Book]
-leastRecent = do
-  results <- query $ do
-    b <- select (gen books)
-    restrict (b ! dbRead)
-    order (b ! dbLastRead) ascending
-    pure b
-  pure (map fromRel results)
+leastRecent = query $ do
+  b <- select books
+  restrict (b ! dbRead)
+  order (b ! dbLastRead) ascending
+  pure b
 
 -- | Search the books.
 searchBooks
@@ -99,33 +95,29 @@ searchBooks
   -> Bool -- ^ Permit read books
   -> Bool -- ^ Permit unread books
   -> SeldaM [Book]
-searchBooks isbn title subtitle author location borrower category matchread matchunread = do
-  results <- query $ do
-    b <- select (gen books)
-    let l s = literal ("%" <> s <> "%")
-    restrict (b ! dbIsbn     `like` l isbn)
-    restrict (b ! dbTitle    `like` l title)
-    restrict (b ! dbSubtitle `like` l subtitle)
-    restrict (b ! dbAuthor   `like` l author)
-    restrict (b ! dbLocation `like` l location)
-    restrict (b ! dbBorrower `like` l borrower)
-    case category of
-      Just cat ->
-        restrict (b ! dbCategoryCode .== literal (categoryCode cat))
-      Nothing ->
-        pure ()
-    unless matchread $
-      restrict (not_ (b ! dbRead))
-    unless matchunread $
-      restrict (b ! dbRead)
-    pure b
-  pure (map fromRel results)
+searchBooks isbn title subtitle author location borrower category matchread matchunread = query $ do
+  b <- select books
+  let l s = literal ("%" <> s <> "%")
+  restrict (b ! dbIsbn     `like` l isbn)
+  restrict (b ! dbTitle    `like` l title)
+  restrict (b ! dbSubtitle `like` l subtitle)
+  restrict (b ! dbAuthor   `like` l author)
+  restrict (b ! dbLocation `like` l location)
+  restrict (b ! dbBorrower `like` l borrower)
+  case category of
+    Just cat ->
+      restrict (b ! dbCategoryCode .== literal (categoryCode cat))
+    Nothing ->
+      pure ()
+  unless matchread $
+    restrict (not_ (b ! dbRead))
+  unless matchunread $
+    restrict (b ! dbRead)
+  pure b
 
 -- | Limited form of search: use the given restriction.
-restrictBooks :: (Cols s (Relation Book) -> Col s Bool) -> SeldaM [Book]
-restrictBooks f = do
-  results <- query $ do
-    b <- select (gen books)
-    restrict (f b)
-    pure b
-  pure (map fromRel results)
+restrictBooks :: (Row s Book -> Col s Bool) -> SeldaM [Book]
+restrictBooks f = query $ do
+  b <- select books
+  restrict (f b)
+  pure b

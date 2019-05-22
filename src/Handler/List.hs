@@ -13,8 +13,7 @@ import           Data.Maybe                (fromMaybe)
 import           Data.Monoid               ((<>))
 import           Data.Ord                  (Down (..), comparing)
 import           Data.Text                 (toLower, unpack)
-import           Database.Selda            (Col, Cols)
-import           Database.Selda.Generic    (Relation)
+import           Database.Selda            (Col, Row)
 
 import           Database
 import           Requests
@@ -48,7 +47,7 @@ search = do
   htmlUrlResponse $ T.search categories isbn title subtitle author matchread matchunread location borrower category books
 
 -- |Filter by field value
-restrict :: (Cols s (Relation Book) -> Col s Bool) -- ^ The filter
+restrict :: (Row s Book -> Col s Bool) -- ^ The filter
          -> Handler Sitemap
 restrict by = do
   categories <- lift allCategories
