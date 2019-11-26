@@ -31,7 +31,7 @@ stats = do
   let lastYear = map (genericLength . filter (eqYear ago)) byMonth
   let avgYear  = map ((/genericLength byYear) . genericLength) byMonth
 
-  htmlUrlResponse $ T.stats categories lastYearBooks leastRecentBooks thisYear lastYear avgYear
+  htmlUrlResponse $ T.stats categories lastYearBooks (take 50 leastRecentBooks) thisYear lastYear avgYear
 
 -- | Check if two timestamps are from the same year
 eqYear :: UTCTime -> UTCTime -> Bool
