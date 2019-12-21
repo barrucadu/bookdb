@@ -33,7 +33,7 @@ Template vars:
           <td colspan="8">There are no books.
     $else
       $forall book <- books
-        <tr class="#{bool (bookNowReading book) "nowreading" ""}">
+        <tr>
           <td>
             $maybe cover <- bookCover book
               <a href="@{Covers cover}" .preview title="#{bookTitle book}">

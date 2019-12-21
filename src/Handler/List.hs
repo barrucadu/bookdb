@@ -11,7 +11,7 @@ import           Data.Char                 (isDigit)
 import           Data.List                 (sortBy)
 import           Data.Maybe                (fromMaybe)
 import           Data.Monoid               ((<>))
-import           Data.Ord                  (Down (..), comparing)
+import           Data.Ord                  (comparing)
 import           Data.Text                 (toLower, unpack)
 import           Database.Selda            (Col, Row)
 
@@ -58,7 +58,7 @@ restrict by = do
 -- | Sort a book list.
 sortBooks :: [Book] -> [Book]
 sortBooks = sortBy cmp where
-  cmp = (Down . bookNowReading) <>: key <>: bookTitle <>: (split . bookVolume) <>: comparing (split . bookFascicle)
+  cmp = key <>: bookTitle <>: (split . bookVolume) <>: comparing (split . bookFascicle)
   key book = toLower . fromMaybe (bookAuthor book) $ bookSorting book
 
   split txt = case span isDigit $ unpack txt of

@@ -114,7 +114,6 @@ mutate book = do
   sorting    <- param' "sorting"    ""
   read       <- param' "read"       ""
   lastread   <- param' "lastread"   ""
-  nowreading <- param' "nowreading" ""
   location   <- param' "location"   ""
   code       <- param' "category"   "-"
   borrower   <- param' "borrower"   ""
@@ -130,11 +129,10 @@ mutate book = do
     let editor'     = empty editor
     let sorting'    = empty sorting
     let read'       = set read
-    let nowreading' = set nowreading
 
     case (toDate lastread, categoryByCode' code categories) of
       (Just lastread', Just _) -> do
-        let newbook = Book isbn title subtitle cover' volume fascicle voltitle author' translator' editor' sorting' read' lastread' nowreading' location borrower code
+        let newbook = Book isbn title subtitle cover' volume fascicle voltitle author' translator' editor' sorting' read' lastread' location borrower code
 
         case book of
           Just b -> do

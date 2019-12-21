@@ -28,7 +28,7 @@ migrate = do
   createTable categories
 
 -- selectors
-dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: dbVoltitle :*: dbAuthor :*: dbTranslator :*: dbEditor :*: dbSorting :*: dbRead :*: dbLastRead :*: dbNowReading :*: dbLocation :*: dbBorrower :*: dbCategoryCode = selectors books
+dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: dbVoltitle :*: dbAuthor :*: dbTranslator :*: dbEditor :*: dbSorting :*: dbRead :*: dbLastRead :*: dbLocation :*: dbBorrower :*: dbCategoryCode = selectors books
 
 dbCode :*: dbName = selectors categories
 

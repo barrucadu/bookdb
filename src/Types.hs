@@ -48,7 +48,6 @@ data Book = Book
   -- should re-read those books which I haven't touched for that long.
   , bookRead         :: Bool
   , bookLastRead     :: Maybe UTCTime
-  , bookNowReading   :: Bool
 
   -- These work, if I only have one copy of each book. If I have
   -- multiple copies, things start to get a bit messy.
@@ -62,7 +61,7 @@ instance SqlRow Book
 
 -- |A null book
 emptyBook :: Book
-emptyBook = Book "" "" "" Nothing "" "" "" "" Nothing Nothing Nothing False Nothing False "" "" "-"
+emptyBook = Book "" "" "" Nothing "" "" "" "" Nothing Nothing Nothing False Nothing "" "" "-"
 
 -- | A book's category.  Returns the "Uncategorised" category if
 -- there's no match.
