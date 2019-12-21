@@ -12,7 +12,6 @@ module Handler.Templates
     , noticeError
 
     -- * Browsing books
-    , stats
     , search
     , index
     ) where
@@ -22,7 +21,7 @@ import           Prelude          hiding (null)
 import           Data.Maybe       (fromMaybe)
 import           Data.Monoid      ((<>))
 import           Data.Set         (Set)
-import           Data.Text        (Text, null, pack, splitOn, toLower)
+import           Data.Text        (Text, null, splitOn, toLower)
 import           Data.Time.Format (defaultTimeLocale, formatTime)
 import           Numeric          (showFFloat)
 import           Text.Hamlet      (HtmlUrl, hamletFile)
@@ -69,20 +68,6 @@ list :: [BookCategory] -- ^ List of all categories
      -> Bool      -- ^ Whether to display in \"thin\" mode
      -> HtmlUrl Sitemap
 list categories books authors read thin = $(hamletFile "templates/list.hamlet")
-
-stats :: [BookCategory] -- ^ List of all categories
-      -> [Book]  -- ^ The books read in the prior year
-      -> [Book]  -- ^ The least recently read books
-      -> [Int]   -- ^ The number of books read each month this year
-      -> [Int]   -- ^ The number of books read each month last year
-      -> [Float] -- ^ The number of books read each month on average
-      -> HtmlUrl Sitemap
-stats categories lastYearBooks leastRecentBooks thisYear lastYear avgYear =
-  let title = "BookDB :: Stats" :: Text
-      lastYearAuthors    = numAuthors lastYearBooks
-      leastRecentAuthors = numAuthors leastRecentBooks
-      body = $(hamletFile "templates/stats.hamlet")
-  in $(hamletFile "templates/wrapper.hamlet")
 
 -------------------------
 
@@ -176,11 +161,3 @@ bool :: Bool -- ^ Condition
      -> Text
 bool True  t _ = t
 bool False _ f = f
-
--- |Show a float to two decimal places at most.
-showFloat :: Float -> String
-showFloat n = showFFloat (Just 2) n ""
-
--- |Show a list, with a function to show the elements.
-showListWith :: (a -> String) -> [a] -> String
-showListWith f xs = Text.Show.showListWith ((++) . f) xs ""

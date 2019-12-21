@@ -12,8 +12,6 @@ $doctype 5
     <link rel="stylesheet" href="@{Static "style.css"}" type="text/css">
 
     <script src="@{Static "vendor/jquery-1.9.1.min.js"}">
-    <script src="@{Static "vendor/jquery-ui-1.10.2.js"}">
-    <script src="@{Static "vendor/Chart-1.0.2.min.js"}">
     <script src="@{Static "script.js"}">
 
   <body>
@@ -29,8 +27,6 @@ $doctype 5
               <a href="@{Add}">Add
             <li>
               <a href="@{Search}">Search
-            <li>
-              <a href="@{Stats}">Stats
 
       ^{body}
 

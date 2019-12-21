@@ -11,8 +11,6 @@ data Sitemap =
   -- ^ The full book list
   | Search
   -- ^ The search form and results
-  | Stats
-  -- ^ Reading statistics
 
   | Author Text
   -- ^ Filter by author

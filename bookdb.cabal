@@ -59,7 +59,6 @@ executable bookdb
                      , Handler.Edit
                      , Handler.Information
                      , Handler.List
-                     , Handler.Stats
                      , Handler.Templates
                      , Handler.Utils
                      , Routes

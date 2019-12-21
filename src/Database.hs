@@ -8,7 +8,6 @@ import           Control.Monad          (unless)
 import           Data.Maybe             (listToMaybe)
 import           Data.Monoid            ((<>))
 import           Data.Text              (Text)
-import           Data.Time.Clock        (UTCTime)
 import           Database.Selda
 
 import           Types
@@ -65,23 +64,6 @@ replaceBook isbn b = transaction $ do
 -- | Delete a book by ISBN.
 deleteBook :: Text -> SeldaM ()
 deleteBook isbn = deleteFrom_ books (\b -> b ! dbIsbn .== literal isbn)
-
--- | List books read since a given time.
-readSince :: UTCTime -> SeldaM [Book]
-readSince lastRead = query $ do
-  b <- select books
-  restrict (b ! dbRead)
-  restrict (b ! dbLastRead .>= literal (Just lastRead))
-  order (b ! dbLastRead) descending
-  pure b
-
--- | List read books, least recently read first
-leastRecent :: SeldaM [Book]
-leastRecent = query $ do
-  b <- select books
-  restrict (b ! dbRead)
-  order (b ! dbLastRead) ascending
-  pure b
 
 -- | Search the books.
 searchBooks
