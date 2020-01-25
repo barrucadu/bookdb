@@ -5,4 +5,4 @@ resolver: lts-13.16
 extra-deps:
 - web-routes-th-0.22.6.4
 nix:
-  packages: [gcc zlib]
+  packages: [gcc postgresql zlib]

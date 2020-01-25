@@ -3,22 +3,24 @@
 -- |Configuration file handling.
 module Configuration where
 
-import qualified Data.HashMap.Strict as M
-import qualified Data.Text           as T
-import           System.IO.Error     (catchIOError, ioError, userError)
-import           Text.Parsec.Error   (errorMessages, messageString)
+import qualified Data.HashMap.Strict       as M
+import           Data.Maybe                (fromMaybe)
+import qualified Data.Text                 as T
+import           Database.Selda.PostgreSQL (PGConnectInfo(..))
+import           System.IO.Error           (catchIOError, ioError, userError)
+import           Text.Parsec.Error         (errorMessages, messageString)
 import           Text.Toml
 import           Text.Toml.Types
 
 -- | The configuration record.
 data Configuration = Configuration
-  { cfgHost         :: String
-  , cfgPort         :: Int
-  , cfgWebRoot      :: String
-  , cfgFileRoot     :: String
-  , cfgDatabaseFile :: String
-  , cfgReadOnly     :: Bool
-  } deriving Show
+  { cfgHost     :: String
+  , cfgPort     :: Int
+  , cfgWebRoot  :: String
+  , cfgFileRoot :: String
+  , cfgDatabase :: PGConnectInfo
+  , cfgReadOnly :: Bool
+  }
 
 -- | Default configuration.
 defaults :: Configuration
@@ -54,22 +56,27 @@ loadConfigFileUnsafe filename = do
 -- blanks with default values.
 toConfiguration :: Maybe Table -> Configuration
 toConfiguration tbl = Configuration
-  { cfgHost = case M.lookup "host" =<< tbl of
-      Just (VString val) -> T.unpack val
-      _                  -> "*"
-  , cfgPort = case M.lookup "port" =<< tbl of
-      Just (VInteger val) -> fromIntegral val
-      _                   -> 3000
-  , cfgWebRoot = case M.lookup "web_root" =<< tbl of
-      Just (VString val) -> T.unpack val
-      _                  -> "http://localhost:3000"
-  , cfgFileRoot = case M.lookup "file_root" =<< tbl of
-      Just (VString val) -> T.unpack val
-      _                  -> "/tmp"
-  , cfgDatabaseFile = case M.lookup "database_file" =<< tbl of
-      Just (VString val) -> T.unpack val
-      _                  -> "bookdb.sqlite"
-  , cfgReadOnly = case M.lookup "read_only" =<< tbl of
-      Just (VBoolean val) -> val
-      _                   -> False
-  }
+    { cfgHost = maybe "*" T.unpack (getStr "host")
+    , cfgPort = fromMaybe 3000 (getInt "port")
+    , cfgWebRoot = maybe "http://localhost:3000" T.unpack (getStr "web_root")
+    , cfgFileRoot = maybe "/tmp" T.unpack (getStr "file_root")
+    , cfgDatabase = PGConnectInfo
+      { pgHost = fromMaybe "localhost" (getStr "pg_host")
+      , pgPort = fromMaybe 5432 (getInt "pg_port")
+      , pgDatabase = fromMaybe "bookdb" (getStr "pg_name")
+      , pgSchema = getStr "pg_schema"
+      , pgUsername = getStr "pg_username"
+      , pgPassword = getStr "pg_password"
+      }
+    , cfgReadOnly = fromMaybe False (getBool "read_only")
+    }
+  where
+    getInt key = case M.lookup key =<< tbl of
+      Just (VInteger val) -> Just (fromIntegral val)
+      _ -> Nothing
+    getStr key = case M.lookup key =<< tbl of
+      Just (VString val) -> Just val
+      _  -> Nothing
+    getBool key = case M.lookup key =<< tbl of
+      Just (VBoolean val) -> Just val
+      _  -> Nothing

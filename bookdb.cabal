@@ -82,7 +82,7 @@ executable bookdb
                      , parsec
                      , random
                      , selda
-                     , selda-sqlite
+                     , selda-postgresql
                      , shakespeare
                      , text
                      , time

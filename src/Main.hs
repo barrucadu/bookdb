@@ -15,9 +15,8 @@ import           Data.Text.Encoding                   (decodeUtf8)
 import           Database
 import           Database.Selda                       (like, literal, not_, (!),
                                                        (.==))
-import           Database.Selda.Backend               (SeldaConnection,
-                                                       runSeldaT, seldaClose)
-import           Database.Selda.SQLite                (sqliteOpen)
+import qualified Database.Selda.Backend               as DB
+import qualified Database.Selda.PostgreSQL            as DB
 import           Handler.Edit
 import           Handler.Information
 import           Handler.List
@@ -60,16 +59,12 @@ main = do
              _              -> return $ Just defaults
 
   case config of
-    Just conf -> do
-      let connstr = cfgDatabaseFile conf
-      conn <- sqliteOpen connstr
-      case head args of
-           "run"    -> serve route error404 error500 conf conn
-           "makedb" -> runSeldaT migrate conn
-           _  -> do
-             putStrLn "Unknown command, expected 'run' or 'makedb'."
-             exitFailure
-      seldaClose conn
+    Just conf -> case head args of
+      "run"    -> serve route error404 error500 conf
+      "makedb" -> DB.withPostgreSQL (cfgDatabase conf) migrate
+      _  -> do
+        putStrLn "Unknown command, expected 'run' or 'makedb'."
+        exitFailure
     Nothing -> do
       putStrLn "Failed to read configuration"
       exitFailure
@@ -123,9 +118,8 @@ serve :: PathInfo r
       -> (String -> Handler r) -- ^ 404 handler.
       -> (String -> Handler r) -- ^ 500 handler.
       -> Configuration -- ^ The configuration
-      -> SeldaConnection
       -> IO ()
-serve route on404 on500 conf conn = do
+serve route on404 on500 conf = do
   let host = cfgHost conf
   let port = cfgPort conf
   let settings = setHost (fromString host) . setPort port $ W.defaultSettings
@@ -167,4 +161,4 @@ serve route on404 on500 conf conn = do
                   , _mkurl  = mkurl
                   }
 
-      (flip runSeldaT conn . flip runReaderT cry $ h) >>= receiver
+      (DB.withPostgreSQL (cfgDatabase conf) . flip runReaderT cry $ h) >>= receiver
