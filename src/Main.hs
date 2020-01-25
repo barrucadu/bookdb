@@ -5,53 +5,30 @@
 module Main where
 
 import           Configuration
-import           Control.Arrow                        (first, second, (***))
-import           Control.Monad                        (when)
-import           Control.Monad.Trans.Reader           (runReaderT)
-import           Data.Foldable                        (for_)
-import           Data.Maybe                           (fromMaybe)
-import           Data.Monoid                          ((<>))
-import           Data.String                          (fromString)
-import           Data.Text                            (pack)
-import           Data.Text.Encoding                   (decodeUtf8)
+import           Control.Monad.Trans.Reader    (runReaderT)
+import           Data.Foldable                 (for_)
+import           Data.Monoid                   ((<>))
+import qualified Data.Text                     as T
+import qualified Data.Text.Lazy                as TL
 import           Database
-import           Database.Selda                       (like, literal, not_, (!),
-                                                       (.==))
-import qualified Database.Selda.Backend               as DB
-import qualified Database.Selda.PostgreSQL            as DB
+import           Database.Selda                (like, literal, not_, (!), (.==))
+import qualified Database.Selda.PostgreSQL     as DB
 import           Handler.Edit
 import           Handler.Information
 import           Handler.List
-import           Network.HTTP.Types.Method            (StdMethod (..),
-                                                       parseMethod)
-import           Network.HTTP.Types.Status            (internalServerError500,
-                                                       methodNotAllowed405,
-                                                       notFound404)
-import           Network.Wai                          (queryString,
-                                                       requestMethod)
-import           Network.Wai.Handler.Warp             (runSettings, setHost,
-                                                       setPort)
-import           Network.Wai.Middleware.RequestLogger (logStdout)
-import           Network.Wai.Middleware.Static        (addBase, staticPolicy)
-import           Network.Wai.Parse                    (lbsBackEnd,
-                                                       parseRequestBody)
-import           Requests
-import           Routes
-import           System.Environment                   (getArgs)
-import           System.Exit                          (exitFailure)
-import           System.IO.Error                      (catchIOError)
-import           Web.Routes                           (fromPathInfo,
-                                                       toPathInfoParams)
-import           Web.Routes.Wai                       (handleWai_)
-
-import qualified Data.ByteString.Char8                as B8
-import qualified Network.Wai.Handler.Warp             as W
+import           Network.HTTP.Types.Status     (internalServerError500,
+                                                notFound404)
+import           Network.Wai                   (pathInfo)
+import           Network.Wai.Middleware.Static (addBase, staticPolicy)
+import           System.Environment            (getArgs)
+import           System.Exit                   (exitFailure)
+import qualified Web.Scotty.Trans              as S
 
 -- |Run the server
 main :: IO ()
 main = getConfig >>= \case
   Right conf -> getArgs >>= \case
-    ["run"] -> serve route error404 error500 conf
+    ["run"] -> serve conf
     ["makedb"] -> DB.withPostgreSQL (cfgDatabase conf) makedb
     _ -> do
       putStrLn "USAGE: bookdb (run | makedb)"
@@ -61,96 +38,77 @@ main = getConfig >>= \case
     for_ errors $ \e -> putStrLn ("    " ++ e)
     exitFailure
 
--- |Route a request to a handler. These do not cover static files, as
--- Seacat handles those.
-route :: StdMethod -> Sitemap -> Handler Sitemap
-route GET List   = list
-route GET Search = search
+-- | Serve requests.
+--
+-- Each connection gets its own DB connection.
+serve :: Configuration -> IO ()
+serve conf = S.scottyT port run $ do
+    S.middleware $ staticPolicy (addBase (cfgFileRoot conf))
 
--- Fuzzy matching is required for author because in general the author
--- field contains a list, and we want to be able to match any one of
--- them.
-route GET (Author a)     = restrict (\b -> b ! dbAuthor `like` literal ("%" <> a <> "%"))
-route GET (Translator t) = restrict (\b -> b ! dbTranslator .== literal (Just t))
-route GET (Editor e)     = restrict (\b -> b ! dbEditor .== literal (Just e))
-route GET Read           = restrict (! dbRead)
-route GET Unread         = restrict (\b -> not_ (b ! dbRead))
-route GET (Location l)   = restrict (\b -> b ! dbLocation .== literal l)
-route GET (Category c)   = restrict (\b -> b ! dbCategoryCode .== literal c)
-route GET (Borrower w)   = restrict (\b -> b ! dbBorrower .== literal w)
+    S.get "/" $ S.redirect "/list"
 
-route GET Add        = add
-route GET (Edit e)   = edit e
-route GET (Delete d) = delete d
+    S.get "/list"   list
+    S.get "/search" search
 
-route POST Add        = commitAdd
-route POST (Edit e)   = commitEdit e
-route POST (Delete d) = commitDelete d
+    S.get "/read"   $ restrict (! dbRead)
+    S.get "/unread" $ restrict (\b -> not_ (b ! dbRead))
 
-route _ _ = serverError methodNotAllowed405 "Method not allowed"
+    S.get "/author/:author" $ do
+      author <- S.param "author"
+      restrict (\b -> b ! dbAuthor `like` literal ("%" <> author <> "%"))
+
+    S.get "/translator/:translator" $ do
+      translator <- S.param "translator"
+      restrict (\b -> b ! dbTranslator .== literal (Just translator))
+
+    S.get "/editor/:editor" $ do
+      editor <- S.param "editor"
+      restrict (\b -> b ! dbEditor .== literal (Just editor))
+
+    S.get "/location/:location" $ do
+      location <- S.param "location"
+      restrict (\b -> b ! dbLocation .== literal location)
+
+    S.get "/category/:category" $ do
+      category <- S.param "category"
+      restrict (\b -> b ! dbCategoryCode .== literal category)
+
+    S.get "/borrower/:borrower" $ do
+      borrower <- S.param "borrower"
+      restrict (\b -> b ! dbBorrower .== literal borrower)
+
+    S.get "/add"  add
+    S.post "/add" commitAdd
+
+    S.get "/edit/:key"  $ do
+      key <- S.param "key"
+      edit key
+    S.post "/edit/:key" $ do
+      key <- S.param "key"
+      commitEdit key
+
+    S.get "/delete/:key"  $ do
+      key <- S.param "key"
+      delete key
+    S.post "/delete/:key" $ do
+      key <- S.param "key"
+      commitDelete key
+
+    S.notFound $ do
+      path <- pathInfo <$> S.request
+      error404 (T.intercalate "/" path)
+
+    S.defaultHandler (error500 . TL.toStrict)
+  where
+    port = cfgPort conf
+    run ma = DB.withPostgreSQL (cfgDatabase conf) (runReaderT ma conf)
 
 -------------------------
 
 -- |404 handler.
-error404 :: String -> Handler Sitemap
--- Haaacky! Figure out how to handle this in the template haskell
--- code.
-error404 "/" = route GET List
-error404 uri = serverError notFound404 ("File not found: " <> pack uri)
+error404 :: T.Text -> Handler db
+error404 uri = serverError notFound404 ("File not found: " <> uri)
 
 -- |500 handler.
-error500 :: String -> Handler Sitemap
-error500 = serverError internalServerError500 . pack
-
--------------------------
-
--- |Serve requests
-serve :: PathInfo r
-      => (StdMethod -> r -> Handler r) -- ^ Routing function
-      -> (String -> Handler r) -- ^ 404 handler.
-      -> (String -> Handler r) -- ^ 500 handler.
-      -> Configuration -- ^ The configuration
-      -> IO ()
-serve route on404 on500 conf = do
-  let host = cfgHost conf
-  let port = cfgPort conf
-  let settings = setHost (fromString host) . setPort port $ W.defaultSettings
-  putStrLn $ "Listening on " <> host <> ":" <> show port
-  runSettings settings runner
-
-  where
-    runner = handleWai_ toPathInfo' fromPathInfo' (fromString webroot) $ \mkurl ->
-      -- Hamlet needs a slightly different @MkUrl@ type than what web-routes-wai gives us.
-      let mkurl' r = mkurl (Right r) . map (\(a,b) -> (a, if b == "" then Nothing else Just b))
-       in logStdout . staticPolicy (addBase fileroot) . process mkurl'
-
-      where
-        toPathInfo' (Right p) = toPathInfoParams p
-
-        fromPathInfo' bs = case fromPathInfo bs of
-          Right url -> Right (Right url)
-          Left  _   -> Right (Left  bs)
-
-        webroot  = cfgWebRoot conf
-        fileroot = cfgFileRoot conf
-
-    process mkurl path req receiver = requestHandler `catchIOError` runError
-      where
-        requestHandler = case path of
-          Right uri -> runHandler' $ route method uri
-          Left  uri -> runHandler' $ on404 (B8.unpack uri)
-        runError err   = runHandler' $ on500 (show err)
-        runHandler' h  = runHandler h mkurl req receiver
-        method         = either (error . show) id . parseMethod . requestMethod $ req
-
-    runHandler h mkurl req receiver = do
-      (ps, fs) <- parseRequestBody lbsBackEnd req
-      let ps' = map (second $ fromMaybe "") $ queryString req
-      let cry = Request
-                  { _params = map (decodeUtf8 *** decodeUtf8) (ps ++ ps')
-                  , _files  = map (first decodeUtf8) fs
-                  , _conf   = conf
-                  , _mkurl  = mkurl
-                  }
-
-      (DB.withPostgreSQL (cfgDatabase conf) . flip runReaderT cry $ h) >>= receiver
+error500 :: T.Text -> Handler db
+error500 = serverError internalServerError500

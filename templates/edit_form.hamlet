@@ -5,7 +5,7 @@ Template vars:
  - book :: Maybe Book, the book we're dealing with
 -->
 $with book <- fromMaybe emptyBook book
-  <form action="@{target}" method="post" enctype="multipart/form-data">
+  <form action="#{target}" method="post" enctype="multipart/form-data">
     <fieldset>
       <ol>
         <li>

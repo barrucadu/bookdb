@@ -4,12 +4,23 @@
 -- | Additional types and type utilities.
 module Types where
 
-import           Data.List      (find)
-import           Data.Maybe     (fromMaybe)
-import           Data.Text      (Text)
-import           Data.Time      (UTCTime)
-import           Database.Selda (SqlRow)
-import           GHC.Generics   (Generic)
+import           Control.Monad.Trans.Reader (ReaderT)
+import           Data.List                  (find)
+import           Data.Maybe                 (fromMaybe)
+import           Data.Text                  (Text)
+import qualified Data.Text.Lazy             as TL
+import           Data.Time                  (UTCTime)
+import           Database.Selda             (SeldaT, SqlRow)
+import           GHC.Generics               (Generic)
+import           Web.Scotty.Trans           (ActionT)
+
+import           Configuration              (Configuration)
+
+-- |Function which handles a request
+type RequestProcessor db m a = ActionT TL.Text (ReaderT Configuration (SeldaT db m)) a
+
+-- |'RequestProcessor' specialised to producing a response.
+type Handler db = RequestProcessor db IO ()
 
 -------------------------------------------------------------------------------
 -- Books

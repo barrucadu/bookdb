@@ -7,12 +7,13 @@ Template vars:
 $doctype 5
 <html>
   <head>
+    <base href="#{web_root}">
     <title>#{title}
 
-    <link rel="stylesheet" href="@{Static "style.css"}" type="text/css">
+    <link rel="stylesheet" href="style.css" type="text/css">
 
-    <script src="@{Static "vendor/jquery-1.9.1.min.js"}">
-    <script src="@{Static "script.js"}">
+    <script src="vendor/jquery-1.9.1.min.js">
+    <script src="script.js">
 
   <body>
     <div .page>
@@ -22,11 +23,11 @@ $doctype 5
         <nav>
           <ul>
             <li>
-              <a href="@{List}">List
+              <a href="list">List
             <li>
-              <a href="@{Add}">Add
+              <a href="add">Add
             <li>
-              <a href="@{Search}">Search
+              <a href="search">Search
 
       ^{body}
 

@@ -15,7 +15,6 @@ Running
 
 Configure with environment variables:
 
-- `BOOKDB_HOST`: host to listen on (default `*`)
 - `BOOKDB_PORT`: port to listen on (default `3000`)
 - `BOOKDB_WEB_ROOT`: base path for external URLs (default `http://localhost:3000`)
 - `BOOKDB_FILE_ROOT`: directory to store covers in (default `/tmp`)

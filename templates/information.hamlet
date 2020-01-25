@@ -7,13 +7,14 @@ $doctype 5
 $with title <- bool error "Error" "Information"
   <html>
     <head>
+      <base href="#{web_root}">
       <title>#{title}</title>
 
       $if error
       $else
-        <meta http-equiv="refresh" content="2;URL='@{List}'">
+        <meta http-equiv="refresh" content="2;URL='#{web_root}/list'">
 
-      <link rel="stylesheet" href="@{Static "style.css"}" type="text/css">
+      <link rel="stylesheet" href="style.css" type="text/css">
 
   <body class="#{toLower title}">
     <div .information>
@@ -22,7 +23,7 @@ $with title <- bool error "Error" "Information"
 
       <p>#{message}
       <p>
-        <a href="@{List}">Click here to continue.
+        <a href="list">Click here to continue.
 
       <footer>
         <a href="https://github.com/barrucadu/bookdb">Github

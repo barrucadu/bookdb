@@ -5,8 +5,9 @@ Template vars:
 $doctype 5
 <html>
   <head>
+    <base href="#{web_root}">
     <title>Confirm Delete
-    <link rel="stylesheet" href="@{Static "style.css"}" type="text/css">
+    <link rel="stylesheet" href="style.css" type="text/css">
 
   <body>
     <div .information>
@@ -15,7 +16,7 @@ $doctype 5
 
       <p>Do you really want to delete <span .isbn>#{bookIsbn book}</span> (<strong>#{bookTitle book}</strong>, by <strong>#{bookAuthor book}</strong>)?
 
-      <form action="@{Delete $ bookIsbn book}" method="post">
+      <form action="delete/#{bookIsbn book}" method="post">
         <input type="submit" value="Confirm Delete">
 
       <footer>

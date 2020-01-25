@@ -36,8 +36,8 @@ Template vars:
         <tr>
           <td>
             $maybe cover <- bookCover book
-              <a href="@{Covers cover}" .preview title="#{bookTitle book}">
-                <img src="@{Covers cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
+              <a href="covers/#{cover}" .preview title="#{bookTitle book}">
+                <img src="covers/#{cover}"  alt="#{bookTitle book}, by #{bookAuthor book}">
           <td .isbn>#{bookIsbn book}
           <td>
             #{pprint book}
@@ -48,14 +48,14 @@ Template vars:
                   <li .pseudo>#{author}
                 $else
                   <li>
-                    <a href="@{Author author}">#{author}
+                    <a href="author/#{author}">#{author}
 
             $maybe trans <- bookTranslator book
               (trans.
                 <ol class="translators">
                   $forall translator <- splitOn " & " trans
                     <li>
-                      <a href="@{Translator translator}">#{translator}</a>
+                      <a href="translator/#{translator}">#{translator}</a>
               )
 
             $maybe edit <- bookEditor book
@@ -63,23 +63,23 @@ Template vars:
                 <ol class="editors">
                   $forall editor <- splitOn " & " edit
                     <li>
-                      <a href="@{Editor editor}">#{editor}</a>
+                      <a href="editor/#{editor}">#{editor}</a>
               )
           <td>
             $if bookRead book
               $maybe read <- bookLastRead book
-                <a href="@{Read}">✔ (#{formatTime defaultTimeLocale "%F" read})
+                <a href="read">✔ (#{formatTime defaultTimeLocale "%F" read})
               $nothing
-                <a href="@{Read}">✔
+                <a href="read">✔
             $else
-              <a href="@{Unread}">✘
+              <a href="unread">✘
           $if not thin
             <td>
-              <a href="@{Location $ bookLocation book}">#{bookLocation book}
+              <a href="location/#{bookLocation book}">#{bookLocation book}
             <td>
-              <a href="@{Category $ bookCategoryCode book}">
+              <a href="category/#{bookCategoryCode book}">
                 <abbr title="#{categoryName (bookCategory book categories)}">#{bookCategoryCode book}</abbr>
             <td>
-              <a href="@{Borrower $ bookBorrower book}">#{bookBorrower book}
+              <a href="borrower/#{bookBorrower book}">#{bookBorrower book}
             <td .meta>
-              [&nbsp;<a href="@{Edit $ bookIsbn book}">e</a>&nbsp;/&nbsp;<a href="@{Delete $ bookIsbn book}">d</a>&nbsp;]
+              [&nbsp;<a href="edit/#{bookIsbn book}">e</a>&nbsp;/&nbsp;<a href="delete/#{bookIsbn book}">d</a>&nbsp;]

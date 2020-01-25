@@ -12,116 +12,116 @@ module Handler.Edit
     , commitDelete
     ) where
 
-import           Prelude                   hiding (null, userError)
+import           Prelude                    hiding (null, userError)
 
-import           Control.Applicative       ((<|>))
-import           Control.Monad.IO.Class    (liftIO)
-import           Control.Monad.Trans.Class (lift)
-import           Data.Char                 (chr)
-import           Data.List                 (sort)
-import           Data.Text                 (Text, intercalate, null, pack,
-                                            splitOn, unpack)
-import           Data.Time.Calendar        (fromGregorian)
-import           Data.Time.Clock           (UTCTime (..))
+import           Control.Applicative        ((<|>))
+import           Control.Monad.IO.Class     (MonadIO, liftIO)
+import           Control.Monad.Trans.Class  (lift)
+import           Control.Monad.Trans.Reader (ask)
+import qualified Data.ByteString            as B
+import qualified Data.ByteString.Lazy       as BL
+import           Data.Char                  (chr)
+import           Data.List                  (sort)
+import           Data.Text                  (Text, intercalate, null, pack,
+                                             splitOn, unpack)
+import           Data.Time.Calendar         (fromGregorian)
+import           Data.Time.Clock            (UTCTime (..))
 import           Database
-import           System.FilePath           (joinPath, takeExtension,
-                                            takeFileName)
-import           Text.Read                 (readMaybe)
+import           Network.Wai.Parse          (FileInfo (..))
+import           System.FilePath            (joinPath, takeExtension,
+                                             takeFileName)
+import           Text.Read                  (readMaybe)
+import qualified Web.Scotty.Trans           as S
 
 import           Configuration
 import           Handler.Information
+import qualified Handler.Templates          as T
 import           Handler.Utils
-import           Requests
-import           Routes
-
-import qualified Data.ByteString           as B
-import qualified Data.ByteString.Lazy      as BL
-import qualified Handler.Templates         as T
 
 -- |Display an add form, or an error if in read-only mode
-add :: Handler Sitemap
+add :: Handler db
 add = onReadWrite add'
 
 -- |Display an edit form, or an error if in read-only mode
 edit :: Text -- ^ The ISBN
-     -> Handler Sitemap
+     -> Handler db
 edit = onReadWrite . withBook edit'
 
 -- |Display a confirm delete page, or an error if in read-only mode
 delete :: Text -- ^ The ISBN
-       -> Handler Sitemap
+       -> Handler db
 delete = onReadWrite . withBook delete'
 
 -- |Commit an add, or display an error if in read-only mode
-commitAdd :: Handler Sitemap
+commitAdd :: Handler db
 commitAdd = onReadWrite commitAdd'
 
 -- |Commit an edit, or display an error if in read-only mode
 commitEdit :: Text -- ^ The ISBN
-           -> Handler Sitemap
+           -> Handler db
 commitEdit = onReadWrite . withBook commitEdit'
 
 -- |Commit a delete, or display an error if in read-only mode
 commitDelete :: Text -- ^ The ISBN
-             -> Handler Sitemap
+             -> Handler db
 commitDelete = onReadWrite . withBook commitDelete'
 
 -------------------------
 
-add' :: Handler Sitemap
+add' :: Handler db
 add' = do
-  categories <- lift allCategories
-  htmlUrlResponse $ T.addForm categories
+  categories <- lift (lift allCategories)
+  htmlResponse $ T.addForm categories
 
-edit' :: Book -> Handler Sitemap
+edit' :: Book -> Handler db
 edit' book = do
-  categories <- lift allCategories
-  htmlUrlResponse $ T.editForm categories book
+  categories <- lift (lift allCategories)
+  htmlResponse $ T.editForm categories book
 
-delete' :: Book -> Handler Sitemap
-delete' book = htmlUrlResponse $ T.confirmDelete book
+delete' :: Book -> Handler db
+delete' book = htmlResponse $ T.confirmDelete book
 
 -------------------------
 
-commitAdd' :: Handler Sitemap
+commitAdd' :: Handler db
 commitAdd' = mutate Nothing
 
-commitEdit' :: Book -> Handler Sitemap
+commitEdit' :: Book -> Handler db
 commitEdit' = mutate . Just
 
-commitDelete' :: Book -> Handler Sitemap
+commitDelete' :: Book -> Handler db
 commitDelete' book = do
-  lift (deleteBook (bookIsbn book))
+  lift (lift (deleteBook (bookIsbn book)))
   information "Book deleted successfully"
 
 -------------------------
 
 -- |Mutate a book, and display a notification when done.
 mutate :: Maybe Book -- ^ The book to mutate, or Nothing to insert
-       -> Handler Sitemap
+       -> Handler db
 mutate book = do
   -- do cover upload
   cover      <- uploadCover
-  isbn       <- param' "isbn"       ""
-  title      <- param' "title"      ""
-  subtitle   <- param' "subtitle"   ""
-  volume     <- param' "volume"     ""
-  fascicle   <- param' "fascicle"   ""
-  voltitle   <- param' "voltitle"   ""
-  author     <- param' "author"     ""
-  translator <- param' "translator" ""
-  editor     <- param' "editor"     ""
-  sorting    <- param' "sorting"    ""
-  read       <- param' "read"       ""
-  lastread   <- param' "lastread"   ""
-  location   <- param' "location"   ""
-  code       <- param' "category"   "-"
-  borrower   <- param' "borrower"   ""
+  isbn       <- paramWithDefault "isbn"       ""
+  title      <- paramWithDefault "title"      ""
+  subtitle   <- paramWithDefault "subtitle"   ""
+  volume     <- paramWithDefault "volume"     ""
+  fascicle   <- paramWithDefault "fascicle"   ""
+  voltitle   <- paramWithDefault "voltitle"   ""
+  author     <- paramWithDefault "author"     ""
+  translator <- paramWithDefault "translator" ""
+  editor     <- paramWithDefault "editor"     ""
+  sorting    <- paramWithDefault "sorting"    ""
+  read       <- paramWithDefault "read"       ""
+  lastread   <- paramWithDefault "lastread"   ""
+  location   <- paramWithDefault "location"   ""
+  code       <- paramWithDefault "category"   "-"
+  borrower   <- paramWithDefault "borrower"   ""
 
   if null isbn || null title || null author || null location
   then userError "Missing required fields"
   else do
-    categories <- lift allCategories
+    categories <- lift (lift allCategories)
 
     let cover'      = cover <|> (book >>= bookCover)
     let author'     = sortAuthors author
@@ -136,10 +136,10 @@ mutate book = do
 
         case book of
           Just b -> do
-            lift (replaceBook (bookIsbn b) newbook)
+            lift (lift (replaceBook (bookIsbn b) newbook))
             information "Book updated successfully"
           Nothing -> do
-            lift (insertBook newbook)
+            lift (lift (insertBook newbook))
             information "Book added successfully"
 
       (Nothing, _) -> userError "Invalid date format, expected yyyy-mm-dd"
@@ -166,10 +166,10 @@ mutate book = do
 -------------------------
 
 -- |Upload the cover image for a book, returning its path
-uploadCover :: RequestProcessor Sitemap (Maybe Text)
+uploadCover :: MonadIO m => RequestProcessor db m (Maybe Text)
 uploadCover = do
-  isbn <- param' "isbn" ""
-  file <- lookup "cover" <$> askFiles
+  isbn <- paramWithDefault "isbn" ""
+  file <- lookup "cover" <$> S.files
 
   case file of
     Just f@(FileInfo _ _ c)
@@ -179,7 +179,7 @@ uploadCover = do
 
   where
   save fbits (FileInfo name _ content) = do
-    fileroot <- cfgFileRoot <$> askConf
+    fileroot <- cfgFileRoot <$> lift ask
     let ext    = takeExtension (map (chr . fromIntegral) $ B.unpack name)
     let path   = joinPath $ fileroot : fbits
     let fname' = path ++ ext

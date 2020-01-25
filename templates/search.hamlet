@@ -16,7 +16,7 @@ Template vars:
  - authors :: Int, the number of authors matching the prior search
  - read :: Int, the number of read books matching the prior search
 -->
-<form method="get" action="@{Search}">
+<form method="get" action="search">
   <fieldset>
     <ol>
       <li>

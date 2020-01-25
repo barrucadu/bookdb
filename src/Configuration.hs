@@ -6,16 +6,15 @@ module Configuration where
 import           Control.Monad             (guard)
 import           Data.Maybe                (fromMaybe)
 import qualified Data.Text                 as T
-import           Database.Selda.PostgreSQL (PGConnectInfo(..))
+import           Database.Selda.PostgreSQL (PGConnectInfo (..))
 import           System.Environment        (lookupEnv)
 import           Text.Read                 (readMaybe)
 
 -- | The configuration record.
 data Configuration = Configuration
-  { cfgHost     :: String
-  , cfgPort     :: Int
-  , cfgWebRoot  :: String
-  , cfgFileRoot :: String
+  { cfgPort     :: Int
+  , cfgWebRoot  :: T.Text -- everything which consumes this takes a Text
+  , cfgFileRoot :: String -- everything which consumes this takes a String - inconsistency ho!
   , cfgDatabase :: PGConnectInfo
   , cfgReadOnly :: Bool
   }
@@ -23,7 +22,6 @@ data Configuration = Configuration
 -- | Read configuration from the environment.
 getConfig :: IO (Either [String] Configuration)
 getConfig = do
-  bookdb_host <- lookupEnv "BOOKDB_HOST"
   bookdb_port <- lookupEnv "BOOKDB_PORT"
   bookdb_web_root <- lookupEnv "BOOKDB_WEB_ROOT"
   bookdb_file_root <- lookupEnv "BOOKDB_FILE_ROOT"
@@ -36,9 +34,8 @@ getConfig = do
   bookdb_read_only <- lookupEnv "BOOKDB_READ_ONLY"
 
   pure . runValidation $ Configuration
-    <$> pure (fromMaybe "*" bookdb_host)
-    <*> maybeToValidation "could not parse BOOKDB_PORT (expected integer in range 0..65535)" (maybe (Just 3000) readPort bookdb_port)
-    <*> pure (fromMaybe "http://localhost:3000" bookdb_web_root)
+    <$> maybeToValidation "could not parse BOOKDB_PORT (expected integer in range 0..65535)" (maybe (Just 3000) readPort bookdb_port)
+    <*> pure (maybe "http://localhost:3000" T.pack bookdb_web_root)
     <*> pure (fromMaybe "/tmp" bookdb_file_root)
     <*> (PGConnectInfo
          <$> pure (maybe "localhost" T.pack bookdb_pg_host)

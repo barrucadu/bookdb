@@ -1,27 +1,29 @@
-{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module Database (module Database, module Types) where
 
-import           Control.Monad          (unless)
-import           Data.Maybe             (listToMaybe)
-import           Data.Monoid            ((<>))
-import           Data.Text              (Text)
+import           Control.Monad                (unless)
+import           Data.Maybe                   (listToMaybe)
+import           Data.Monoid                  ((<>))
+import           Data.Text                    (Text)
 import           Database.Selda
+import           Database.Selda.MakeSelectors
 
 import           Types
 
 -- | The table of books.
 books :: Table Book
-books = table "books" [#bookIsbn :- primary, #bookCategoryCode :- foreignKey categories dbCode]
+(books, dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: dbVoltitle :*: dbAuthor :*: dbTranslator :*: dbEditor :*: dbSorting :*: dbRead :*: dbLastRead :*: dbLocation :*: dbBorrower :*: dbCategoryCode)
+  = tableWithSelectors "books" [#bookIsbn :- primary, #bookCategoryCode :- foreignKey categories dbCode]
 
 -- | The table of categories
 categories :: Table BookCategory
-categories = table "book_categories" [#categoryCode :- primary]
+(categories, dbCode :*: dbName) = tableWithSelectors "book_categories" [#categoryCode :- primary]
 
 -- | Create the tables
-makedb :: SeldaM ()
+makedb :: SeldaM db ()
 makedb = do
     createTable categories
     insert_ categories defaultCategories
@@ -43,24 +45,19 @@ makedb = do
       , uncategorised
       ]
 
--- selectors
-dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: dbVoltitle :*: dbAuthor :*: dbTranslator :*: dbEditor :*: dbSorting :*: dbRead :*: dbLastRead :*: dbLocation :*: dbBorrower :*: dbCategoryCode = selectors books
-
-dbCode :*: dbName = selectors categories
-
 -------------------------------------------------------------------------------
 -- * Queries
 
 -- | All books.
-allBooks :: SeldaM [Book]
+allBooks :: SeldaM db [Book]
 allBooks = query (select books)
 
 -- | All categories.
-allCategories :: SeldaM [BookCategory]
+allCategories :: SeldaM db [BookCategory]
 allCategories = query (select categories)
 
 -- | Find a book by ISBN.
-findBook :: Text -> SeldaM (Maybe Book)
+findBook :: Text -> SeldaM db (Maybe Book)
 findBook isbn = do
   results <- query $ do
     b <- select books
@@ -69,17 +66,17 @@ findBook isbn = do
   pure (listToMaybe results)
 
 -- | Insert a book.
-insertBook :: Book -> SeldaM ()
+insertBook :: Book -> SeldaM db ()
 insertBook b = insert_ books [b]
 
 -- | Replace a book by ISBN.
-replaceBook :: Text -> Book -> SeldaM ()
+replaceBook :: Text -> Book -> SeldaM db ()
 replaceBook isbn b = transaction $ do
   deleteBook isbn
   insertBook b
 
 -- | Delete a book by ISBN.
-deleteBook :: Text -> SeldaM ()
+deleteBook :: Text -> SeldaM db ()
 deleteBook isbn = deleteFrom_ books (\b -> b ! dbIsbn .== literal isbn)
 
 -- | Search the books.
@@ -93,7 +90,7 @@ searchBooks
   -> Maybe BookCategory -- ^ Category (exact match)
   -> Bool -- ^ Permit read books
   -> Bool -- ^ Permit unread books
-  -> SeldaM [Book]
+  -> SeldaM db [Book]
 searchBooks isbn title subtitle author location borrower category matchread matchunread = query $ do
   b <- select books
   let l s = literal ("%" <> s <> "%")
@@ -115,7 +112,7 @@ searchBooks isbn title subtitle author location borrower category matchread matc
   pure b
 
 -- | Limited form of search: use the given restriction.
-restrictBooks :: (Row s Book -> Col s Bool) -> SeldaM [Book]
+restrictBooks :: (Row db Book -> Col db Bool) -> SeldaM db [Book]
 restrictBooks f = query $ do
   b <- select books
   restrict (f b)
