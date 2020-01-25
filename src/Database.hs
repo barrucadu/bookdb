@@ -21,10 +21,27 @@ categories :: Table BookCategory
 categories = table "book_categories" [#categoryCode :- primary]
 
 -- | Create the tables
-migrate :: SeldaM ()
-migrate = do
-  createTable categories
-  createTable books
+makedb :: SeldaM ()
+makedb = do
+    createTable categories
+    insert_ categories defaultCategories
+    createTable books
+  where
+    defaultCategories =
+      [ BookCategory { categoryCode = "CS", categoryName = "Computer Science" }
+      , BookCategory { categoryCode = "F", categoryName =  "Miscellaneous Fiction" }
+      , BookCategory { categoryCode = "HI", categoryName = "History" }
+      , BookCategory { categoryCode = "KF", categoryName = "Kitchen, Food, Recipe" }
+      , BookCategory { categoryCode = "M", categoryName =  "Manga" }
+      , BookCategory { categoryCode = "NF", categoryName = "Miscellaneous Nonfiction" }
+      , BookCategory { categoryCode = "P", categoryName =  "Poetry" }
+      , BookCategory { categoryCode = "PH", categoryName = "Philosophy" }
+      , BookCategory { categoryCode = "PO", categoryName = "Politics" }
+      , BookCategory { categoryCode = "PR", categoryName = "Programming" }
+      , BookCategory { categoryCode = "RM", categoryName = "Religion, Mythology, & Folklore" }
+      , BookCategory { categoryCode = "RPG", categoryName = "RPG Sourcebooks" }
+      , uncategorised
+      ]
 
 -- selectors
 dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: dbVoltitle :*: dbAuthor :*: dbTranslator :*: dbEditor :*: dbSorting :*: dbRead :*: dbLastRead :*: dbLocation :*: dbBorrower :*: dbCategoryCode = selectors books

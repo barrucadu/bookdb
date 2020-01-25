@@ -61,7 +61,7 @@ main = do
   case config of
     Just conf -> case head args of
       "run"    -> serve route error404 error500 conf
-      "makedb" -> DB.withPostgreSQL (cfgDatabase conf) migrate
+      "makedb" -> DB.withPostgreSQL (cfgDatabase conf) makedb
       _  -> do
         putStrLn "Unknown command, expected 'run' or 'makedb'."
         exitFailure
