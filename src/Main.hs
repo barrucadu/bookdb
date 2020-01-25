@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
 
@@ -7,6 +8,7 @@ import           Configuration
 import           Control.Arrow                        (first, second, (***))
 import           Control.Monad                        (when)
 import           Control.Monad.Trans.Reader           (runReaderT)
+import           Data.Foldable                        (for_)
 import           Data.Maybe                           (fromMaybe)
 import           Data.Monoid                          ((<>))
 import           Data.String                          (fromString)
@@ -47,27 +49,17 @@ import qualified Network.Wai.Handler.Warp             as W
 
 -- |Run the server
 main :: IO ()
-main = do
-  args <- getArgs
-
-  when (length args < 1) $ do
-    putStrLn "Expected at least one argument"
-    exitFailure
-
-  config <- case args of
-             (_:conffile:_) -> loadConfigFile conffile
-             _              -> return $ Just defaults
-
-  case config of
-    Just conf -> case head args of
-      "run"    -> serve route error404 error500 conf
-      "makedb" -> DB.withPostgreSQL (cfgDatabase conf) makedb
-      _  -> do
-        putStrLn "Unknown command, expected 'run' or 'makedb'."
-        exitFailure
-    Nothing -> do
-      putStrLn "Failed to read configuration"
+main = getConfig >>= \case
+  Right conf -> getArgs >>= \case
+    ["run"] -> serve route error404 error500 conf
+    ["makedb"] -> DB.withPostgreSQL (cfgDatabase conf) makedb
+    _ -> do
+      putStrLn "USAGE: bookdb (run | makedb)"
       exitFailure
+  Left errors -> do
+    putStrLn "Couldn't load configuration from environment:"
+    for_ errors $ \e -> putStrLn ("    " ++ e)
+    exitFailure
 
 -- |Route a request to a handler. These do not cover static files, as
 -- Seacat handles those.

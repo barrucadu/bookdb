@@ -3,14 +3,12 @@
 -- |Configuration file handling.
 module Configuration where
 
-import qualified Data.HashMap.Strict       as M
+import           Control.Monad             (guard)
 import           Data.Maybe                (fromMaybe)
 import qualified Data.Text                 as T
 import           Database.Selda.PostgreSQL (PGConnectInfo(..))
-import           System.IO.Error           (catchIOError, ioError, userError)
-import           Text.Parsec.Error         (errorMessages, messageString)
-import           Text.Toml
-import           Text.Toml.Types
+import           System.Environment        (lookupEnv)
+import           Text.Read                 (readMaybe)
 
 -- | The configuration record.
 data Configuration = Configuration
@@ -22,61 +20,64 @@ data Configuration = Configuration
   , cfgReadOnly :: Bool
   }
 
--- | Default configuration.
-defaults :: Configuration
-defaults = toConfiguration Nothing
+-- | Read configuration from the environment.
+getConfig :: IO (Either [String] Configuration)
+getConfig = do
+  bookdb_host <- lookupEnv "BOOKDB_HOST"
+  bookdb_port <- lookupEnv "BOOKDB_PORT"
+  bookdb_web_root <- lookupEnv "BOOKDB_WEB_ROOT"
+  bookdb_file_root <- lookupEnv "BOOKDB_FILE_ROOT"
+  bookdb_pg_host <- lookupEnv "BOOKDB_PG_HOST"
+  bookdb_pg_port <- lookupEnv "BOOKDB_PG_PORT"
+  bookdb_pg_db <- lookupEnv "BOOKDB_PG_DB"
+  bookdb_pg_schema <- lookupEnv "BOOKDB_PG_SCHEMA"
+  bookdb_pg_username <- lookupEnv "BOOKDB_PG_USERNAME"
+  bookdb_pg_password <- lookupEnv "BOOKDB_PG_PASSWORD"
+  bookdb_read_only <- lookupEnv "BOOKDB_READ_ONLY"
 
--- |Load a configuration file by name.
--- All errors (syntax, file access, etc) are squashed together,
--- returning a Nothing if anything fails. This is probably ok, given
--- the simplicity of the format, however it may be useful later on to
--- distinguish between syntax errors (and where they are) and access
--- errors, giving the user a better error message than just "oops,
--- something went wrong"
---
--- String interpolation is turned on (with a depth of 10). See the
--- `Data.ConfigParser` documentation for details on that.
---
--- This sets all of the configuration values expected by the main
--- application to their defaults if they weren't present already, but
--- other values are left as they are in the file.
-loadConfigFile :: FilePath -> IO (Maybe Configuration)
-loadConfigFile filename = (Just <$> loadConfigFileUnsafe filename) `catchIOError` const (return Nothing)
+  pure . runValidation $ Configuration
+    <$> pure (fromMaybe "*" bookdb_host)
+    <*> maybeToValidation "could not parse BOOKDB_PORT (expected integer in range 0..65535)" (maybe (Just 3000) readPort bookdb_port)
+    <*> pure (fromMaybe "http://localhost:3000" bookdb_web_root)
+    <*> pure (fromMaybe "/tmp" bookdb_file_root)
+    <*> (PGConnectInfo
+         <$> pure (maybe "localhost" T.pack bookdb_pg_host)
+         <*> maybeToValidation "could not parse BOOKDB_PG_PORT (expected integer in range 0..65535)" (maybe (Just 5432) readPort bookdb_pg_port)
+         <*> pure (maybe "bookdb" T.pack bookdb_pg_db)
+         <*> pure (T.pack <$> bookdb_pg_schema)
+         <*> pure (T.pack <$> bookdb_pg_username)
+         <*> pure (T.pack <$> bookdb_pg_password)
+        )
+    <*> maybeToValidation "could not parse BOOKDB_READ_ONLY (expected boolean)" (maybe (Just False) readBool bookdb_read_only)
 
--- |Load a configuration file unsafely. This may throw an IO
--- exception.
-loadConfigFileUnsafe :: FilePath -> IO Configuration
-loadConfigFileUnsafe filename = do
-  cfg <- readFile filename
-  let config = parseTomlDoc filename (T.pack cfg)
-  let formatError = unlines . map messageString . errorMessages
-  either (ioError . userError . formatError) (pure . toConfiguration . Just) config
+-- | Like @Either [e] a@, but accumulates errors.
+newtype Validation e a = Validation { runValidation :: Either [e] a }
 
--- | Convert a TOML 'Table' to a 'Coniguration' value, filling in the
--- blanks with default values.
-toConfiguration :: Maybe Table -> Configuration
-toConfiguration tbl = Configuration
-    { cfgHost = maybe "*" T.unpack (getStr "host")
-    , cfgPort = fromMaybe 3000 (getInt "port")
-    , cfgWebRoot = maybe "http://localhost:3000" T.unpack (getStr "web_root")
-    , cfgFileRoot = maybe "/tmp" T.unpack (getStr "file_root")
-    , cfgDatabase = PGConnectInfo
-      { pgHost = fromMaybe "localhost" (getStr "pg_host")
-      , pgPort = fromMaybe 5432 (getInt "pg_port")
-      , pgDatabase = fromMaybe "bookdb" (getStr "pg_name")
-      , pgSchema = getStr "pg_schema"
-      , pgUsername = getStr "pg_username"
-      , pgPassword = getStr "pg_password"
-      }
-    , cfgReadOnly = fromMaybe False (getBool "read_only")
-    }
-  where
-    getInt key = case M.lookup key =<< tbl of
-      Just (VInteger val) -> Just (fromIntegral val)
-      _ -> Nothing
-    getStr key = case M.lookup key =<< tbl of
-      Just (VString val) -> Just val
-      _  -> Nothing
-    getBool key = case M.lookup key =<< tbl of
-      Just (VBoolean val) -> Just val
-      _  -> Nothing
+instance Functor (Validation e) where
+  fmap f (Validation e) = Validation (fmap f e)
+
+instance Applicative (Validation e) where
+  pure a = Validation (Right a)
+  Validation (Right f) <*> Validation (Right a) = Validation (Right (f a))
+  Validation (Left el) <*> Validation (Left er) = Validation (Left (el ++ er))
+  Validation (Left el) <*> _ = Validation (Left el)
+  _ <*> Validation (Left er) = Validation (Left er)
+
+-- | Convert a Maybe into a Validation
+maybeToValidation :: Read a => e -> Maybe a -> Validation e a
+maybeToValidation e = Validation . maybe (Left [e]) Right
+
+-- | Parse a port number.
+readPort :: String -> Maybe Int
+readPort str = do
+  p <- readMaybe str
+  guard (p > 0)
+  guard (p < 65536)
+  pure p
+
+-- | Parse a boolean.
+readBool :: String -> Maybe Bool
+readBool str
+  | str `elem` ["true", "True", "TRUE"] = Just True
+  | str `elem` ["false", "False", "FALSE"] = Just False
+  | otherwise = Nothing

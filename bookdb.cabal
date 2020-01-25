@@ -75,11 +75,9 @@ executable bookdb
                      , bytestring
                      , containers
                      , filepath
-                     , htoml
                      , http-types
                      , mtl
                      , network
-                     , parsec
                      , random
                      , selda
                      , selda-postgresql
@@ -87,7 +85,6 @@ executable bookdb
                      , text
                      , time
                      , transformers
-                     , unordered-containers
                      , wai
                      , wai-extra
                      , wai-middleware-static
