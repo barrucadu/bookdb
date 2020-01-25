@@ -23,8 +23,8 @@ categories = table "book_categories" [#categoryCode :- primary]
 -- | Create the tables
 migrate :: SeldaM ()
 migrate = do
-  createTable books
   createTable categories
+  createTable books
 
 -- selectors
 dbIsbn :*: dbTitle :*: dbSubtitle :*: dbCover :*: dbVolume :*: dbFascicle :*: dbVoltitle :*: dbAuthor :*: dbTranslator :*: dbEditor :*: dbSorting :*: dbRead :*: dbLastRead :*: dbLocation :*: dbBorrower :*: dbCategoryCode = selectors books
