@@ -45,9 +45,9 @@ serve :: Configuration -> IO ()
 serve conf = S.scottyT port run $ do
     S.middleware $ staticPolicy (addBase (cfgFileRoot conf))
 
-    S.get "/" $ S.redirect "/list"
+    S.get "/"     $ S.redirect "/search"
+    S.get "/list" $ S.redirect "/search"
 
-    S.get "/list"   list
     S.get "/search" search
 
     S.get "/read"   $ restrict (! dbRead)

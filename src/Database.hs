@@ -48,10 +48,6 @@ makedb = do
 -------------------------------------------------------------------------------
 -- * Queries
 
--- | All books.
-allBooks :: SeldaM db [Book]
-allBooks = query (select books)
-
 -- | All categories.
 allCategories :: SeldaM db [BookCategory]
 allCategories = query (select categories)

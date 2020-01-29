@@ -23,11 +23,7 @@ $doctype 5
         <nav>
           <ul>
             <li>
-              <a href="list">List
-            <li>
               <a href="add">Add
-            <li>
-              <a href="search">Search
 
       ^{body}
 

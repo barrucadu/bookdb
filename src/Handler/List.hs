@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Handler.List
-    ( list
-    , search
+    ( search
     , restrict
     ) where
 
@@ -19,13 +18,6 @@ import           Database
 
 import qualified Handler.Templates         as T
 import           Handler.Utils
-
-list :: Handler db
-list = do
-  categories <- lift (lift allCategories)
-  books <- sortBooks <$> lift (lift allBooks)
-
-  htmlResponse $ T.index categories books
 
 search :: Handler db
 search = do
