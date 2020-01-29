@@ -77,21 +77,17 @@ deleteBook isbn = deleteFrom_ books (\b -> b ! dbIsbn .== literal isbn)
 
 -- | Search the books.
 searchBooks
-  :: Text -- ^ ISBN
-  -> Text -- ^ Title
-  -> Text -- ^ Subtitle
+  :: Text -- ^ Title
   -> Text -- ^ Author
   -> Text -- ^ Location
   -> Text -- ^ Borrower
   -> Maybe BookCategory -- ^ Category (exact match)
   -> Maybe Bool -- ^ Match only read/unread books
   -> SeldaM db [Book]
-searchBooks isbn title subtitle author location borrower category match = query $ do
+searchBooks title author location borrower category match = query $ do
   b <- select books
   let l s = literal ("%" <> s <> "%")
-  restrict (b ! dbIsbn     `like` l isbn)
   restrict (b ! dbTitle    `like` l title)
-  restrict (b ! dbSubtitle `like` l subtitle)
   restrict (b ! dbAuthor   `like` l author)
   restrict (b ! dbLocation `like` l location)
   restrict (b ! dbBorrower `like` l borrower)

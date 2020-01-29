@@ -3,9 +3,7 @@ TODO: Use digestive-functors to generate this form
 
 Template vars:
  - categories :: [BookCategory], the list of categories
- - isbn :: Text, the isbn from the prior search
  - btitle :: Text, the title from the prior search
- - subtitle :: Text, the subtitle from the prior search
  - author :: Text, the author from the prior search
  - match :: Text, the match read from the prior search
  - location :: Text, the location from the prior search
@@ -19,14 +17,8 @@ Template vars:
   <fieldset>
     <ol>
       <li>
-        <label for="isbn">ISBN/ID
-        <input type="text" #isbn name="isbn" value="#{isbn}">
-      <li>
         <label for="title">Title
         <input type="text" #title name="title" value="#{btitle}">
-      <li>
-        <label for="subtitle">Subtitle
-        <input type="text" #subtitle name="subtitle" value="#{subtitle}">
       <li>
         <label for="author">Author
         <input type="text" #author name="author" value="#{author}">
