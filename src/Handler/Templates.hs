@@ -41,6 +41,8 @@ index categories books web_root =
   in $(shamletFile "templates/wrapper.hamlet")
 
 search :: [BookCategory] -- ^ List of all categories
+       -> [Text] -- ^ List of all locations
+       -> [Text] -- ^ List of all borrowers
        -> Text -- ^ The title
        -> Text -- ^ The author
        -> Text -- ^ The matcher
@@ -50,7 +52,7 @@ search :: [BookCategory] -- ^ List of all categories
        -> [Book] -- ^ Books matching the search
        -> Text -- ^ Web root
        -> Html
-search categories btitle author match location borrower category books web_root =
+search categories locations borrowers btitle author match location borrower category books web_root =
   let authors = numAuthors books
       read    = numRead books
       title   = "BookDB :: Search" :: Text

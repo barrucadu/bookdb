@@ -29,11 +29,13 @@ search = do
   borrower  <- paramWithDefault "borrower" ""
 
   categories <- lift (lift allCategories)
+  locations  <- lift (lift allLocations)
+  borrowers  <- lift (lift allBorrowers)
   let category = categoryByCode' code categories
   let match = case matchcode of "only-read" -> Just True; "only-unread" -> Just False; _ -> Nothing
   books <- sortBooks <$> lift (lift (searchBooks title author location borrower category match))
 
-  htmlResponse $ T.search categories title author matchcode location borrower category books
+  htmlResponse $ T.search categories locations borrowers title author matchcode location borrower category books
 
 -- |Filter by field value
 restrict :: (Row db Book -> Col db Bool) -- ^ The filter

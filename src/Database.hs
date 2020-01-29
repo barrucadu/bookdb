@@ -4,7 +4,6 @@
 
 module Database (module Database, module Types) where
 
-import           Control.Monad                (unless)
 import           Data.Maybe                   (listToMaybe)
 import           Data.Monoid                  ((<>))
 import           Data.Text                    (Text)
@@ -51,6 +50,18 @@ makedb = do
 -- | All categories.
 allCategories :: SeldaM db [BookCategory]
 allCategories = query (select categories)
+
+-- | All locations.
+allLocations :: SeldaM db [Text]
+allLocations = query . distinct $ do
+  b <- select books
+  pure (b ! dbLocation)
+
+-- | All borrowers.
+allBorrowers :: SeldaM db [Text]
+allBorrowers = query . distinct $ do
+  b <- select books
+  pure (b ! dbBorrower)
 
 -- | Find a book by ISBN.
 findBook :: Text -> SeldaM db (Maybe Book)

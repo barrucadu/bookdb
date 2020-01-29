@@ -3,6 +3,8 @@ TODO: Use digestive-functors to generate this form
 
 Template vars:
  - categories :: [BookCategory], the list of categories
+ - locations :: [Text], the list of locations
+ - borrowers :: [Text], the list of borrowers
  - btitle :: Text, the title from the prior search
  - author :: Text, the author from the prior search
  - match :: Text, the match read from the prior search
@@ -25,7 +27,7 @@ Template vars:
       <li>
         <label for="match">Show
         <select #match name="match">
-          $if match == ""
+          $if match == "all"
             <option value="all" selected>
               All books
           $else
@@ -45,7 +47,19 @@ Template vars:
               Only unread books
       <li>
         <label for="location">Location
-        <input type="text" #location name="location" value="#{location}">
+        <select #location name="location">
+          $if location == ""
+            <option value="" selected>
+          $else
+            <option value="">
+
+          $forall loc <- locations
+            $if location == loc
+              <option value="#{loc}" selected>
+                #{loc}
+            $else
+              <option value="#{loc}">
+                #{loc}
       <li>
         <label for="category">Category
         <select #category name="category">
@@ -69,7 +83,19 @@ Template vars:
                   #{categoryCode cat} - #{categoryName cat}
       <li>
         <label for="borrower">Borrower
-        <input type="text" #borrower name="borrower" value="#{borrower}">
+        <select #borrower name="borrower">
+          $if borrower == ""
+            <option value="" selected>
+          $else
+            <option value="">
+
+          $forall bor <- borrowers
+            $if borrower == bor
+              <option value="#{bor}" selected>
+                #{bor}
+            $else
+              <option value="#{bor}">
+                #{bor}
       <li>
         <input type="submit" value="Search">
 
