@@ -7,8 +7,7 @@ Template vars:
  - btitle :: Text, the title from the prior search
  - subtitle :: Text, the subtitle from the prior search
  - author :: Text, the author from the prior search
- - matchread :: Bool, the match read from the prior search
- - matchunread :: Bool, the match unread from the prior search
+ - match :: Text, the match read from the prior search
  - location :: Text, the location from the prior search
  - category :: Maybe BookCategory, the category from the prior search
  - borrower :: Text, the borrower from the prior search
@@ -32,17 +31,26 @@ Template vars:
         <label for="author">Author
         <input type="text" #author name="author" value="#{author}">
       <li>
-        <label for="matchread">Match Read
-        $if matchread
-          <input type="checkbox" #matchread name="matchread" value="yes" checked>
-        $else
-          <input type="checkbox" #matchread name="matchread" value="yes">
-      <li>
-        <label for="matchunread">Match Unread
-        $if matchunread
-          <input type="checkbox" #matchunread name="matchunread" value="yes" checked>
-        $else
-          <input type="checkbox" #matchunread name="matchunread" value="yes">
+        <label for="match">Show
+        <select #match name="match">
+          $if match == ""
+            <option value="all" selected>
+              All books
+          $else
+            <option value="all">
+              All books
+          $if match == "only-read"
+            <option value="only-read" selected>
+              Only read books
+          $else
+            <option value="only-read">
+              Only read books
+          $if match == "only-unread"
+            <option value="only-unread" selected>
+              Only unread books
+          $else
+            <option value="only-unread">
+              Only unread books
       <li>
         <label for="location">Location
         <input type="text" #location name="location" value="#{location}">

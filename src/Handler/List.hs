@@ -21,21 +21,21 @@ import           Handler.Utils
 
 search :: Handler db
 search = do
-  isbn        <- paramWithDefault "isbn" ""
-  title       <- paramWithDefault "title" ""
-  subtitle    <- paramWithDefault "subtitle" ""
-  author      <- paramWithDefault "author" ""
-  matchread   <- hasParam "matchread"
-  matchunread <- hasParam "matchunread"
-  location    <- paramWithDefault "location" ""
-  code        <- paramWithDefault "category" ""
-  borrower    <- paramWithDefault "borrower" ""
+  isbn      <- paramWithDefault "isbn" ""
+  title     <- paramWithDefault "title" ""
+  subtitle  <- paramWithDefault "subtitle" ""
+  author    <- paramWithDefault "author" ""
+  matchcode <- paramWithDefault "match" "all"
+  location  <- paramWithDefault "location" ""
+  code      <- paramWithDefault "category" ""
+  borrower  <- paramWithDefault "borrower" ""
 
   categories <- lift (lift allCategories)
   let category = categoryByCode' code categories
-  books <- sortBooks <$> lift (lift (searchBooks isbn title subtitle author location borrower category matchread matchunread))
+  let match = case matchcode of "only-read" -> Just True; "only-unread" -> Just False; _ -> Nothing
+  books <- sortBooks <$> lift (lift (searchBooks isbn title subtitle author location borrower category match))
 
-  htmlResponse $ T.search categories isbn title subtitle author matchread matchunread location borrower category books
+  htmlResponse $ T.search categories isbn title subtitle author matchcode location borrower category books
 
 -- |Filter by field value
 restrict :: (Row db Book -> Col db Bool) -- ^ The filter

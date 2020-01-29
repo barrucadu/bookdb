@@ -45,15 +45,14 @@ search :: [BookCategory] -- ^ List of all categories
        -> Text -- ^ The title
        -> Text -- ^ The subtitle
        -> Text -- ^ The author
-       -> Bool -- ^ Whether to match read
-       -> Bool -- ^ Whether to match unread
+       -> Text -- ^ The matcher
        -> Text -- ^ The location
        -> Text -- ^ The borrower
        -> Maybe BookCategory -- ^ The category
        -> [Book] -- ^ Books matching the search
        -> Text -- ^ Web root
        -> Html
-search categories isbn btitle subtitle author matchread matchunread location borrower category books web_root =
+search categories isbn btitle subtitle author match location borrower category books web_root =
   let authors = numAuthors books
       read    = numRead books
       title   = "BookDB :: Search" :: Text

@@ -84,10 +84,9 @@ searchBooks
   -> Text -- ^ Location
   -> Text -- ^ Borrower
   -> Maybe BookCategory -- ^ Category (exact match)
-  -> Bool -- ^ Permit read books
-  -> Bool -- ^ Permit unread books
+  -> Maybe Bool -- ^ Match only read/unread books
   -> SeldaM db [Book]
-searchBooks isbn title subtitle author location borrower category matchread matchunread = query $ do
+searchBooks isbn title subtitle author location borrower category match = query $ do
   b <- select books
   let l s = literal ("%" <> s <> "%")
   restrict (b ! dbIsbn     `like` l isbn)
@@ -101,10 +100,13 @@ searchBooks isbn title subtitle author location borrower category matchread matc
       restrict (b ! dbCategoryCode .== literal (categoryCode cat))
     Nothing ->
       pure ()
-  unless matchread $
-    restrict (not_ (b ! dbRead))
-  unless matchunread $
-    restrict (b ! dbRead)
+  case match of
+    Just True ->
+      restrict (b ! dbRead)
+    Just False ->
+      restrict (not_ (b ! dbRead))
+    Nothing ->
+      pure ()
   pure b
 
 -- | Limited form of search: use the given restriction.
