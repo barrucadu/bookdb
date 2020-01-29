@@ -2,7 +2,6 @@
 
 module Handler.List
     ( search
-    , restrict
     ) where
 
 import           Control.Monad.Trans.Class (lift)
@@ -12,7 +11,6 @@ import           Data.Maybe                (fromMaybe)
 import           Data.Monoid               ((<>))
 import           Data.Ord                  (comparing)
 import           Data.Text                 (toLower, unpack)
-import           Database.Selda            (Col, Row)
 
 import           Database
 
@@ -36,15 +34,6 @@ search = do
   books <- sortBooks <$> lift (lift (searchBooks title author location borrower category match))
 
   htmlResponse $ T.search categories locations borrowers title author matchcode location borrower category books
-
--- |Filter by field value
-restrict :: (Row db Book -> Col db Bool) -- ^ The filter
-         -> Handler db
-restrict by = do
-  categories <- lift (lift allCategories)
-  books <- sortBooks <$> lift (lift (restrictBooks by))
-
-  htmlResponse $ T.index categories books
 
 -- | Sort a book list.
 sortBooks :: [Book] -> [Book]

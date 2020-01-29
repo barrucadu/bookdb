@@ -99,4 +99,4 @@ Template vars:
       <li>
         <input type="submit" value="Search">
 
-^{list categories books authors (Just read) False}
+^{results}

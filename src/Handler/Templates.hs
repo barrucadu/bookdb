@@ -13,7 +13,6 @@ module Handler.Templates
 
     -- * Browsing books
     , search
-    , index
     ) where
 
 import           Prelude          hiding (null)
@@ -31,15 +30,6 @@ import qualified Data.Set         as S
 
 -------------------------
 
-index :: [BookCategory] -- ^ List of all categories
-      -> [Book] -- ^ The list of all books
-      -> Text -- ^ Web root
-      -> Html
-index categories books web_root =
-  let title = "BookDB" :: Text
-      body  = list categories books (numAuthors books) (Just $ numRead books) False
-  in $(shamletFile "templates/wrapper.hamlet")
-
 search :: [BookCategory] -- ^ List of all categories
        -> [Text] -- ^ List of all locations
        -> [Text] -- ^ List of all borrowers
@@ -56,16 +46,9 @@ search categories locations borrowers btitle author match location borrower cate
   let authors = numAuthors books
       read    = numRead books
       title   = "BookDB :: Search" :: Text
+      results = $(shamletFile "templates/list.hamlet")
       body    = $(shamletFile "templates/search.hamlet")
   in $(shamletFile "templates/wrapper.hamlet")
-
-list :: [BookCategory] -- ^ List of all categories
-     -> [Book]    -- ^ The books
-     -> Int       -- ^ The number of authors
-     -> Maybe Int -- ^ The number of read books
-     -> Bool      -- ^ Whether to display in \"thin\" mode
-     -> Html
-list categories books authors read thin = $(shamletFile "templates/list.hamlet")
 
 -------------------------
 

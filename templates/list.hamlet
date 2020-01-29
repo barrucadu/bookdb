@@ -3,13 +3,13 @@ Template vars:
  - categories :: [BookCategory], the list of all categories
  - books :: [Book], list of books
  - authors :: Int, the number of authors
- - read :: Maybe Int, the number of read books
- - thin :: Bool, if true, only show the first five columns (cover, ISBN/ID, title, author, read)
+ - read :: Int, the number of read books
 -->
 <p>
   Showing #{length books} #{pluralise "book" "books" (length books)} by #{authors} #{pluralise "author" "authors" authors}
-  $maybe nread <- read
-    , of which #{nread} (#{percent nread (length books)}%) #{pluralise "has" "have" nread} been read
+  $if read > 0
+    , of which #{read} (#{percent read (length books)}%) #{pluralise "has" "have" read} been read
+  $else
   .
 
 <table>
@@ -19,18 +19,14 @@ Template vars:
     <th>Title
     <th>Author
     <th style="min-width:7em">Read
-    $if not thin
-      <th>Where?
-      <th>What?
-      <th>Who?
-      <th>
+    <th>Where?
+    <th>What?
+    <th>Who?
+    <th>
   <tbody>
     $if length books == 0
       <tr>
-        $if thin
-          <td colspan="5">There are no books.
-        $else
-          <td colspan="8">There are no books.
+        <td colspan="8">There are no books.
     $else
       $forall book <- books
         <tr>
@@ -47,39 +43,31 @@ Template vars:
                 $if elem author ["Anonymous", "Unknown", "Various"]
                   <li .pseudo>#{author}
                 $else
-                  <li>
-                    <a href="author/#{author}">#{author}
+                  <li>#{author}
 
             $maybe trans <- bookTranslator book
               (trans.
                 <ol class="translators">
                   $forall translator <- splitOn " & " trans
-                    <li>
-                      <a href="translator/#{translator}">#{translator}</a>
+                    <li>#{translator}
               )
 
             $maybe edit <- bookEditor book
               (edit.
                 <ol class="editors">
                   $forall editor <- splitOn " & " edit
-                    <li>
-                      <a href="editor/#{editor}">#{editor}</a>
+                    <li>#{editor}
               )
           <td>
             $if bookRead book
               $maybe read <- bookLastRead book
-                <a href="read">✔ (#{formatTime defaultTimeLocale "%F" read})
+                ✔ (#{formatTime defaultTimeLocale "%F" read})
               $nothing
-                <a href="read">✔
+                ✔
             $else
-              <a href="unread">✘
-          $if not thin
-            <td>
-              <a href="location/#{bookLocation book}">#{bookLocation book}
-            <td>
-              <a href="category/#{bookCategoryCode book}">
-                <abbr title="#{categoryName (bookCategory book categories)}">#{bookCategoryCode book}</abbr>
-            <td>
-              <a href="borrower/#{bookBorrower book}">#{bookBorrower book}
-            <td .meta>
-              [&nbsp;<a href="edit/#{bookIsbn book}">e</a>&nbsp;/&nbsp;<a href="delete/#{bookIsbn book}">d</a>&nbsp;]
+              ✘
+          <td>#{bookLocation book}
+          <td><abbr title="#{categoryName (bookCategory book categories)}">#{bookCategoryCode book}</abbr>
+          <td>#{bookBorrower book}
+          <td .meta>
+            [&nbsp;<a href="edit/#{bookIsbn book}">e</a>&nbsp;/&nbsp;<a href="delete/#{bookIsbn book}">d</a>&nbsp;]

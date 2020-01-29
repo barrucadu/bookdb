@@ -11,7 +11,6 @@ import           Data.Monoid                   ((<>))
 import qualified Data.Text                     as T
 import qualified Data.Text.Lazy                as TL
 import           Database
-import           Database.Selda                (like, literal, not_, (!), (.==))
 import qualified Database.Selda.PostgreSQL     as DB
 import           Handler.Edit
 import           Handler.Information
@@ -49,33 +48,6 @@ serve conf = S.scottyT port run $ do
     S.get "/list" $ S.redirect "/search"
 
     S.get "/search" search
-
-    S.get "/read"   $ restrict (! dbRead)
-    S.get "/unread" $ restrict (\b -> not_ (b ! dbRead))
-
-    S.get "/author/:author" $ do
-      author <- S.param "author"
-      restrict (\b -> b ! dbAuthor `like` literal ("%" <> author <> "%"))
-
-    S.get "/translator/:translator" $ do
-      translator <- S.param "translator"
-      restrict (\b -> b ! dbTranslator .== literal (Just translator))
-
-    S.get "/editor/:editor" $ do
-      editor <- S.param "editor"
-      restrict (\b -> b ! dbEditor .== literal (Just editor))
-
-    S.get "/location/:location" $ do
-      location <- S.param "location"
-      restrict (\b -> b ! dbLocation .== literal location)
-
-    S.get "/category/:category" $ do
-      category <- S.param "category"
-      restrict (\b -> b ! dbCategoryCode .== literal category)
-
-    S.get "/borrower/:borrower" $ do
-      borrower <- S.param "borrower"
-      restrict (\b -> b ! dbBorrower .== literal borrower)
 
     S.get "/add"  add
     S.post "/add" commitAdd
