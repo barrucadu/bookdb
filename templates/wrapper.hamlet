@@ -8,7 +8,7 @@ $doctype 5
 <html>
   <head>
     <base href="#{web_root}">
-    <title>#{title}
+    <title>BookDB :: #{title}
 
     <link rel="stylesheet" href="style.css" type="text/css">
 
@@ -17,15 +17,12 @@ $doctype 5
 
   <body>
     <div .page>
-      <header>
-        <h1>#{title}
-
-        <nav>
-          <ul>
-            <li>
-              <a href="add">Add
-
       ^{body}
 
       <footer>
-        <a href="https://github.com/barrucadu/bookdb">Github
+        <nav>
+          <ul>
+            <li>
+              <a href="add">Add new book
+            <li>
+              <a href="https://github.com/barrucadu/bookdb">Github

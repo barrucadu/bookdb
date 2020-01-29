@@ -45,7 +45,7 @@ search :: [BookCategory] -- ^ List of all categories
 search categories locations borrowers btitle author match location borrower category books web_root =
   let authors = numAuthors books
       read    = numRead books
-      title   = "BookDB :: Search" :: Text
+      title   = "Search" :: Text
       results = $(shamletFile "templates/list.hamlet")
       body    = $(shamletFile "templates/search.hamlet")
   in $(shamletFile "templates/wrapper.hamlet")
@@ -58,7 +58,7 @@ addForm :: [BookCategory]  -- ^ List of all categories
 addForm categories web_root =
   let book   = Nothing
       target = "add" :: Text
-      title  = "BookDB :: Add" :: Text
+      title  = "Add" :: Text
       body   = $(shamletFile "templates/edit_form.hamlet")
   in $(shamletFile "templates/wrapper.hamlet")
 
@@ -69,7 +69,7 @@ editForm :: [BookCategory] -- ^ List of all categories
 editForm categories bk web_root =
   let book   = Just bk
       target = "edit/" <> bookIsbn bk
-      title  = "BookDB :: Edit " <> bookIsbn bk :: Text
+      title  = "Edit " <> bookIsbn bk :: Text
       body   = $(shamletFile "templates/edit_form.hamlet")
   in $(shamletFile "templates/wrapper.hamlet")
 
