@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from flask import Flask, abort, jsonify, send_from_directory
+from flask import Flask, abort, jsonify, request, send_from_directory
 
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
@@ -38,12 +38,51 @@ LOCATIONS = {
 }
 
 
-def transform_book(book):
+def __expand_category(uuid):
+    out = []
+    while uuid is not None:
+        name, uuid = CATEGORIES[uuid]
+        out.append(name)
+
+    return out
+
+
+def __children_categories(uuid):
+    out = [uuid]
+    for k, v in CATEGORIES.items():
+        if v[1] == uuid:
+            out.extend(__children_categories(k))
+    return out
+
+
+MEMOISED_EXPAND_CATEGORY = {}
+MEMOISED_CHILDREN_CATEGORIES = {}
+
+for uuid in CATEGORIES.keys():
+    MEMOISED_EXPAND_CATEGORY[uuid] = __expand_category(uuid)
+    MEMOISED_CHILDREN_CATEGORIES[uuid] = __children_categories(uuid)
+
+
+def expand_category(uuid):
+    return MEMOISED_EXPAND_CATEGORY[uuid]
+
+
+def children_categories(uuid):
+    return MEMOISED_CHILDREN_CATEGORIES[uuid]
+
+
+def expand_location(uuid):
+    return LOCATIONS[uuid]
+
+
+def transform_book(bId, book):
     def convert_bit(bit):
         try:
             return int(bit)
         except ValueError:
             return bit
+
+    book["id"] = bId
 
     if "volume_number" in book:
         book["volume_number"]["bits"] = [convert_bit(bit) for bit in book["volume_number"]["bits"]]
@@ -51,23 +90,96 @@ def transform_book(book):
         book["fascicle_number"]["bits"] = [convert_bit(bit) for bit in book["fascicle_number"]["bits"]]
     if "holdings" in book:
         for holding in book["holdings"]:
-            holding["location"] = LOCATIONS[holding["location_uuid"]]
+            holding["location"] = expand_location(holding["location_uuid"])
     if "category_uuid" in book:
-        book["category"] = []
-        current_uuid = book["category_uuid"]
-        while current_uuid is not None:
-            name, current_uuid = CATEGORIES[current_uuid]
-            book["category"].append(name)
+        book["category"] = expand_category(book["category_uuid"])
 
     return book
+
+
+def sort_key_for_book(book):
+    return (
+        book["bucket"],
+        book["title"].lower(),
+        book.get("volume_number", {}).get("bits", []),
+        book.get("fascicle_number", {}).get("bits", []),
+        book.get("subtitle", "").lower(),
+        book.get("volume_title", "").lower(),
+    )
 
 
 def get_book(bId):
     try:
         book = es.get(index="bookdb", id=bId)
-        return transform_book(book["_source"])
+        return transform_book(bId, book["_source"])
     except NotFoundError:
         return None
+
+
+def do_search(request_args):
+    search_params = {}
+    for k in request_args:
+        if k in ["keywords", "match", "location", "category"]:
+            search_params[k] = request_args.get(k)
+        elif k in ["author[]", "editor[]", "translator[]"]:
+            search_params[k] = request_args.getlist(k)
+
+    filters = {
+        "people.authors": search_params.get("author[]"),
+        "people.editors": search_params.get("editor[]"),
+        "people.translators": search_params.get("translator[]"),
+        "has_been_read": {"only-read": True, "only-unread": False}.get(search_params.get("match"), None),
+        "holdings.location_uuid": search_params.get("location"),
+    }
+
+    queries = []
+    if "keywords" in search_params:
+        queries.append({"query_string": {"query": search_params["keywords"], "default_field": "display_title"}})
+    else:
+        queries.append({"match_all": {}})
+    for f, vs in filters.items():
+        for v in vs or []:
+            queries.append({"term": {f: v}})
+    if "category" in search_params:
+        queries.append({"terms": {"category_uuid": children_categories(search_params["category"])}})
+
+    body = {
+        "query": {"bool": {"must": queries}},
+        "aggs": {
+            **{
+                k: {"terms": {"field": v, "size": 500}}
+                for k, v in [("author", "people.authors"), ("editor", "people.editors"), ("translator", "people.translators"), ("match", "has_been_read"), ("category", "category_uuid")]
+            },
+            **{"location": {"nested": {"path": "holdings"}, "aggs": {"location": {"terms": {"field": "holdings.location_uuid", "size": 500}}}}},
+        },
+        "size": 5000,
+    }
+
+    results = es.search(index="bookdb", body=body)
+    hits = results["hits"]["hits"]
+
+    aggregations = {k: results["aggregations"][k]["buckets"] for k in ["author", "editor", "translator"]}
+    aggregations["match"] = []
+    read = list(d["doc_count"] for d in results["aggregations"]["match"]["buckets"] if d["key_as_string"] == "true")
+    unread = list(d["doc_count"] for d in results["aggregations"]["match"]["buckets"] if d["key_as_string"] == "false")
+    if read:
+        aggregations["match"].append({"key": "only-read", "doc_count": min(read)})
+    if unread:
+        aggregations["match"].append({"key": "only-unread", "doc_count": min(unread)})
+    aggregations["category"] = [{"key": expand_category(d["key"]), "key_uuid": d["key"], "doc_count": d["doc_count"]} for d in results["aggregations"]["category"]["buckets"]]
+    aggregations["location"] = [{"key": expand_location(d["key"]), "key_uuid": d["key"], "doc_count": d["doc_count"]} for d in results["aggregations"]["location"]["location"]["buckets"]]
+
+    return {
+        "aggregations": {k: sorted(v, key=lambda d: d["key"]) for k, v in aggregations.items()},
+        "books": sorted([transform_book(hit["_id"], hit["_source"]) for hit in hits], key=sort_key_for_book),
+        "count": len(hits),
+        "search_params": search_params,
+    }
+
+
+@app.route("/search.json")
+def search_json():
+    return jsonify(do_search(request.args))
 
 
 @app.route("/book/<bId>.json")
