@@ -1,5 +1,1 @@
-.cabal-sandbox
-cabal.sandbox.config
-dist
-*.sqlite
-.stack-work
+venv
