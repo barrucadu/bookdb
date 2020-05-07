@@ -38,12 +38,14 @@ body {
     padding: 25px;
 }
 
-div.information {
+.info {
     background-color: var(--content-bg-color);
     border: 5px solid var(--content-border-color);
     width: 600px;
     margin: 0 auto;
     padding: 25px;
+    font-weight: bold;
+    text-align: center;
 }
 
 p {
@@ -202,4 +204,15 @@ img {
     border: 2px solid transparent;
     box-shadow: 0 2px 0 var(--button-shadow-color);
     color: var(--button-text-color);
+}
+
+.error {
+    background-color: var(--bg-color);
+    border: 5px solid var(--content-border-color);
+    color: var(--content-bg-color);
+    padding: 10px;
+    margin: 0 auto;
+    max-width: 500px;;
+    font-weight: bold;
+    text-align: center;
 }

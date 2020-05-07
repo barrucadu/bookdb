@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from common import fixup_book_for_index
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
 
@@ -36,7 +37,7 @@ if len(sys.argv) == 2:
 
     try:
         for doc_id, doc in dump.items():
-            es.index(index="bookdb", id=doc_id, body=doc)
+            es.index(index="bookdb", id=doc_id, body=fixup_book_for_index(doc))
         print(f"Indexed {len(dump)} records")
     except AttributeError:
         print(f"Expected {sys.argv[1]} to be an object")

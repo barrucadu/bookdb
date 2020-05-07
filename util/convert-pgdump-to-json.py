@@ -53,7 +53,7 @@ BOOKS = {}
 # COPY public.books ("bookIsbn", "bookTitle", "bookSubtitle", "bookCover", "bookVolume", "bookFascicle", "bookVoltitle", "bookAuthor", "bookTranslator", "bookEditor", "bookSorting", "bookRead", "bookLastRead", "bookLocation", "bookBorrower", "bookCategoryCode") FROM stdin;
 
 
-def to_people(people, bucket_only=False):
+def to_people(people):
     if not people:
         return []
     out = []
@@ -63,47 +63,7 @@ def to_people(people, bucket_only=False):
             if "," in person:
                 lst, fst = person.split(",")
                 person = f"{fst.strip()} {lst.strip()}"
-            if bucket_only:
-                return lst
             out.append(person)
-    return out
-
-
-def person_bucket(people):
-    person = people.split("&")[0].strip()
-    if "," in person:
-        person = person.split(",")[0]
-    return person.lower()
-
-
-def to_bits(cs):
-    if not cs:
-        return []
-
-    out = []
-    tmp = ""
-    is_number = True
-    first = True
-    for c in cs:
-        if c in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
-            if is_number:
-                tmp += c
-            else:
-                if not first:
-                    out.append(tmp)
-                tmp = c
-                is_number = True
-        else:
-            if is_number:
-                if not first:
-                    out.append(tmp)
-                tmp = c
-                is_number = False
-            else:
-                tmp += c
-        first = False
-    if not first:
-        out.append(tmp)
     return out
 
 
@@ -122,33 +82,16 @@ with open("/home/barrucadu/bookdb-data/restore.sql") as f:
             "last_read_date": rs[12].split()[0] if rs[12] else None,
             "cover_image_mimetype": MIMETYPES[rs[3].split(".")[1].lower()] if rs[3] else None,
             "holdings": [{"location_uuid": LOCATIONS[rs[13].lower()]}],
-            "bucket": (BUCKET_FIXUPS.get(rs[10], rs[10]) or to_people(rs[7], bucket_only=True)).lower(),
+            "bucket": (BUCKET_FIXUPS.get(rs[10], rs[10]) or "").lower() or None,
             "category_uuid": CATEGORIES[rs[15].lower()],
             "created_at": now,
             "updated_at": now,
         }
-        book = {k: v for k, v in book.items() if v or v is False}
+        book = {k: v for k, v in book.items() if v}
         book["people"] = {k: v for k, v in book["people"].items() if v}
         if rs[4]:
-            book["volume_number"] = {
-                "raw": rs[4],
-                "bits": to_bits(rs[4]),
-            }
+            book["volume_number"] = {"raw": rs[4]}
         if rs[5]:
-            book["fascicle_number"] = {
-                "raw": rs[5],
-                "bits": to_bits(rs[5]),
-            }
-        book["display_title"] = book["title"]
-        if "subtitle" in book:
-            book["display_title"] += f": {book['subtitle']}"
-        if "volume_number" in book and "fascicle_number" in book:
-            book["display_title"] += f" (vol. {book['volume_number']['raw']}; fas. {book['fascicle_number']['raw']})"
-        elif "volume_number" in book:
-            book["display_title"] += f" (vol. {book['volume_number']['raw']})"
-        elif "fascicle_number" in book:
-            book["display_title"] += f" (fas. {book['fascicle_number']['raw']})"
-        if "volume_title" in book:
-            book["display_title"] += f" / {book['volume_title']}"
+            book["fascicle_number"] = {"raw": rs[5]}
         BOOKS[ISBN_FIXUPS.get(rs[0], rs[0])] = book
 print(json.dumps(BOOKS))

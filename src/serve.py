@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from flask import Flask, abort, jsonify, redirect, render_template, request, send_from_directory
-
+from common import fixup_book_for_index
+from datetime import datetime
 from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import NotFoundError
+from elasticsearch.exceptions import ConflictError, NotFoundError
+from flask import Flask, abort, jsonify, redirect, render_template, request, send_from_directory
 
 import os
 
@@ -100,6 +101,7 @@ def transform_book(bId, book):
         except ValueError:
             return bit
 
+    book = {k: v for k, v in book.items() if v}
     book["id"] = bId
     book["has_cover_image"] = "cover_image_mimetype" in book
 
@@ -202,6 +204,71 @@ def do_search(request_args):
     }
 
 
+def form_to_book(form, this_is_an_insert=True):
+    bId = None
+    book = {}
+    errors = []
+
+    now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    if this_is_an_insert:
+        book["created_at"] = now
+    book["updated_at"] = now
+
+    if this_is_an_insert:
+        if form.get("code"):
+            bId = form.get("code").strip()
+        if not bId:
+            errors.append("The code cannot be blank.")
+
+    if form.get("category"):
+        uuid = form.get("category")
+        if uuid in CATEGORIES:
+            book["category_uuid"] = uuid
+        else:
+            errors.append(f"There is no such category: {uuid}.")
+
+    book["title"] = form.get("title", "").strip()
+    if not book["title"]:
+        errors.append("The title cannot be blank.")
+
+    book["subtitle"] = form.get("subtitle", "").strip() or None
+    book["volume_title"] = form.get("volume_title", "").strip() or None
+    if form.get("volume_number", "").strip():
+        book["volume_number"] = {"raw": form.get("volume_number").strip()}
+    else:
+        book["volume_number"] = None
+    if form.get("fascicle_number", "").strip():
+        book["fascicle_number"] = {"raw": form.get("fascicle_number").strip()}
+    else:
+        book["fascicle_number"] = None
+
+    book["has_been_read"] = "has_been_read" in form
+    book["last_read_date"] = form.get("last_read_date", "").strip() or None
+
+    book["people"] = {
+        "authors": [n.strip() for n in form.getlist("author[]") if n.strip()],
+        "editors": [n.strip() for n in form.getlist("editor[]") if n.strip()],
+        "translators": [n.strip() for n in form.getlist("translator[]") if n.strip()],
+    }
+    if not book["people"]["authors"]:
+        errors.append("There must be at least one author.")
+
+    book["holdings"] = []
+    for uuid, notes in zip(form.getlist("location[]"), form.getlist("notes[]")):
+        if not uuid:
+            continue
+        if uuid in LOCATIONS:
+            book["holdings"].append({"location_uuid": uuid, "notes": notes})
+        else:
+            errors.append(f"There is no such location: {uuid}.")
+    if not book["holdings"]:
+        errors.append("There must be at least one holding.")
+
+    book["bucket"] = form.get("bucket", "").strip() or None
+
+    return bId, fixup_book_for_index(book), errors
+
+
 def standard_template_args():
     all_books = do_search({})
 
@@ -245,6 +312,43 @@ def search():
         search_params=results["search_params"],
         **standard_template_args(),
     )
+
+
+@app.route("/add", methods=["GET", "HEAD", "POST"])
+def add():
+    if not ALLOW_WRITES:
+        abort(403)
+
+    if request.method == "POST":
+        bId, candidate, errors = form_to_book(request.form)
+        if errors:
+            return render_template("edit.html", book=candidate, errors=errors, **standard_template_args())
+        try:
+            es.create(index="bookdb", id=bId, body=candidate)
+        except ConflictError:
+            return render_template("edit.html", book=candidate, errors=["Code already in use"], **standard_template_args())
+        return render_template("info.html", message="The book has been created.", base_uri=BASE_URI)
+
+    return render_template("edit.html", book={}, **standard_template_args())
+
+
+@app.route("/book/<bId>/edit", methods=["GET", "HEAD", "POST"])
+def edit(bId):
+    if not ALLOW_WRITES:
+        abort(403)
+
+    book = get_book(bId)
+    if not book:
+        abort(404)
+
+    if request.method == "POST":
+        _, candidate, errors = form_to_book(request.form, this_is_an_insert=False)
+        if errors:
+            return render_template("edit.html", book={"id": bId, **candidate}, errors=errors, **standard_template_args())
+        es.update(index="bookdb", id=bId, body={"doc": candidate})
+        return render_template("info.html", message="The book has been updated.", base_uri=BASE_URI)
+
+    return render_template("edit.html", book=book, **standard_template_args())
 
 
 @app.route("/search.json")
