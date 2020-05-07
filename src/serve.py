@@ -7,6 +7,7 @@ from elasticsearch.exceptions import ConflictError, NotFoundError
 from flask import Flask, abort, jsonify, redirect, render_template, request, send_from_directory
 
 import os
+import re
 
 app = Flask(__name__)
 
@@ -204,9 +205,10 @@ def do_search(request_args):
     }
 
 
-def form_to_book(form, this_is_an_insert=True):
+def form_to_book(form, files, this_is_an_insert=True):
     bId = None
     book = {}
+    cover = None
     errors = []
 
     now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
@@ -219,6 +221,8 @@ def form_to_book(form, this_is_an_insert=True):
             bId = form.get("code").strip()
         if not bId:
             errors.append("The code cannot be blank.")
+        if not re.match("^[a-zA-Z0-9-]+$", bId):
+            errors.append("The code can only contain letters, numbers, and dashes.")
 
     if form.get("category"):
         uuid = form.get("category")
@@ -266,7 +270,20 @@ def form_to_book(form, this_is_an_insert=True):
 
     book["bucket"] = form.get("bucket", "").strip() or None
 
-    return bId, fixup_book_for_index(book), errors
+    if "cover" in files and files["cover"].filename:
+        if "." not in files["cover"].filename:
+            errors.append("Cover filename must be of the form [a-zA-Z0-9-]+.{gif,jpg,jpeg,png}")
+        else:
+            ext = files["cover"].filename.rsplit(".", 1)[1].lower()
+            if ext == "jpg":
+                ext = "jpeg"
+            if ext in ["gif", "jpeg", "png"]:
+                book["cover_image_mimetype"] = f"image/{ext}"
+                cover = files["cover"]
+            else:
+                errors.append("Cover filename must be of the form [a-zA-Z0-9-]+.{gif,jpg,jpeg,png}")
+
+    return bId, fixup_book_for_index(book), cover, errors
 
 
 def standard_template_args():
@@ -320,13 +337,15 @@ def add():
         abort(403)
 
     if request.method == "POST":
-        bId, candidate, errors = form_to_book(request.form)
+        bId, candidate, cover, errors = form_to_book(request.form, request.files)
         if errors:
             return render_template("edit.html", book=candidate, errors=errors, **standard_template_args())
         try:
             es.create(index="bookdb", id=bId, body=candidate)
         except ConflictError:
             return render_template("edit.html", book=candidate, errors=["Code already in use"], **standard_template_args())
+        if cover:
+            cover.save(os.path.join(COVER_DIR, bId))
         return render_template("info.html", message="The book has been created.", base_uri=BASE_URI)
 
     return render_template("edit.html", book={}, **standard_template_args())
@@ -342,10 +361,12 @@ def edit(bId):
         abort(404)
 
     if request.method == "POST":
-        _, candidate, errors = form_to_book(request.form, this_is_an_insert=False)
+        _, candidate, cover, errors = form_to_book(request.form, request.files, this_is_an_insert=False)
         if errors:
             return render_template("edit.html", book={"id": bId, **candidate}, errors=errors, **standard_template_args())
         es.update(index="bookdb", id=bId, body={"doc": candidate})
+        if cover:
+            cover.save(os.path.join(COVER_DIR, bId))
         return render_template("info.html", message="The book has been updated.", base_uri=BASE_URI)
 
     return render_template("edit.html", book=book, **standard_template_args())
