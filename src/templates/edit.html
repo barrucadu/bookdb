@@ -67,45 +67,45 @@
   </div>
 
   <div class="form-row">
-    <div class="form-group">
+    <div class="form-group js-authors">
       <label class="form-label form-label-required" for="author_0">Authors</label>
       {% if book.people %}{% for name in book.people.authors %}
       <div class="autocomplete">
         <input class="form-input" type="text" id="author_{{ (1 + loop.index)|e }}" name="author[]" value="{{ name|e }}">
       </div>
       {% endfor %}{% endif %}
-      <!-- TODO: make a new author field as soon as there is text in the last one -->
       <div class="autocomplete">
         <input class="form-input" type="text" id="author_0" name="author[]">
       </div>
+      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('js-authors', 'author[]', authors)" value="+">
     </div>
   </div>
   <div class="form-row">
-    <div class="form-group">
+    <div class="form-group js-editors">
       <label class="form-label" for="editor_0">Editors</label>
       {% if book.people %}{% for name in book.people.editors %}
       <div class="autocomplete">
         <input class="form-input" type="text" id="editor_{{ (1 + loop.index)|e }}" name="editor[]" value="{{ name|e }}">
       </div>
       {% endfor %}{% endif %}
-      <!-- TODO: make a new editor field as soon as there is text in the last one -->
       <div class="autocomplete">
         <input class="form-input" type="text" id="editor_0" name="editor[]">
       </div>
+      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('js-editors', 'editor[]', editors)" value="+">
     </div>
   </div>
   <div class="form-row">
-    <div class="form-group">
+    <div class="form-group js-translators">
       <label class="form-label" for="translator_0">Translators</label>
       {% if book.people %}{% for name in book.people.translators %}
       <div class="autocomplete">
         <input class="form-input" type="text" id="translator_{{ (1 + loop.index)|e }}" name="translator[]" value="{{ name|e }}">
       </div>
       {% endfor %}{% endif %}
-      <!-- TODO: make a new editor field as soon as there is text in the last one -->
       <div class="autocomplete">
         <input class="form-input" type="text" id="translator_0" name="translator[]">
       </div>
+      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('js-translators', 'translator[]', translators)" value="+">
     </div>
   </div>
 
@@ -127,10 +127,17 @@
   </div>
   {% endmacro %}
 
-  {% for holding in book.holdings %}
-  {{ render_holding(loop.index, holding.location_uuid, holding.notes) }}
-  {% endfor %}
-  {{ render_holding(book.holdings|length+1) }}
+  <div class="js-holdings">
+    {% for holding in book.holdings %}
+    {{ render_holding(loop.index, holding.location_uuid, holding.notes) }}
+    {% endfor %}
+    {{ render_holding(book.holdings|length+1) }}
+    <div class="form-row js-insert-before">
+      <div class="form-group">
+        <input class="form-button" type="button" onclick="add_holding_entry({{ (book.holdings|length+1)|e }}, locations)" value="+">
+      </div>
+    </div>
+  </div>
 
   <div class="form-row">
     <div class="form-group">
@@ -142,7 +149,7 @@
 
   <div class="form-row">
     <div class="form-group">
-      <input class="form-button" type="submit" value="Save">
+      <input class="form-button form-button-submit" type="submit" value="Save">
     </div>
   </div>
 </form>

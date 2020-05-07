@@ -26,6 +26,7 @@
       const authors = {{ authors|tojson }};
       const editors = {{ editors|tojson }};
       const translators = {{ translators|tojson }};
+      const locations = {{ locations|tojson }};
 
       document.getElementsByName("author[]").forEach(el => autocomplete(el, authors));
       document.getElementsByName("editor[]").forEach(el => autocomplete(el, editors));

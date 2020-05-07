@@ -12,9 +12,11 @@
     --autocomplete-active-bg-color: #f21565;
     --autocomplete-active-text-color: #ffffff;
     --label-required-text-color: #ea4024;
-    --button-bg-color: #fe5301;
-    --button-shadow-color: #d43b0c;
+    --button-bg-color: #20abbb;
+    --button-shadow-color: #0a0969;
     --button-text-color: #ffffff;
+    --button-submit-bg-color: #fe5301;
+    --button-submit-shadow-color: #d43b0c;
 }
 * {
     margin: 0;
@@ -199,11 +201,16 @@ img {
     min-width: 0;
 }
 .form-button {
-    padding: 10px 24px;
+    padding: 6px;
     background-color: var(--button-bg-color);
     border: 2px solid transparent;
     box-shadow: 0 2px 0 var(--button-shadow-color);
     color: var(--button-text-color);
+}
+.form-button-submit {
+    padding: 10px 24px;
+    background-color: var(--button-submit-bg-color);
+    box-shadow-color: var(--button-submit-shadow-color);
 }
 
 .error {
