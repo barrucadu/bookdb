@@ -351,6 +351,22 @@ def edit(bId):
     return render_template("edit.html", book=book, **standard_template_args())
 
 
+@app.route("/book/<bId>/delete", methods=["GET", "HEAD", "POST"])
+def delete(bId):
+    if not ALLOW_WRITES:
+        abort(403)
+
+    book = get_book(bId)
+    if not book:
+        abort(404)
+
+    if request.method == "POST":
+        es.delete(index="bookdb", id=bId)
+        return render_template("info.html", message="The book has been deleted.", base_uri=BASE_URI)
+
+    return render_template("delete.html", book=book, base_uri=BASE_URI)
+
+
 @app.route("/search.json")
 def search_json():
     return jsonify(do_search(request.args))
