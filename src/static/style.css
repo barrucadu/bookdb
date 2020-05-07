@@ -3,6 +3,8 @@
     --text-color: #333333;
     --content-bg-color: #f9f9f9;
     --content-border-color: #ef5052;
+    --table-bg-color-odd: #f3f3f3;
+    --table-bg-color-even: #e9e9e9;
     --link-color: #838474;
     --link-hover-color: #503941;
     --autocomplete-bg-color: #d4d4d4;
@@ -54,15 +56,12 @@ p {
     margin-bottom: 6px;
 }
 
-ul, ol {
-    list-style-type: none;
-}
-
 header {
     margin-bottom: 16px;
 }
 
 nav ul {
+    list-style-type: none;
     display: flex;
     justify-content: space-between
 }
@@ -82,19 +81,22 @@ td + td {
     border-left: 1px solid var(--content-border-color);
 }
 
-td ol, td ol li {
+td {
+    vertical-align: top;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: var(--table-bg-color-odd);
+}
+
+tbody tr:nth-child(even) {
+    background-color: var(--table-bg-color-even);
+}
+
+ol.people, ol.holdings {
     margin: 0;
     padding: 0;
-    display: inline;
-}
-
-.translators, .editors {
-    margin-left: 3px;
-    margin-right: -3px;
-}
-
-td ol li + li :before {
-    content: " & ";
+    list-style-type: none;
 }
 
 th {

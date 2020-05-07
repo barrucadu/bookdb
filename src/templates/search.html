@@ -74,23 +74,11 @@
       <td class="code">{{ book.id|e }}</td>
       <td>{{ book.display_title|e }}</td>
       <td>
-        <ol class="authors">
+        <ol class="people">
           {% for p in book.people.authors %}<li>{{ p|e }}</li>{% endfor %}
+          {% for p in book.people.translators %}<li>(trans. {{ p|e }})</li>{% endfor %}
+          {% for p in book.people.editors %}<li>(edit. {{ p|e }})</li>{% endfor %}
         </ol>
-        {% if book.people.translators|length > 0 %}
-        (trans.
-        <ol class="translators">
-          {% for p in book.people.translators %}<li>{{ p|e }}</li>{% endfor %}
-        </ol>
-        )
-        {% endif %}
-        {% if book.people.editors|length > 0 %}
-        (edit.
-        <ol class="editors">
-          {% for p in book.people.editors %}<li>{{ p|e }}</li>{% endfor %}
-        </ol>
-        )
-        {% endif %}
       </td>
       <td>
         {% if book.has_been_read %}
