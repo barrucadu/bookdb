@@ -1,0 +1,123 @@
+{% extends "_layout.html" %}
+{% block body %}
+<form method="get" action="search" autocomplete="off">
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="keywords">Keywords</label>
+      <input class="form-input" type="text" id="keywords" name="keywords" value="{{ search_params.keywords|e }}">
+    </div>
+    <div class="form-group">
+      <!-- TODO: implement multi-select for authors -->
+      <label class="form-label" for="author_0">Author</label>
+      <div class="autocomplete">
+        <input class="form-input" type="text" id="author_0" name="author[]" value="{% if search_params["author[]"] %}{{ search_params["author[]"][0]|e }}{% endif %}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="location">Location</label>
+      <select class="form-input form-input-narrow" id="location" name="location">
+        <option></option>
+        {% for location in locations %}
+        <option value="{{ location.key|e }}" {% if search_params.location == location.key %}selected{% endif %}>{{ location.label|e }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label"for="match">Show</label>
+      <select class="form-input form-input-narrow" id="match" name="match">
+        <option></option>
+        <option value="only-read" {% if search_params.match == "only-read" %}selected{% endif %}>Only read books</option>
+        <option value="only-unread" {% if search_params.match == "only-unread" %}selected{% endif %}>Only unread books</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="category">Category</label>
+      <select class="form-input" id="category" name="category">
+        <option></option>
+        {% for category in categories %}
+        <option value="{{ category.key|e }}" {% if search_params.category == category.key %}selected{% endif %}>{{ category.label|e }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <input class="form-button" type="submit" value="Search">
+    </div>
+  </div>
+</form>
+
+<p>
+  Showing {{ books|length|e }} {% if books|length == 1 %}book{% else %}books{% endif %} by {{ num_authors|e }} {% if books|length == 1 %}author{% else %}authors{% endif %}{% if num_read > 0 %}, of which {{ num_read|e }} ({{ percent_read|e }}%) {% if num_read == 1 %}has{% else %}have{% endif %} been read{% endif %}.
+</p>
+
+<table>
+  <thead>
+    <th></th>
+    <th>Code</th>
+    <th>Title</th>
+    <th>Author</th>
+    <th style="min-width:7em">Read</th>
+    <th>Category</th>
+    <th>Holdings</th>
+    {% if allow_writes %}<th></th>{% endif %}
+  </thead>
+  <tbody>
+    {% if books|length == 0 %}
+    <tr><td colspan="{% if allow_writes %}8{% else %}7|{% endif %}">There are no books.</td></tr>
+    {% else %}
+    {% for book in books %}
+    <tr>
+      <td>{% if book.has_cover_image %}<a href="book/{{ book.id|e }}/cover" class="preview" title="{{ book.display_title|e }}"><img src="book/{{ book.id|e }}/cover" alt=" {{book.display_title|e }}"></a>{% endif %}</td>
+      <td class="code">{{ book.id|e }}</td>
+      <td>{{ book.display_title|e }}</td>
+      <td>
+        <ol class="authors">
+          {% for p in book.people.authors %}<li>{{ p|e }}</li>{% endfor %}
+        </ol>
+        {% if book.people.translators|length > 0 %}
+        (trans.
+        <ol class="translators">
+          {% for p in book.people.translators %}<li>{{ p|e }}</li>{% endfor %}
+        </ol>
+        )
+        {% endif %}
+        {% if book.people.editors|length > 0 %}
+        (edit.
+        <ol class="editors">
+          {% for p in book.people.editors %}<li>{{ p|e }}</li>{% endfor %}
+        </ol>
+        )
+        {% endif %}
+      </td>
+      <td>
+        {% if book.has_been_read %}
+        ✔{% if book.last_read_date %} ({{ book.last_read_date|e }}{% endif %}
+        {% else %}
+        ✘
+        {% endif %}
+      </td>
+      <td>{% if book.category_name %}{{ book.category_name|e }}{% endif %}</td>
+      <td>
+        <ol class="holdings">
+          {% for holding in book.holdings %}
+          <li>
+            {{ holding.location|e }}
+            {% if holding.notes %}({{ holding.notes|e }}){% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+      </td>
+      {% if allow_writes %}
+      <td class="meta">
+        [&nbsp;<a href="book/{{ book.id|e }}/edit">e</a>&nbsp;/&nbsp;<a href="book/{{ book.id|e }}/delete">d</a>&nbsp;]
+      </td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+    {% endif %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base href="{{ base_uri|e }}">
+    <title>BookDB</title>
+
+    <link rel="stylesheet" href="static/style.css" type="text/css">
+    <script src="static/jquery-1.9.1.min.js"></script>
+    <script src="static/script.js"></script>
+  </head>
+
+  <body>
+    <div class="page">
+      {% block body %}{% endblock %}
+
+      <footer>
+        <nav>
+          <ul>
+            {% if allow_writes %}<li><a href="/add">Add new book</a></li>{% endif %}
+            <li><a href="https://github.com/barrucadu/bookdb">Github</a></li>
+          </ul>
+        </nav>
+      </footer>
+    </div>
+    <script type="text/javascript">
+      const authors = {{ authors|tojson }};
+      const editors = {{ editors|tojson }};
+      const translators = {{ translators|tojson }};
+
+      document.getElementsByName("author[]").forEach(el => autocomplete(el, authors));
+      document.getElementsByName("editor[]").forEach(el => autocomplete(el, editors));
+      document.getElementsByName("translator[]").forEach(el => autocomplete(el, translators));
+    </script>
+  </body>
+</html>
