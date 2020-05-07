@@ -30,8 +30,11 @@ except RequestError:
 
 if len(sys.argv) == 2:
     try:
-        with open(sys.argv[1]) as f:
-            dump = yaml.safe_load(f)
+        if sys.argv[1] == "-":
+            dump = yaml.safe_load(sys.stdin)
+        else:
+            with open(sys.argv[1]) as f:
+                dump = yaml.safe_load(f)
     except FileNotFoundError:
         print(f"Could not open data file {sys.argv[1]}")
         sys.exit(1)
