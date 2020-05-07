@@ -1,12 +1,11 @@
-FROM haskell:8.6.5
+FROM python:3.8
 
-RUN apt-get update && apt-get install -y libpq-dev && rm -rf /var/lib/apt/lists/*
+COPY requirements-freeze.txt .
+RUN pip install -r requirements-freeze.txt
 
-RUN useradd -m bookdb
-COPY --chown=bookdb . /bookdb
-WORKDIR /bookdb
-USER bookdb
+RUN useradd -m app
+COPY --chown=app src /app
+WORKDIR /app
+USER app
 
-RUN stack build --copy-bins && rm -rf .stack-work && rm -rf ~/.stack
-
-CMD ["/home/bookdb/.local/bin/bookdb", "run"]
+CMD /app/serve.py

@@ -1,0 +1,156 @@
+{% extends "_layout.html" %}
+{% block body %}
+{% if errors %}
+<div class="error">
+{% for error in errors %}
+<p>{{ error|e }}</p>
+{% endfor %}
+</div>
+{% endif %}
+<form action="{% if book.id %}book/{{ book.id|e}}/edit{% else %}add{% endif %}" method="post" enctype="multipart/form-data" autocomplete="off">
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label form-label-required" for="code">Code</label>
+      {% if book.id %}<span class="form-input code">{{ book.id|e }}</span>
+      {% else %}
+      <input class="form-input" type="text" id="code" name="code" required>
+      {% endif %}
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="cover">Image</label>
+      <input class="form-input" type="file" id="cover" name="cover">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="category">Category</label>
+      <select class="form-input" id="category" name="category">
+        {% for category in categories %}
+        <option value="{{ category.key|e }}"{% if book.category_uuid == category.key %} selected{% endif %}>{{ category.label|e }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label form-label-required" for="title">Title</label>
+      <input class="form-input" type="text" id="title" name="title" value="{{ book.title|e }}" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="subtitle">Subtitle</label>
+      <input class="form-input" type="text" id="subtitle" name="subtitle" value="{{ book.subtitle|e }}">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="volume_title">Volume Title</label>
+      <input class="form-input" type="text" id="volume_title" name="volume_title" value="{{ book.volume_title|e }}">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="volume_number">Volume Number</label>
+      <input class="form-input" type="text" id="volume_number" name="volume_number" value="{% if book.volume_number %}{{ book.volume_number.raw|e }}{% endif %}">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="fascicle_number">Fascicle Number</label>
+      <input class="form-input" type="text" id="fascicle_number" name="fascicle_number" value="{% if book.fascicle_number %}{{ book.fascicle_number.raw|e }}{% endif %}">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="has_been_read">Has Been Read</label>
+      <input class="form-input form-input-zerowidth" type="checkbox" id="has_been_read" name="has_been_read" {% if book.has_been_read %} checked{% endif %}>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="last_read_date">Last Read Date</label>
+      <input class="form-input form-input-narrow" type="date" id="last_read_date" name="last_read_date" value="{{ book.last_read_date|e }}">
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group js-authors">
+      <label class="form-label form-label-required" for="author_0">Authors</label>
+      {% if book.people %}{% for name in book.people.authors %}
+      <div class="autocomplete">
+        <input class="form-input" type="text" id="author_{{ (1 + loop.index)|e }}" name="author[]" value="{{ name|e }}">
+      </div>
+      {% endfor %}{% endif %}
+      <div class="autocomplete">
+        <input class="form-input" type="text" id="author_0" name="author[]">
+      </div>
+      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('js-authors', 'author[]', authors)" value="+">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group js-editors">
+      <label class="form-label" for="editor_0">Editors</label>
+      {% if book.people %}{% for name in book.people.editors %}
+      <div class="autocomplete">
+        <input class="form-input" type="text" id="editor_{{ (1 + loop.index)|e }}" name="editor[]" value="{{ name|e }}">
+      </div>
+      {% endfor %}{% endif %}
+      <div class="autocomplete">
+        <input class="form-input" type="text" id="editor_0" name="editor[]">
+      </div>
+      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('js-editors', 'editor[]', editors)" value="+">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group js-translators">
+      <label class="form-label" for="translator_0">Translators</label>
+      {% if book.people %}{% for name in book.people.translators %}
+      <div class="autocomplete">
+        <input class="form-input" type="text" id="translator_{{ (1 + loop.index)|e }}" name="translator[]" value="{{ name|e }}">
+      </div>
+      {% endfor %}{% endif %}
+      <div class="autocomplete">
+        <input class="form-input" type="text" id="translator_0" name="translator[]">
+      </div>
+      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('js-translators', 'translator[]', translators)" value="+">
+    </div>
+  </div>
+
+  {% macro render_holding(n, location_uuid="", notes="") %}
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label{% if n == 1 %} form-label-required{% endif %}" for="location_{{ n|e }}">Location #{{ n|e }}</label>
+      <select class="form-input form-input-narrow" id="location_{{ n|e }}" name="location[]">
+        {% if n > 1 %}<option value=""{% if location_uuid == "" %} selected{% endif %}></option>{% endif %}
+        {% for location in locations %}
+        <option value="{{ location.key|e }}"{% if location_uuid == location.key %} selected{% endif %}>{{ location.label|e }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="notes_{{ n|e }}">Notes</label>
+      <input class="form-input" type="text" id="notes_{{ n|e }}" name="notes[]" value="{{ notes|e }}">
+    </div>
+  </div>
+  {% endmacro %}
+
+  <div class="js-holdings">
+    {% for holding in book.holdings %}
+    {{ render_holding(loop.index, holding.location_uuid, holding.notes) }}
+    {% endfor %}
+    {{ render_holding(book.holdings|length+1) }}
+    <div class="form-row js-insert-before">
+      <div class="form-group">
+        <input class="form-button" type="button" onclick="add_holding_entry({{ (book.holdings|length+1)|e }}, locations)" value="+">
+      </div>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="bucket">Bucket</label>
+      <!-- TODO: for the add form, automatically fill this in with the first author's surname (lowercased) -->
+      <input class="form-input" type="text" id="bucket" name="bucket" value="{{ book.bucket|e }}" placeholder="(automatic)">
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <input class="form-button form-button-submit" type="submit" value="Save">
+    </div>
+  </div>
+</form>
+{% endblock %}

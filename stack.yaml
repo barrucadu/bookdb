@@ -1,6 +1,0 @@
-flags: {}
-packages:
-- '.'
-resolver: lts-14.21
-nix:
-  packages: [gcc postgresql zlib]
