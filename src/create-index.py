@@ -3,6 +3,7 @@
 from common import fixup_book_for_index
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
+from elasticsearch.helpers import bulk
 
 import os
 import sys
@@ -36,9 +37,12 @@ if len(sys.argv) == 2:
         sys.exit(1)
 
     try:
-        for doc_id, doc in dump.items():
-            es.index(index="bookdb", id=doc_id, body=fixup_book_for_index(doc))
-        print(f"Indexed {len(dump)} records")
+        ok, errors = bulk(es, [{"_index": "bookdb", "_id": doc_id, "_source": fixup_book_for_index(doc)} for doc_id, doc in dump.items()])
+        print(f"Indexed {ok} records")
+        if errors:
+            print("")
+        for error in errors:
+            print(error)
     except AttributeError:
         print(f"Expected {sys.argv[1]} to be an object")
         sys.exit(3)
