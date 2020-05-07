@@ -5,6 +5,7 @@ RUN pip install -r requirements-freeze.txt
 
 RUN useradd -m app
 COPY --chown=app src /app
+COPY --chown=app config /app/config
 WORKDIR /app
 USER app
 
