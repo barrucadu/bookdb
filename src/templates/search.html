@@ -82,7 +82,7 @@
       </td>
       <td>
         {% if book.has_been_read %}
-        ✔{% if book.last_read_date %} ({{ book.last_read_date|e }}{% endif %}
+        ✔{% if book.last_read_date %} ({{ book.last_read_date|e }}){% endif %}
         {% else %}
         ✘
         {% endif %}
