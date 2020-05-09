@@ -20,7 +20,7 @@ COVER_DIR = os.getenv("COVER_DIR", "covers")
 ALLOW_WRITES = os.getenv("ALLOW_WRITES", "0") == "1"
 
 ORDERED_CATEGORIES = [
-    ("a3bbb1c6-5ff8-4ddf-81f4-820593a2a5ff", ("Manga", None)),
+    ("a3bbb1c6-5ff8-4ddf-81f4-820593a2a5ff", ("Light Novels + Manga", None)),
 
     ("58c63aea-72b6-4988-96a0-aca572661303", ("Nonfiction", None)),
     ("afc7135b-bf67-4284-bcc1-2bbd3386aea3", ("Computer Science, Software Engineering, + Digital Culture", "58c63aea-72b6-4988-96a0-aca572661303")),
