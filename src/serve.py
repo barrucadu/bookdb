@@ -119,7 +119,6 @@ def transform_book(bId, book):
             holding["location"] = expand_location(holding["location_uuid"])
     if "category_uuid" in book:
         book["category"] = expand_category(book["category_uuid"])
-        book["category_name"] = full_category_name(book["category_uuid"])
 
     return book
 

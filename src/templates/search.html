@@ -74,7 +74,7 @@
       <td class="code">{{ book.id|e }}</td>
       <td>{{ book.display_title|e }}</td>
       <td>
-        <ol class="people">
+        <ol class="detail-list">
           {% for p in book.people.authors %}<li>{{ p|e }}</li>{% endfor %}
           {% for p in book.people.translators %}<li>(trans. {{ p|e }})</li>{% endfor %}
           {% for p in book.people.editors %}<li>(edit. {{ p|e }})</li>{% endfor %}
@@ -87,9 +87,15 @@
         ✘
         {% endif %}
       </td>
-      <td>{% if book.category_name %}{{ book.category_name|e }}{% endif %}</td>
       <td>
-        <ol class="holdings">
+        {% if book.category %}
+        <ol class="detail-list">
+          {% for c in book.category|reverse %}<li>{{ c|e }}</li>{% endfor %}
+        </ol>
+        {% endif %}
+      </td>
+      <td>
+        <ol class="detail-list">
           {% for holding in book.holdings %}
           <li>
             {{ holding.location|e }}
