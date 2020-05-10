@@ -54,6 +54,8 @@ def fixup_book_for_index(book):
     """Get a book ready to be indexed.
     """
 
+    book = {k: v for k, v in book.items() if v}
+
     if book.get("title"):
         book["display_title"] = display_title(book)
     if book.get("volume_number"):

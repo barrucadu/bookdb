@@ -240,19 +240,15 @@ def form_to_book(form, files, this_is_an_insert=True):
     if not book["title"]:
         errors.append("The title cannot be blank.")
 
-    book["subtitle"] = form.get("subtitle", "").strip() or None
-    book["volume_title"] = form.get("volume_title", "").strip() or None
+    book["subtitle"] = form.get("subtitle", "").strip()
+    book["volume_title"] = form.get("volume_title", "").strip()
     if form.get("volume_number", "").strip():
         book["volume_number"] = {"raw": form.get("volume_number").strip()}
-    else:
-        book["volume_number"] = None
     if form.get("fascicle_number", "").strip():
         book["fascicle_number"] = {"raw": form.get("fascicle_number").strip()}
-    else:
-        book["fascicle_number"] = None
 
     book["has_been_read"] = "has_been_read" in form
-    book["last_read_date"] = form.get("last_read_date", "").strip() or None
+    book["last_read_date"] = form.get("last_read_date", "").strip()
 
     book["people"] = {
         "authors": [n.strip() for n in form.getlist("author[]") if n.strip()],
@@ -273,7 +269,7 @@ def form_to_book(form, files, this_is_an_insert=True):
     if not book["holdings"]:
         errors.append("There must be at least one holding.")
 
-    book["bucket"] = form.get("bucket", "").strip() or None
+    book["bucket"] = form.get("bucket", "").strip()
 
     if "cover" in files and files["cover"].filename:
         if "." not in files["cover"].filename:
