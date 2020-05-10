@@ -84,19 +84,19 @@ for uuid in CATEGORIES.keys():
 
 
 def expand_category(uuid):
-    return MEMOISED_EXPAND_CATEGORY[uuid]
+    return MEMOISED_EXPAND_CATEGORY.get(uuid, [])
 
 
 def children_categories(uuid):
-    return MEMOISED_CHILDREN_CATEGORIES[uuid]
+    return MEMOISED_CHILDREN_CATEGORIES.get(uuid, [])
 
 
 def full_category_name(uuid):
-    return MEMOISED_FULL_CATEGORY_NAME[uuid]
+    return MEMOISED_FULL_CATEGORY_NAME.get(uuid, uuid)
 
 
 def expand_location(uuid):
-    return LOCATIONS[uuid]
+    return LOCATIONS.get(uuid, uuid)
 
 
 def transform_book(bId, book):
