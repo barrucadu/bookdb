@@ -61,7 +61,7 @@ def fixup_book_for_index(book):
     if book.get("fascicle_number"):
         book["fascicle_number"]["bits"] = to_bits(book["fascicle_number"]["raw"])
 
-    if not book.get("bucket"):
+    if not book.get("bucket") and book["people"].get("authors"):
         book["bucket"] = min(n.split()[-1].lower() for n in book["people"]["authors"])
 
     book["has_been_read"] = book.get("has_been_read") is True

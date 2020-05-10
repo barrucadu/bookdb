@@ -226,7 +226,7 @@ def form_to_book(form, files, this_is_an_insert=True):
             bId = form.get("code").strip()
         if not bId:
             errors.append("The code cannot be blank.")
-        if not re.match("^[a-zA-Z0-9-]+$", bId):
+        elif not re.match("^[a-zA-Z0-9-]+$", bId):
             errors.append("The code can only contain letters, numbers, and dashes.")
 
     if form.get("category"):
