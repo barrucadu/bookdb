@@ -144,64 +144,66 @@ def get_book(bId):
 
 def do_search(request_args):
     search_params = {}
+    queries = [{"match_all": {}}]
     for k in request_args:
-        if k in ["keywords", "match", "location", "category"]:
-            v = request_args.get(k)
-            if v:
-                search_params[k] = v
-        elif k in ["author[]", "editor[]", "translator[]"]:
-            vs = [v for v in request_args.getlist(k) if v]
-            if vs:
-                search_params[k] = vs
+        vs = [v for v in request_args.getlist(k) if v]
+        v = request_args.get(k)
+        if k == "keywords" and v:
+            search_params[k] = v
+            queries.append({"query_string": {"query": v, "default_field": "display_title"}})
+        elif k == "match" and v:
+            search_params[k] = v
+            queries.append({"term": {"has_been_read": v == "only-read"}})
+        elif k == "location" and v:
+            search_params[k] = v
+            queries.append({"nested": {"path": "holdings", "query": {"bool": {"must": {"term": {"holdings.location_uuid": v}}}}}})
+        elif k == "category" and v:
+            search_params[k] = v
+            queries.append({"terms": {"category_uuid": children_categories(v)}})
+        elif k == "author[]" and vs:
+            search_params[k] = vs
+            queries.append({"terms": {"people.authors": vs}})
+        elif k == "editor[]" and vs:
+            search_params[k] = vs
+            queries.append({"terms": {"people.editors": vs}})
+        elif k == "translator[]" and vs:
+            search_params[k] = vs
+            queries.append({"terms": {"people.translators": vs}})
 
-    filters = {
-        "people.authors": search_params.get("author[]"),
-        "people.editors": search_params.get("editor[]"),
-        "people.translators": search_params.get("translator[]"),
-        "has_been_read": {"only-read": [True], "only-unread": [False]}.get(search_params.get("match"), None),
-    }
-
-    queries = []
-    if "keywords" in search_params:
-        queries.append({"query_string": {"query": search_params["keywords"], "default_field": "display_title"}})
-    else:
-        queries.append({"match_all": {}})
-    for f, vs in filters.items():
-        for v in vs or []:
-            queries.append({"term": {f: v}})
-    if "location" in search_params:
-        queries.append({"nested": {"path": "holdings", "query": {"bool": {"must": {"term": {"holdings.location_uuid": search_params["location"]}}}}}})
-    if "category" in search_params:
-        queries.append({"terms": {"category_uuid": children_categories(search_params["category"])}})
-
-    body = {
-        "query": {"bool": {"must": queries}},
-        "aggs": {
-            **{
-                k: {"terms": {"field": v, "size": 500}}
-                for k, v in [("author", "people.authors"), ("editor", "people.editors"), ("translator", "people.translators"), ("match", "has_been_read"), ("category", "category_uuid")]
+    results = es.search(
+        index="bookdb",
+        body={
+            "query": {"bool": {"must": queries}},
+            "aggs": {
+                "author": {"terms": {"field": "people.authors", "size": 500}},
+                "editor": {"terms": {"field": "people.editors", "size": 500}},
+                "translator": {"terms": {"field": "people.translators", "size": 500}},
+                "has_been_read": {"terms": {"field": "has_been_read", "size": 500}},
+                "category_uuid": {"terms": {"field": "category_uuid", "size": 500}},
+                "holdings": {"nested": {"path": "holdings"}, "aggs": {"location_uuid": {"terms": {"field": "holdings.location_uuid", "size": 500}}}},
             },
-            **{"location": {"nested": {"path": "holdings"}, "aggs": {"location": {"terms": {"field": "holdings.location_uuid", "size": 500}}}}},
+            "size": 5000,
         },
-        "size": 5000,
-    }
+    )
 
-    results = es.search(index="bookdb", body=body)
-    hits = results["hits"]["hits"]
-
-    aggregations = {k: results["aggregations"][k]["buckets"] for k in ["author", "editor", "translator"]}
-    aggregations["match"] = []
-    read = list(d["doc_count"] for d in results["aggregations"]["match"]["buckets"] if d["key_as_string"] == "true")
-    unread = list(d["doc_count"] for d in results["aggregations"]["match"]["buckets"] if d["key_as_string"] == "false")
+    agg_match = {}
+    read = list(d["doc_count"] for d in results["aggregations"]["has_been_read"]["buckets"] if d["key_as_string"] == "true")
+    unread = list(d["doc_count"] for d in results["aggregations"]["has_been_read"]["buckets"] if d["key_as_string"] == "false")
     if read:
-        aggregations["match"].append({"key": "only-read", "doc_count": min(read)})
+        agg_match["only-read"] = min(read)
     if unread:
-        aggregations["match"].append({"key": "only-unread", "doc_count": min(unread)})
-    aggregations["category"] = [{"key": expand_category(d["key"]), "key_uuid": d["key"], "doc_count": d["doc_count"]} for d in results["aggregations"]["category"]["buckets"]]
-    aggregations["location"] = [{"key": expand_location(d["key"]), "key_uuid": d["key"], "doc_count": d["doc_count"]} for d in results["aggregations"]["location"]["location"]["buckets"]]
+        agg_match["only-unread"] = min(unread)
 
+    hits = results["hits"]["hits"]
     return {
-        "aggregations": {k: sorted(v, key=lambda d: d["key"]) for k, v in aggregations.items()},
+        "aggregations": {
+            "author": {d["key"]: d["doc_count"] for d in results["aggregations"]["author"]["buckets"]},
+            "editor": {d["key"]: d["doc_count"] for d in results["aggregations"]["editor"]["buckets"]},
+            "translator": {d["key"]: d["doc_count"] for d in results["aggregations"]["translator"]["buckets"]},
+            "match": agg_match,
+            "category": {d["key"]: {"expanded": expand_category(d["key"]), "count": d["doc_count"]} for d in results["aggregations"]["category_uuid"]["buckets"]},
+            "location": {d["key"]: {"expanded": expand_location(d["key"]), "count": d["doc_count"]} for d in results["aggregations"]["holdings"]["location_uuid"]["buckets"]},
+        },
         "books": sorted([transform_book(hit["_id"], hit["_source"]) for hit in hits], key=sort_key_for_book),
         "count": len(hits),
         "search_params": search_params,
@@ -297,9 +299,9 @@ def standard_template_args():
         "base_uri": BASE_URI,
         "locations": [{"key": k, "label": v} for k, v in ORDERED_LOCATIONS],
         "categories": [{"key": k, "label": full_category_name(k)} for k, _ in ORDERED_CATEGORIES],
-        "authors": [d["key"] for d in all_books["aggregations"]["author"]],
-        "editors": [d["key"] for d in all_books["aggregations"]["editor"]],
-        "translators": [d["key"] for d in all_books["aggregations"]["translator"]],
+        "authors": list(all_books["aggregations"]["author"].keys()),
+        "editors": list(all_books["aggregations"]["editor"].keys()),
+        "translators": list(all_books["aggregations"]["translator"].keys()),
     }
 
 
@@ -317,12 +319,7 @@ def redirect_list():
 def search():
     results = do_search(request.args)
 
-    num_read = list(d["doc_count"] for d in results["aggregations"]["match"] if d["key"] == "only-read")
-    if num_read:
-        num_read = min(num_read)
-    else:
-        num_read = 0
-
+    num_read = results["aggregations"]["match"].get("only-read", 0)
     return render_template(
         "search.html",
         books=results["books"],
