@@ -49,6 +49,11 @@
   </div>
 </form>
 
+{% if books|length == 0 %}
+<div class="error">
+<p>No matching books!</p>
+</div>
+{% else %}
 <p>
   Showing {{ books|length|e }} {% if books|length == 1 %}book{% else %}books{% endif %} by {{ num_authors|e }} {% if books|length == 1 %}author{% else %}authors{% endif %}{% if num_read > 0 %}, of which {{ num_read|e }} ({{ percent_read|e }}%) {% if num_read == 1 %}has{% else %}have{% endif %} been read{% endif %}.
 </p>
@@ -65,9 +70,6 @@
     {% if allow_writes %}<th></th>{% endif %}
   </thead>
   <tbody>
-    {% if books|length == 0 %}
-    <tr><td colspan="{% if allow_writes %}8{% else %}7|{% endif %}">There are no books.</td></tr>
-    {% else %}
     {% for book in books %}
     <tr>
       <td>{% if book.has_cover_image %}<a href="book/{{ book.id|e }}/cover" class="preview" title="{{ book.display_title|e }}"><img src="book/{{ book.id|e }}/cover" alt=" {{book.display_title|e }}"></a>{% endif %}</td>
@@ -111,7 +113,7 @@
       {% endif %}
     </tr>
     {% endfor %}
-    {% endif %}
   </tbody>
 </table>
+{% endif %}
 {% endblock %}

@@ -52,14 +52,6 @@ body {
     text-align: center;
 }
 
-p {
-    margin-bottom: 6px;
-}
-
-header {
-    margin-bottom: 16px;
-}
-
 nav ul {
     list-style-type: none;
     display: flex;
