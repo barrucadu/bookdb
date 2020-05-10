@@ -2,12 +2,16 @@ mappings:
   properties:
     title:
       type: text
+      analyzer: english
     subtitle:
       type: text
+      analyzer: english
     volume_title:
       type: text
+      analyzer: english
     display_title:
       type: text
+      analyzer: english
 
     volume_number:
       type: object
