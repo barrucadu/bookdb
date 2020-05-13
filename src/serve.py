@@ -8,6 +8,17 @@ from flask import Flask, abort, jsonify, redirect, render_template, request, sen
 
 import os
 import re
+import sys
+import yaml
+
+
+def flatten_tree_config(cfg, out, parent=None):
+    for o in cfg:
+        uuid = o["uuid"]
+        out.append((uuid, o["name"], parent))
+        flatten_tree_config(o.get("ordered_children", []), out, parent=uuid)
+    return out
+
 
 app = Flask(__name__)
 
@@ -19,38 +30,22 @@ COVER_DIR = os.getenv("COVER_DIR", "covers")
 
 ALLOW_WRITES = os.getenv("ALLOW_WRITES", "0") == "1"
 
-ORDERED_CATEGORIES = [
-    ("a3bbb1c6-5ff8-4ddf-81f4-820593a2a5ff", ("Light Novels + Manga", None)),
+try:
+    with open("config/uuids.yaml") as f:
+        tree_config = yaml.safe_load(f)
+except FileNotFoundError:
+    print("Could not read config/uuids.yaml")
+    sys.exit(1)
+if "ordered_categories" not in tree_config:
+    print("Missing ordered_categories")
+    sys.exit(1)
+if "ordered_locations" not in tree_config:
+    print("Missing ordered_locations")
+    sys.exit(1)
 
-    ("58c63aea-72b6-4988-96a0-aca572661303", ("Nonfiction", None)),
-    ("afc7135b-bf67-4284-bcc1-2bbd3386aea3", ("Computer Science, Software Engineering, + Digital Culture", "58c63aea-72b6-4988-96a0-aca572661303")),
-    ("b5451ba6-a3ef-4c27-99fc-a07d8cd54161", ("Kitchen, Food, + Recipe", "58c63aea-72b6-4988-96a0-aca572661303")),
-    ("ac4706f3-54c3-4e6d-a72d-85321d9dcd72", ("Politics, Philosophy, Economics, + History", "58c63aea-72b6-4988-96a0-aca572661303")),
-    ("219ae9f4-84f1-4ea2-a9cd-fbc16698a669", ("RPG Rulebooks", "58c63aea-72b6-4988-96a0-aca572661303")),
-    ("fb2dd601-883a-4254-a294-fcf0a0f98d2f", ("Miscellaneous", "58c63aea-72b6-4988-96a0-aca572661303")),
-
-    ("b96b2465-2995-4ee9-a59a-048ecb217a7c", ("Penguin Little Black Classics", None)),
-
-    ("590ac55d-0644-4a71-b902-587faa5b03d9", ("Prose Fiction + Visual Novels", None)),
-    ("c2bfb2d8-ce64-4480-aaa6-c2d2dcb34ace", ("Gothic, Horror, + Weird", "590ac55d-0644-4a71-b902-587faa5b03d9")),
-    ("bcb54905-2e45-4a8f-bda0-e1d12e4114d2", ("High Fantasy", "590ac55d-0644-4a71-b902-587faa5b03d9")),
-    ("ea4e9b04-3ebb-4ff3-b387-d8bfc603f58a", ("Miscellaneous", "590ac55d-0644-4a71-b902-587faa5b03d9")),
-
-    ("a7d83bc9-0352-4fb5-a9dc-68428562a17f", ("Religion, Mythology, + Folklore", None)),
-    ("384664d5-e256-4787-a729-1eb5e7a7de6f", ("Abrahamic", "a7d83bc9-0352-4fb5-a9dc-68428562a17f")),
-    ("0435b803-d2e9-49b9-a1c7-bc7fc1b30cdd", ("Miscellaneous", "a7d83bc9-0352-4fb5-a9dc-68428562a17f")),
-
-    ("217f8eaa-b54a-466c-83f8-3f569f46732e", ("Verse", None)),
-]
-
+ORDERED_CATEGORIES = [(k, (v, p)) for k, v, p in flatten_tree_config(tree_config["ordered_categories"], [])]
+ORDERED_LOCATIONS = [(k, v) for k, v, _ in flatten_tree_config(tree_config["ordered_locations"], [])]
 CATEGORIES = {k: v for k, v in ORDERED_CATEGORIES}
-
-ORDERED_LOCATIONS = [
-    ("be60be7b-a10f-42e1-8769-d43f12cad02d", "London"),
-    ("f256ed66-4c09-4207-86de-adc8e9fb86ec", "Hull"),
-    ("6a233e5e-3b64-4169-ac67-cf46113afd97", "Missing"),
-]
-
 LOCATIONS = {k: v for k, v in ORDERED_LOCATIONS}
 
 
