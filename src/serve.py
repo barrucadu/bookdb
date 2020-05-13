@@ -29,6 +29,8 @@ ORDERED_CATEGORIES = [
     ("219ae9f4-84f1-4ea2-a9cd-fbc16698a669", ("RPG Rulebooks", "58c63aea-72b6-4988-96a0-aca572661303")),
     ("fb2dd601-883a-4254-a294-fcf0a0f98d2f", ("Miscellaneous", "58c63aea-72b6-4988-96a0-aca572661303")),
 
+    ("b96b2465-2995-4ee9-a59a-048ecb217a7c", ("Penguin Little Black Classics", None)),
+
     ("590ac55d-0644-4a71-b902-587faa5b03d9", ("Prose Fiction + Visual Novels", None)),
     ("c2bfb2d8-ce64-4480-aaa6-c2d2dcb34ace", ("Gothic, Horror, + Weird", "590ac55d-0644-4a71-b902-587faa5b03d9")),
     ("bcb54905-2e45-4a8f-bda0-e1d12e4114d2", ("High Fantasy", "590ac55d-0644-4a71-b902-587faa5b03d9")),
