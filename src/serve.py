@@ -207,6 +207,28 @@ def do_search(request_args):
     }
 
 
+def is_invalid_isbn(code):
+    # this function doesn't care about codes which aren't ISBNs at
+    # all.
+    if len(code) == 0 or not code[0].isdigit():
+        return False
+
+    try:
+        ds = [10 if x == "X" else int(x) for x in code]
+    except ValueError:
+        return True
+
+    if len(ds) == 10:
+        check = ds[0] * 10 + ds[1] * 9 + ds[2] * 8 + ds[3] * 7 + ds[4] * 6 + ds[5] * 5 + ds[6] * 4 + ds[7] * 3 + ds[8] * 2 + ds[9]
+        mod = 11
+    elif len(ds) == 13:
+        check = ds[0] + ds[1] * 3 + ds[2] + ds[3] * 3 + ds[4] + ds[5] * 3 + ds[6] + ds[7] * 3 + ds[8] + ds[9] * 3 + ds[10] + ds[11] * 3 + ds[12]
+        mod = 10
+    else:
+        return True
+    return check % mod != 0
+
+
 def form_to_book(form, files, this_is_an_insert=True):
     bId = None
     book = {}
@@ -225,6 +247,8 @@ def form_to_book(form, files, this_is_an_insert=True):
             errors.append("The code cannot be blank.")
         elif not re.match("^[a-zA-Z0-9-]+$", bId):
             errors.append("The code can only contain letters, numbers, and dashes.")
+        elif is_invalid_isbn(bId):
+            errors.append(f"The ISBN '{bId}' is invalid.")
 
     if form.get("category"):
         uuid = form.get("category")
