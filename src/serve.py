@@ -456,8 +456,12 @@ def book_controller(bId, **kwargs):
         abort(404)
 
     if request.method == "PUT":
+        if not ALLOW_WRITES:
+            abort(403)
         return do_update_book(bId, book, request)
     elif request.method == "DELETE":
+        if not ALLOW_WRITES:
+            abort(403)
         return do_delete_book(bId, request)
     else:
         if accepts_json(request):
