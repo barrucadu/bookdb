@@ -448,20 +448,19 @@ def search(**kwargs):
 @app.route("/book/<bId>", methods=["GET", "PUT", "DELETE", "HEAD"])
 @app.route("/book/<bId>.<fmt>", methods=["GET", "PUT", "DELETE", "HEAD"])
 def book_controller(bId, **kwargs):
-    if unacceptable(request):
-        abort(406)
+    if request.method in ["PUT", "DELETE"] and not ALLOW_WRITES:
+        abort(403)
 
     book = get_book(bId)
     if not book:
         abort(404)
 
+    if unacceptable(request):
+        abort(406)
+
     if request.method == "PUT":
-        if not ALLOW_WRITES:
-            abort(403)
         return do_update_book(bId, book, request)
     elif request.method == "DELETE":
-        if not ALLOW_WRITES:
-            abort(403)
         return do_delete_book(bId, request)
     else:
         if accepts_json(request):
@@ -473,11 +472,11 @@ def book_controller(bId, **kwargs):
 @app.route("/add", methods=["GET", "HEAD", "POST"])
 @app.route("/add.<fmt>", methods=["GET", "HEAD", "POST"])
 def add(**kwargs):
-    if unacceptable(request):
-        abort(406)
-
     if not ALLOW_WRITES:
         abort(403)
+
+    if unacceptable(request):
+        abort(406)
 
     if request.method == "POST":
         return do_create_book(request)
@@ -491,15 +490,15 @@ def add(**kwargs):
 @app.route("/book/<bId>/edit", methods=["GET", "HEAD", "POST"])
 @app.route("/book/<bId>/edit.<fmt>", methods=["GET", "HEAD", "POST"])
 def edit(bId, **kwargs):
-    if unacceptable(request):
-        abort(406)
-
     if not ALLOW_WRITES:
         abort(403)
 
     book = get_book(bId)
     if not book:
         abort(404)
+
+    if unacceptable(request):
+        abort(406)
 
     if request.method == "POST":
         return do_update_book(bId, book, request)
@@ -513,15 +512,15 @@ def edit(bId, **kwargs):
 @app.route("/book/<bId>/delete", methods=["GET", "HEAD", "POST"])
 @app.route("/book/<bId>/delete.<fmt>", methods=["GET", "HEAD", "POST"])
 def delete(bId, **kwargs):
-    if unacceptable(request):
-        abort(406)
-
     if not ALLOW_WRITES:
         abort(403)
 
     book = get_book(bId)
     if not book:
         abort(404)
+
+    if unacceptable(request):
+        abort(406)
 
     if request.method == "POST":
         return do_delete_book(bId, request)
