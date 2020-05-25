@@ -3,8 +3,9 @@
 from common import fixup_book_for_index
 from datetime import datetime
 from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import ConflictError, NotFoundError
+from elasticsearch.exceptions import ConflictError, ConnectionError, NotFoundError
 from flask import Flask, abort, jsonify, make_response, redirect, render_template, request, send_from_directory
+from werkzeug.exceptions import HTTPException
 
 import os
 import re
@@ -364,6 +365,13 @@ def fmt_message(request, message):
         abort(500)  # unreachable if 'unacceptable' is checked
 
 
+def fmt_http_error(request, code, message):
+    if accepts_html(request):
+        return render_template("error.html", code=code, message=message, base_uri=BASE_URI), code
+    else:
+        return jsonify({"code": code, "message": message}), code
+
+
 ###############################################################################
 ## Controllers
 
@@ -533,6 +541,16 @@ def book_cover(bId):
 @app.route("/static/<path>")
 def static_files(path):
     return send_from_directory("static", path)
+
+
+@app.errorhandler(ConnectionError)
+def handle_connection_error(*args):
+    return fmt_http_error(request, 503, "The search server is unavailable.  Try again in a minute or two.")
+
+
+@app.errorhandler(HTTPException)
+def handle_http_exception(e):
+    return fmt_http_error(request, e.code, e.description)
 
 
 app.run(host="0.0.0.0", port=8888)
