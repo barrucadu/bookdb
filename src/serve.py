@@ -3,8 +3,9 @@
 from common import fixup_book_for_index
 from datetime import datetime
 from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import ConflictError, NotFoundError
-from flask import Flask, abort, jsonify, redirect, render_template, request, send_from_directory
+from elasticsearch.exceptions import ConflictError, ConnectionError, NotFoundError
+from flask import Flask, abort, jsonify, make_response, redirect, render_template, request, send_from_directory
+from werkzeug.exceptions import HTTPException
 
 import os
 import re
@@ -120,6 +121,10 @@ def transform_book(bId, book):
     return book
 
 
+###############################################################################
+## Search helpers
+
+
 def sort_key_for_book(book):
     return (
         book["bucket"],
@@ -205,6 +210,10 @@ def do_search(request_args):
         "count": len(hits),
         "search_params": search_params,
     }
+
+
+###############################################################################
+## Form helpers
 
 
 def is_invalid_isbn(code):
@@ -308,6 +317,10 @@ def form_to_book(form, files, this_is_an_insert=True):
     return bId, fixup_book_for_index(book), cover, errors
 
 
+###############################################################################
+## Response helpers
+
+
 def standard_template_args():
     all_books = do_search({})
 
@@ -322,54 +335,161 @@ def standard_template_args():
     }
 
 
+def accepts_html(request):
+    return request.view_args.get("fmt") in [None, "html"] and request.accept_mimetypes.accept_html
+
+
+def accepts_json(request):
+    return request.view_args.get("fmt") in [None, "json"] and request.accept_mimetypes.accept_json
+
+
+def unacceptable(request):
+    return not accepts_html(request) and not accepts_json(request)
+
+
+def fmt_errors(request, book, errors):
+    if accepts_html(request):
+        return render_template("edit.html", book=book, errors=errors, **standard_template_args())
+    elif accepts_json(request):
+        return jsonify(errors)
+    else:
+        abort(500)  # unreachable if 'unacceptable' is checked
+
+
+def fmt_message(request, message):
+    if accepts_html(request):
+        return render_template("info.html", message=message, base_uri=BASE_URI)
+    elif accepts_json(request):
+        return jsonify({"message": message})
+    else:
+        abort(500)  # unreachable if 'unacceptable' is checked
+
+
+def fmt_http_error(request, code, message):
+    if accepts_html(request):
+        return render_template("error.html", code=code, message=message, base_uri=BASE_URI), code
+    else:
+        return jsonify({"code": code, "message": message}), code
+
+
+###############################################################################
+## Controllers
+
+
+def do_create_book(request):
+    bId, candidate, cover, errors = form_to_book(request.form, request.files)
+    if errors:
+        return fmt_errors(request, candidate, errors), 422
+
+    try:
+        es.create(index="bookdb", id=bId, body=candidate)
+    except ConflictError:
+        return fmt_errors(request, candidate, ["Code already in use"]), 409
+
+    if cover:
+        cover.save(os.path.join(COVER_DIR, bId))
+
+    resp = make_response(fmt_message(request, "The book has been created."), 201)
+    resp.headers["Location"] = f"{BASE_URI}/book/{bId}"
+    return resp
+
+
+def do_update_book(bId, book, request):
+    _, candidate, cover, errors = form_to_book(request.form, request.files, this_is_an_insert=False)
+    if errors:
+        return fmt_errors(request, {"id": bId, **candidate}, errors), 422
+
+    es.update(index="bookdb", id=bId, body={"doc": candidate})
+
+    if cover:
+        cover.save(os.path.join(COVER_DIR, bId))
+
+    return fmt_message(request, "The book has been updated.")
+
+
+def do_delete_book(bId, request):
+    es.delete(index="bookdb", id=bId)
+    return fmt_message(request, "The book has been deleted.")
+
+
+###############################################################################
+## Routes
+
+
 @app.route("/")
-def redirect_index():
-    return redirect(f"{BASE_URI}/search", code=301)
-
-
 @app.route("/list")
-def redirect_list():
+def redirect_to_search():
     return redirect(f"{BASE_URI}/search", code=301)
 
 
 @app.route("/search")
-def search():
+@app.route("/search.<fmt>")
+def search(**kwargs):
+    if unacceptable(request):
+        abort(406)
+
     results = do_search(request.args)
 
-    num_read = results["aggregations"]["match"].get("only-read", 0)
-    return render_template(
-        "search.html",
-        books=results["books"],
-        num_authors=len(results["aggregations"]["author"]),
-        num_read=num_read,
-        percent_read=int((num_read / results["count"]) * 100) if results["count"] > 0 else 100,
-        search_params=results["search_params"],
-        **standard_template_args(),
-    )
+    if accepts_html(request):
+        num_read = results["aggregations"]["match"].get("only-read", 0)
+        return render_template(
+            "search.html",
+            books=results["books"],
+            num_authors=len(results["aggregations"]["author"]),
+            num_read=num_read,
+            percent_read=int((num_read / results["count"]) * 100) if results["count"] > 0 else 100,
+            search_params=results["search_params"],
+            **standard_template_args(),
+        )
+    else:
+        return jsonify(results)
+
+
+@app.route("/book/<bId>", methods=["GET", "PUT", "DELETE", "HEAD"])
+@app.route("/book/<bId>.<fmt>", methods=["GET", "PUT", "DELETE", "HEAD"])
+def book_controller(bId, **kwargs):
+    if unacceptable(request):
+        abort(406)
+
+    book = get_book(bId)
+    if not book:
+        abort(404)
+
+    if request.method == "PUT":
+        return do_update_book(bId, book, request)
+    elif request.method == "DELETE":
+        return do_delete_book(bId, request)
+    else:
+        if accepts_json(request):
+            return jsonify(book)
+        else:
+            abort(406)  # reachable
 
 
 @app.route("/add", methods=["GET", "HEAD", "POST"])
-def add():
+@app.route("/add.<fmt>", methods=["GET", "HEAD", "POST"])
+def add(**kwargs):
+    if unacceptable(request):
+        abort(406)
+
     if not ALLOW_WRITES:
         abort(403)
 
     if request.method == "POST":
-        bId, candidate, cover, errors = form_to_book(request.form, request.files)
-        if errors:
-            return render_template("edit.html", book=candidate, errors=errors, **standard_template_args())
-        try:
-            es.create(index="bookdb", id=bId, body=candidate)
-        except ConflictError:
-            return render_template("edit.html", book=candidate, errors=["Code already in use"], **standard_template_args())
-        if cover:
-            cover.save(os.path.join(COVER_DIR, bId))
-        return render_template("info.html", message="The book has been created.", base_uri=BASE_URI)
+        return do_create_book(request)
 
-    return render_template("edit.html", book={}, **standard_template_args())
+    if accepts_html(request):
+        return render_template("edit.html", book={}, **standard_template_args())
+    else:
+        abort(406)  # reachable
 
 
 @app.route("/book/<bId>/edit", methods=["GET", "HEAD", "POST"])
-def edit(bId):
+@app.route("/book/<bId>/edit.<fmt>", methods=["GET", "HEAD", "POST"])
+def edit(bId, **kwargs):
+    if unacceptable(request):
+        abort(406)
+
     if not ALLOW_WRITES:
         abort(403)
 
@@ -378,19 +498,20 @@ def edit(bId):
         abort(404)
 
     if request.method == "POST":
-        _, candidate, cover, errors = form_to_book(request.form, request.files, this_is_an_insert=False)
-        if errors:
-            return render_template("edit.html", book={"id": bId, **candidate}, errors=errors, **standard_template_args())
-        es.update(index="bookdb", id=bId, body={"doc": candidate})
-        if cover:
-            cover.save(os.path.join(COVER_DIR, bId))
-        return render_template("info.html", message="The book has been updated.", base_uri=BASE_URI)
+        return do_update_book(bId, book, request)
 
-    return render_template("edit.html", book=book, **standard_template_args())
+    if accepts_html(request):
+        return render_template("edit.html", book=book, **standard_template_args())
+    else:
+        abort(406)  # reachable
 
 
 @app.route("/book/<bId>/delete", methods=["GET", "HEAD", "POST"])
-def delete(bId):
+@app.route("/book/<bId>/delete.<fmt>", methods=["GET", "HEAD", "POST"])
+def delete(bId, **kwargs):
+    if unacceptable(request):
+        abort(406)
+
     if not ALLOW_WRITES:
         abort(403)
 
@@ -399,23 +520,12 @@ def delete(bId):
         abort(404)
 
     if request.method == "POST":
-        es.delete(index="bookdb", id=bId)
-        return render_template("info.html", message="The book has been deleted.", base_uri=BASE_URI)
+        return do_delete_book(bId, request)
 
-    return render_template("delete.html", book=book, base_uri=BASE_URI)
-
-
-@app.route("/search.json")
-def search_json():
-    return jsonify(do_search(request.args))
-
-
-@app.route("/book/<bId>.json")
-def book_json(bId):
-    book = get_book(bId)
-    if not book:
-        abort(404)
-    return jsonify(book)
+    if accepts_html(request):
+        return render_template("delete.html", book=book, base_uri=BASE_URI)
+    else:
+        abort(406)  # reachable
 
 
 @app.route("/book/<bId>/cover")
@@ -431,6 +541,16 @@ def book_cover(bId):
 @app.route("/static/<path>")
 def static_files(path):
     return send_from_directory("static", path)
+
+
+@app.errorhandler(ConnectionError)
+def handle_connection_error(*args):
+    return fmt_http_error(request, 503, "The search server is unavailable.  Try again in a minute or two.")
+
+
+@app.errorhandler(HTTPException)
+def handle_http_exception(e):
+    return fmt_http_error(request, e.code, e.description)
 
 
 app.run(host="0.0.0.0", port=8888)
