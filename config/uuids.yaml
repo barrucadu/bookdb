@@ -27,7 +27,7 @@ ordered_categories:
 - name: Penguin Little Black Classics
   uuid: b96b2465-2995-4ee9-a59a-048ecb217a7c
 
-- name: Prose Fiction + Visual Novels
+- name: Prose Fiction + Graphic Novels
   uuid: 590ac55d-0644-4a71-b902-587faa5b03d9
   ordered_children:
   - name: Gothic, Horror, + Weird
