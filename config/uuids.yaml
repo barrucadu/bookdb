@@ -19,8 +19,13 @@ ordered_categories:
     uuid: b5451ba6-a3ef-4c27-99fc-a07d8cd54161
   - name: Politics, Philosophy, Economics, + History
     uuid: ac4706f3-54c3-4e6d-a72d-85321d9dcd72
-  - name: RPG Rulebooks
-    uuid: 219ae9f4-84f1-4ea2-a9cd-fbc16698a669
+  - name: RPG
+    uuid: cf921942-f65a-40e3-8e98-2f565bb8d033
+    ordered_children:
+      - name: Rulebooks
+        uuid: 219ae9f4-84f1-4ea2-a9cd-fbc16698a669
+      - name: Miscellaneous
+        uuid: 70196ec9-dd61-4241-afc9-dd6be7be30a6
   - name: Miscellaneous
     uuid: fb2dd601-883a-4254-a294-fcf0a0f98d2f
 
