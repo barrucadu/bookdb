@@ -561,7 +561,13 @@ def book_cover(bId):
         abort(404)
     if not book["cover_image_mimetype"]:
         abort(404)
-    return send_from_directory(COVER_DIR, bId, cache_timeout=COVER_CACHE_TIMEOUT, last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT), mimetype=book["cover_image_mimetype"],)
+    return send_from_directory(
+        COVER_DIR,
+        bId,
+        cache_timeout=COVER_CACHE_TIMEOUT,
+        last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
+        mimetype=book["cover_image_mimetype"],
+    )
 
 
 @app.route("/book/<bId>/thumb")
@@ -577,7 +583,13 @@ def book_thumb(bId):
     if not os.path.isfile(thumb_file):
         subprocess.run(["convert", cover_file, "-resize", "16x24", thumb_file])
 
-    return send_from_directory(THUMB_DIR, bId + ".jpg", cache_timeout=THUMB_CACHE_TIMEOUT, last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT), mimetype="image/jpeg",)
+    return send_from_directory(
+        THUMB_DIR,
+        bId + ".jpg",
+        cache_timeout=THUMB_CACHE_TIMEOUT,
+        last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
+        mimetype="image/jpeg",
+    )
 
 
 @app.route("/static/<path>")

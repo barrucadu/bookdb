@@ -1,6 +1,5 @@
 def display_title(book):
-    """Computer the display title of a book.
-    """
+    """Compute the display title of a book."""
 
     out = book["title"]
     if book.get("subtitle"):
@@ -17,8 +16,7 @@ def display_title(book):
 
 
 def to_bits(cs):
-    """Split a string into a list of numeric and non-numeric substrings.
-    """
+    """Split a string into a list of numeric and non-numeric substrings."""
 
     if not cs:
         return []
@@ -51,8 +49,7 @@ def to_bits(cs):
 
 
 def fixup_book_for_index(book):
-    """Get a book ready to be indexed.
-    """
+    """Get a book ready to be indexed."""
 
     book = {k: v for k, v in book.items() if v}
 
