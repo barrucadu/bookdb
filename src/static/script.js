@@ -1,25 +1,28 @@
-// Copied from: http://cssglobe.com/lab/tooltip/02/
-$(document).ready(function(){
-	xOffset = 10;
-	yOffset = 30;
+/* derived from http://cssglobe.com/lab/tooltip/02/ */
+function set_preview_hover(el) {
+    const xOffset = 10;
+    const yOffset = 30;
+    const body = document.getElementsByTagName("body")[0];
 
-	$("a.preview").hover(function(e){
-		$("body").append("<img id=\"preview\" src=\"" + this.href + "\" alt=\"" + this.title + "\" />");
-		$("#preview")
-			.css("top",(e.pageY - xOffset) + "px")
-			.css("left",(e.pageX + yOffset) + "px")
-			.fadeIn("fast");
-    },
-	function(){
-		$("#preview").remove();
-    });
+    el.onmouseenter = function(event) {
+        let preview = document.createElement("img");
+        preview.setAttribute("id", "preview");
+        preview.setAttribute("src", el.href);
+        preview.setAttribute("alt", el.title);
+        preview.setAttribute("style", `top:${event.pageY + xOffset}px; left:${event.pageX + yOffset}px;`);
+        body.appendChild(preview);
+    }
 
-	$("a.preview").mousemove(function(e){
-		$("#preview")
-			.css("top",(e.pageY - xOffset) + "px")
-			.css("left",(e.pageX + yOffset) + "px");
-	});
-});
+    el.onmouseleave = function() {
+        let preview = document.getElementById("preview");
+        body.removeChild(preview);
+    }
+
+    el.onmousemove = function(event) {
+        let preview = document.getElementById("preview");
+        preview.setAttribute("style", `top:${event.pageY + xOffset}px; left:${event.pageX + yOffset}px;`);
+    }
+}
 
 /* derived from https://www.w3schools.com/howto/howto_js_autocomplete.asp */
 function autocomplete(inp, arr) {
