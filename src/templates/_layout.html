@@ -5,7 +5,6 @@
     <title>BookDB</title>
 
     <link rel="stylesheet" href="static/style.css" type="text/css">
-    <script src="static/jquery-1.9.1.min.js"></script>
     <script src="static/script.js"></script>
   </head>
 
@@ -31,6 +30,7 @@
       document.getElementsByName("author[]").forEach(el => autocomplete(el, authors));
       document.getElementsByName("editor[]").forEach(el => autocomplete(el, editors));
       document.getElementsByName("translator[]").forEach(el => autocomplete(el, translators));
+      document.getElementsByName("preview[]").forEach(el => set_preview_hover(el));
     </script>
   </body>
 </html>

@@ -9,6 +9,7 @@ from werkzeug.exceptions import HTTPException
 
 import os
 import re
+import subprocess
 import sys
 import yaml
 
@@ -28,6 +29,7 @@ es = Elasticsearch([os.getenv("ES_HOST", "http://localhost:9200")])
 BASE_URI = os.getenv("BASE_URI", "http://bookdb.nyarlathotep")
 
 COVER_DIR = os.getenv("COVER_DIR", "covers")
+THUMB_DIR = os.path.join(COVER_DIR, "thumbs")
 
 ALLOW_WRITES = os.getenv("ALLOW_WRITES", "0") == "1"
 
@@ -43,6 +45,15 @@ if "ordered_categories" not in tree_config:
 if "ordered_locations" not in tree_config:
     print("Missing ordered_locations")
     sys.exit(1)
+
+if not os.path.isdir(THUMB_DIR):
+    os.makedirs(THUMB_DIR)
+
+COVER_CACHE_TIMEOUT = 60 * 60 * 24 * 7 * 4 * 3
+THUMB_CACHE_TIMEOUT = COVER_CACHE_TIMEOUT
+STATIC_CACHE_TIMEOUT = 60 * 60 * 24 * 7
+
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 ORDERED_CATEGORIES = [(k, (v, p)) for k, v, p in flatten_tree_config(tree_config["ordered_categories"], [])]
 ORDERED_LOCATIONS = [(k, v) for k, v, _ in flatten_tree_config(tree_config["ordered_locations"], [])]
@@ -244,7 +255,7 @@ def form_to_book(form, files, this_is_an_insert=True):
     cover = None
     errors = []
 
-    now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now().strftime(DATE_FORMAT)
     if this_is_an_insert:
         book["created_at"] = now
     book["updated_at"] = now
@@ -336,11 +347,11 @@ def standard_template_args():
 
 
 def accepts_html(request):
-    return request.view_args.get("fmt") in [None, "html"] and request.accept_mimetypes.accept_html
+    return (request.view_args or {}).get("fmt") in [None, "html"] and request.accept_mimetypes.accept_html
 
 
 def accepts_json(request):
-    return request.view_args.get("fmt") in [None, "json"] and request.accept_mimetypes.accept_json
+    return (request.view_args or {}).get("fmt") in [None, "json"] and request.accept_mimetypes.accept_json
 
 
 def unacceptable(request):
@@ -389,6 +400,10 @@ def do_create_book(request):
     if cover:
         cover.save(os.path.join(COVER_DIR, bId))
 
+    thumb_file = os.path.join(THUMB_DIR, bId + ".jpg")
+    if os.path.isfile(thumb_file):
+        os.remove(thumb_file)
+
     resp = make_response(fmt_message(request, "The book has been created."), 201)
     resp.headers["Location"] = f"{BASE_URI}/book/{bId}"
     return resp
@@ -409,6 +424,14 @@ def do_update_book(bId, book, request):
 
 def do_delete_book(bId, request):
     es.delete(index="bookdb", id=bId)
+
+    cover_file = os.path.join(COVER_DIR, bId)
+    thumb_file = os.path.join(THUMB_DIR, bId + ".jpg")
+    if os.path.isfile(cover_file):
+        os.delete(cover_file)
+    if os.path.isfile(thumb_file):
+        os.delete(thumb_file)
+
     return fmt_message(request, "The book has been deleted.")
 
 
@@ -538,12 +561,40 @@ def book_cover(bId):
         abort(404)
     if not book["cover_image_mimetype"]:
         abort(404)
-    return send_from_directory(COVER_DIR, bId, mimetype=book["cover_image_mimetype"])
+    return send_from_directory(
+        COVER_DIR,
+        bId,
+        cache_timeout=COVER_CACHE_TIMEOUT,
+        last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
+        mimetype=book["cover_image_mimetype"],
+    )
+
+
+@app.route("/book/<bId>/thumb")
+def book_thumb(bId):
+    book = get_book(bId)
+    if not book:
+        abort(404)
+    if not book["cover_image_mimetype"]:
+        abort(404)
+
+    cover_file = os.path.join(COVER_DIR, bId)
+    thumb_file = os.path.join(THUMB_DIR, bId + ".jpg")
+    if not os.path.isfile(thumb_file):
+        subprocess.run(["convert", cover_file, "-resize", "16x24", thumb_file])
+
+    return send_from_directory(
+        THUMB_DIR,
+        bId + ".jpg",
+        cache_timeout=THUMB_CACHE_TIMEOUT,
+        last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
+        mimetype="image/jpeg",
+    )
 
 
 @app.route("/static/<path>")
 def static_files(path):
-    return send_from_directory("static", path)
+    return send_from_directory("static", path, cache_timeout=STATIC_CACHE_TIMEOUT)
 
 
 @app.errorhandler(ConnectionError)

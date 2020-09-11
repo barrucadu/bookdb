@@ -138,7 +138,6 @@ img {
 #preview {
     position: absolute;
     border: 1px solid var(--bg-color);
-    display: none;
     max-width: 333px;
     max-height: 500px;
 }
