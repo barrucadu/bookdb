@@ -53,6 +53,8 @@ COVER_CACHE_TIMEOUT = 60 * 60 * 24 * 7 * 4 * 3
 THUMB_CACHE_TIMEOUT = COVER_CACHE_TIMEOUT
 STATIC_CACHE_TIMEOUT = 60 * 60 * 24 * 7
 
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
+
 ORDERED_CATEGORIES = [(k, (v, p)) for k, v, p in flatten_tree_config(tree_config["ordered_categories"], [])]
 ORDERED_LOCATIONS = [(k, v) for k, v, _ in flatten_tree_config(tree_config["ordered_locations"], [])]
 CATEGORIES = {k: v for k, v in ORDERED_CATEGORIES}
@@ -253,7 +255,7 @@ def form_to_book(form, files, this_is_an_insert=True):
     cover = None
     errors = []
 
-    now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now().strftime(DATE_FORMAT)
     if this_is_an_insert:
         book["created_at"] = now
     book["updated_at"] = now
@@ -559,7 +561,7 @@ def book_cover(bId):
         abort(404)
     if not book["cover_image_mimetype"]:
         abort(404)
-    return send_from_directory(COVER_DIR, bId, cache_timeout=COVER_CACHE_TIMEOUT, mimetype=book["cover_image_mimetype"])
+    return send_from_directory(COVER_DIR, bId, cache_timeout=COVER_CACHE_TIMEOUT, last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT), mimetype=book["cover_image_mimetype"],)
 
 
 @app.route("/book/<bId>/thumb")
@@ -575,7 +577,7 @@ def book_thumb(bId):
     if not os.path.isfile(thumb_file):
         subprocess.run(["convert", cover_file, "-resize", "16x24", thumb_file])
 
-    return send_from_directory(THUMB_DIR, bId + ".jpg", cache_timeout=THUMB_CACHE_TIMEOUT, mimetype="image/jpeg")
+    return send_from_directory(THUMB_DIR, bId + ".jpg", cache_timeout=THUMB_CACHE_TIMEOUT, last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT), mimetype="image/jpeg",)
 
 
 @app.route("/static/<path>")
