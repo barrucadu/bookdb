@@ -336,11 +336,11 @@ def standard_template_args():
 
 
 def accepts_html(request):
-    return request.view_args.get("fmt") in [None, "html"] and request.accept_mimetypes.accept_html
+    return (request.view_args or {}).get("fmt") in [None, "html"] and request.accept_mimetypes.accept_html
 
 
 def accepts_json(request):
-    return request.view_args.get("fmt") in [None, "json"] and request.accept_mimetypes.accept_json
+    return (request.view_args or {}).get("fmt") in [None, "json"] and request.accept_mimetypes.accept_json
 
 
 def unacceptable(request):
