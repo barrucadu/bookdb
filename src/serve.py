@@ -188,7 +188,7 @@ def do_search(request_args):
         body={
             "query": {"bool": {"must": queries}},
             "aggs": {
-                "author": {"terms": {"field": "people.authors", "size": 500}},
+                "author": {"terms": {"field": "people.authors", "size": 1000}},
                 "editor": {"terms": {"field": "people.editors", "size": 500}},
                 "translator": {"terms": {"field": "people.translators", "size": 500}},
                 "has_been_read": {"terms": {"field": "has_been_read", "size": 500}},
