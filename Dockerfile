@@ -9,4 +9,4 @@ COPY --chown=app config /app/config
 WORKDIR /app
 USER app
 
-CMD /app/serve.py
+CMD gunicorn -w 4 -b 0.0.0.0:8888 serve:app
