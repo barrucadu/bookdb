@@ -607,4 +607,5 @@ def handle_http_exception(e):
     return fmt_http_error(request, e.code, e.description)
 
 
-app.run(host="0.0.0.0", port=8888)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8888)
