@@ -1,0 +1,57 @@
+resources:
+  - name: bookdb-git
+    type: git
+    source:
+      uri: https://github.com/barrucadu/bookdb.git
+  - name: bookdb-image
+    type: docker-image
+    source:
+      repository: registry.barrucadu.dev/bookdb
+      username: registry
+      password: ((docker-registry-password))
+
+jobs:
+  - name: update-pipeline
+    plan:
+      - get: bookdb-git
+        trigger: true
+      - set_pipeline: bookdb
+        file: bookdb-git/concourse/pipeline.yml
+
+  - name: build-image
+    serial: true
+    plan:
+      - get: bookdb-git
+        trigger: true
+      - put: bookdb-image
+        params:
+          build: bookdb-git
+          dockerfile: bookdb-git/Dockerfile
+          tag_as_latest: true
+
+  - name: deploy-dunwich.barrucadu.co.uk
+    serial: true
+    plan:
+      - get: bookdb-image
+        trigger: true
+        passed:
+          - build-image
+      - task: deploy
+        params:
+          SSH_PRIVATE_KEY: ((dunwich-ssh-private-key))
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: alpine
+          run:
+            path: sh
+            args:
+              - -ce
+              - |
+                echo "$SSH_PRIVATE_KEY" > ssh-private-key
+                chmod 600 ssh-private-key
+                set -x
+                apk add --no-cache openssh
+                ssh -i ssh-private-key -o "StrictHostKeyChecking no" "concourse-deploy-robot@dunwich.barrucadu.co.uk" sudo systemctl restart bookdb
