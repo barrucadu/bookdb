@@ -19,3 +19,11 @@ jobs:
           flake8 --ignore=E266,E501 src
           black -l200 src
           git diff --exit-code
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Check Dependencies
+        run: |
+          pip install -r requirements-freeze.txt
