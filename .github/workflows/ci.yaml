@@ -3,6 +3,15 @@ name: Run tests
 on: pull_request
 
 jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: github/codeql-action/init@v1
+        with:
+          languages: python
+      - uses: github/codeql-action/analyze@v1
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -19,6 +28,7 @@ jobs:
           flake8 --ignore=E266,E501 src
           black -l200 src
           git diff --exit-code
+
   test:
     runs-on: ubuntu-latest
     steps:
