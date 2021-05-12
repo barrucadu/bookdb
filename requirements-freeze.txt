@@ -7,4 +7,4 @@ Jinja2==2.11.3
 MarkupSafe==2.0.0
 PyYAML==5.4.1
 urllib3==1.26.4
-Werkzeug==1.0.1
+Werkzeug==2.0.0
