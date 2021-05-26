@@ -9,4 +9,6 @@ COPY --chown=app config /app/config
 WORKDIR /app
 USER app
 
+ENV ELASTIC_CLIENT_APIVERSIONING=1
+
 CMD gunicorn -w 4 -b 0.0.0.0:8888 serve:app
