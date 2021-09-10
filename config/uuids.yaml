@@ -45,3 +45,6 @@ ordered_categories:
 
 - name: Verse
   uuid: 217f8eaa-b54a-466c-83f8-3f569f46732e
+
+- name: To Donate
+  uuid: 957d6a70-5dfc-46e2-8e3c-2f193878b2a5
