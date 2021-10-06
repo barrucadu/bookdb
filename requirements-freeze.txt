@@ -3,7 +3,7 @@ elasticsearch==7.15.0
 Flask==2.0.2
 gunicorn==20.1.0
 itsdangerous==2.0.1
-Jinja2==3.0.1
+Jinja2==3.0.2
 MarkupSafe==2.0.1
 PyYAML==5.4.1
 urllib3==1.26.7
