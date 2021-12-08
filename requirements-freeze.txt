@@ -1,5 +1,5 @@
 click==8.0.3
-elasticsearch==7.15.2
+elasticsearch==7.16.0
 Flask==2.0.2
 gunicorn==20.1.0
 itsdangerous==2.0.1
