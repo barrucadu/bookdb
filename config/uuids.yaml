@@ -13,7 +13,7 @@ ordered_categories:
 - name: Nonfiction
   uuid: 58c63aea-72b6-4988-96a0-aca572661303
   ordered_children:
-  - name: Computer Science, Software Engineering, + Digital Culture
+  - name: Computer Science + Software Engineering
     uuid: afc7135b-bf67-4284-bcc1-2bbd3386aea3
   - name: Kitchen, Food, + Recipe
     uuid: b5451ba6-a3ef-4c27-99fc-a07d8cd54161
