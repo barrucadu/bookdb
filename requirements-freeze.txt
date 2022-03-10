@@ -2,7 +2,7 @@ click==8.0.4
 elasticsearch==8.1.0
 Flask==2.0.3
 gunicorn==20.1.0
-itsdangerous==2.1.0
+itsdangerous==2.1.1
 Jinja2==3.0.3
 MarkupSafe==2.1.0
 PyYAML==6.0
