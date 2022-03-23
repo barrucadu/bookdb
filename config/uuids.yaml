@@ -22,8 +22,10 @@ ordered_categories:
   - name: RPG
     uuid: cf921942-f65a-40e3-8e98-2f565bb8d033
     ordered_children:
-      - name: Rulebooks
-        uuid: 219ae9f4-84f1-4ea2-a9cd-fbc16698a669
+      - name: Call of Cthulhu
+        uuid: 08bc011e-1a42-4d23-961a-803d786d7e58
+      - name: Traveller
+        uuid: d8d4ee9d-e5d8-4d4d-8a78-65ebc23fc451
       - name: Miscellaneous
         uuid: 70196ec9-dd61-4241-afc9-dd6be7be30a6
   - name: Miscellaneous
