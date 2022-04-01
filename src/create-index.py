@@ -18,12 +18,12 @@ except FileNotFoundError:
 
 es = Elasticsearch([os.getenv("ES_HOST", "http://localhost:9200")])
 try:
-    es.indices.create(index="bookdb", body=es_config)
+    es.indices.create(index="bookdb", **es_config)
 except RequestError:
     if os.getenv("DELETE_EXISTING_INDEX", "0") == "1":
         print("Index already exists - recreating it...")
         es.indices.delete(index="bookdb")
-        es.indices.create(index="bookdb", body=es_config)
+        es.indices.create(index="bookdb", **es_config)
     else:
         print("Index already exists - set DELETE_EXISTING_INDEX=1 to recreate it")
         sys.exit(2)
