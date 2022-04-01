@@ -393,7 +393,7 @@ def do_create_book(request):
         return fmt_errors(request, candidate, errors), 422
 
     try:
-        es.create(index="bookdb", id=bId, body=candidate)
+        es.create(index="bookdb", id=bId, **candidate)
     except ConflictError:
         return fmt_errors(request, candidate, ["Code already in use"]), 409
 
