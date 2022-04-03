@@ -393,7 +393,7 @@ def do_create_book(request):
         return fmt_errors(request, candidate, errors), 422
 
     try:
-        es.create(index="bookdb", id=bId, **candidate)
+        es.create(index="bookdb", id=bId, document=candidate)
     except ConflictError:
         return fmt_errors(request, candidate, ["Code already in use"]), 409
 
@@ -414,7 +414,7 @@ def do_update_book(bId, book, request):
     if errors:
         return fmt_errors(request, {"id": bId, **candidate}, errors), 422
 
-    es.update(index="bookdb", id=bId, body={"doc": candidate})
+    es.update(index="bookdb", id=bId, doc=candidate)
 
     if cover:
         cover.save(os.path.join(COVER_DIR, bId))
