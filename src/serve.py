@@ -49,9 +49,9 @@ if "ordered_locations" not in tree_config:
 if not os.path.isdir(THUMB_DIR):
     os.makedirs(THUMB_DIR)
 
-COVER_CACHE_TIMEOUT = 60 * 60 * 24 * 7 * 4 * 3
-THUMB_CACHE_TIMEOUT = COVER_CACHE_TIMEOUT
-STATIC_CACHE_TIMEOUT = 60 * 60 * 24 * 7
+COVER_MAX_AGE = 60 * 60 * 24 * 7 * 4 * 3
+THUMB_MAX_AGE = COVER_MAX_AGE
+STATIC_MAX_AGE = 60 * 60 * 24 * 7
 
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
@@ -564,7 +564,7 @@ def book_cover(bId):
     return send_from_directory(
         COVER_DIR,
         bId,
-        cache_timeout=COVER_CACHE_TIMEOUT,
+        max_age=COVER_MAX_AGE,
         last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
         mimetype=book["cover_image_mimetype"],
     )
@@ -586,7 +586,7 @@ def book_thumb(bId):
     return send_from_directory(
         THUMB_DIR,
         bId + ".jpg",
-        cache_timeout=THUMB_CACHE_TIMEOUT,
+        max_age=THUMB_MAX_AGE,
         last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
         mimetype="image/jpeg",
     )
@@ -594,7 +594,7 @@ def book_thumb(bId):
 
 @app.route("/static/<path>")
 def static_files(path):
-    return send_from_directory("static", path, cache_timeout=STATIC_CACHE_TIMEOUT)
+    return send_from_directory("static", path, max_age=STATIC_MAX_AGE)
 
 
 @app.errorhandler(ConnectionError)
