@@ -21,15 +21,26 @@
         </nav>
       </footer>
     </div>
-    <script type="text/javascript">
-      const authors = {{ authors|tojson }};
-      const editors = {{ editors|tojson }};
-      const translators = {{ translators|tojson }};
-      const locations = {{ locations|tojson }};
 
-      document.getElementsByName("author[]").forEach(el => autocomplete(el, authors));
-      document.getElementsByName("editor[]").forEach(el => autocomplete(el, editors));
-      document.getElementsByName("translator[]").forEach(el => autocomplete(el, translators));
+    <datalist id="authors">
+      {% for name in authors %}
+      <option value="{{name|e}}">
+      {% endfor %}
+    </datalist>
+
+    <datalist id="editors">
+      {% for name in editors %}
+      <option value="{{name|e}}">
+      {% endfor %}
+    </datalist>
+
+    <datalist id="translators">
+      {% for name in translators %}
+      <option value="{{name|e}}">
+      {% endfor %}
+    </datalist>
+
+    <script type="text/javascript">
       document.getElementsByName("preview[]").forEach(el => set_preview_hover(el));
     </script>
   </body>

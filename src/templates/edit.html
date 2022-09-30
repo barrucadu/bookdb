@@ -70,42 +70,30 @@
     <div class="form-group js-authors">
       <label class="form-label form-label-required" for="author_0">Authors</label>
       {% if book.people %}{% for name in book.people.authors %}
-      <div class="autocomplete">
-        <input class="form-input" type="text" id="author_{{ (1 + loop.index)|e }}" name="author[]" value="{{ name|e }}">
-      </div>
+      <input class="form-input form-input--inline" type="text" id="author_{{ (1 + loop.index)|e }}" name="author[]" value="{{ name|e }}" list="authors">
       {% endfor %}{% endif %}
-      <div class="autocomplete">
-        <input class="form-input" type="text" id="author_0" name="author[]">
-      </div>
-      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('js-authors', 'author[]', authors)" value="+">
+      <input class="form-input form-input--inline" type="text" id="author_0" name="author[]" list="authors">
+      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('author')" value="+">
     </div>
   </div>
   <div class="form-row">
     <div class="form-group js-editors">
       <label class="form-label" for="editor_0">Editors</label>
       {% if book.people %}{% for name in book.people.editors %}
-      <div class="autocomplete">
-        <input class="form-input" type="text" id="editor_{{ (1 + loop.index)|e }}" name="editor[]" value="{{ name|e }}">
-      </div>
+      <input class="form-input form-input--inline" type="text" id="editor_{{ (1 + loop.index)|e }}" name="editor[]" value="{{ name|e }}" list="editors">
       {% endfor %}{% endif %}
-      <div class="autocomplete">
-        <input class="form-input" type="text" id="editor_0" name="editor[]">
-      </div>
-      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('js-editors', 'editor[]', editors)" value="+">
+      <input class="form-input form-input--inline" type="text" id="editor_0" name="editor[]" list="editors">
+      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('editor')" value="+">
     </div>
   </div>
   <div class="form-row">
     <div class="form-group js-translators">
       <label class="form-label" for="translator_0">Translators</label>
       {% if book.people %}{% for name in book.people.translators %}
-      <div class="autocomplete">
-        <input class="form-input" type="text" id="translator_{{ (1 + loop.index)|e }}" name="translator[]" value="{{ name|e }}">
-      </div>
+      <input class="form-input form-input--inline" type="text" id="translator_{{ (1 + loop.index)|e }}" name="translator[]" value="{{ name|e }}" list="translators">
       {% endfor %}{% endif %}
-      <div class="autocomplete">
-        <input class="form-input" type="text" id="translator_0" name="translator[]">
-      </div>
-      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('js-translators', 'translator[]', translators)" value="+">
+      <input class="form-input form-input--inline" type="text" id="translator_0" name="translator[]" list="translators">
+      <input class="form-button js-insert-before" type="button" onclick="add_person_entry('translator')" value="+">
     </div>
   </div>
 
@@ -134,7 +122,7 @@
     {{ render_holding(book.holdings|length+1) }}
     <div class="form-row js-insert-before">
       <div class="form-group">
-        <input class="form-button" type="button" onclick="add_holding_entry({{ (book.holdings|length+1)|e }}, locations)" value="+">
+        <input class="form-button" type="button" onclick="add_holding_entry({{ (book.holdings|length+1)|e }}, {{ locations|tojson|forceescape }})" value="+">
       </div>
     </div>
   </div>

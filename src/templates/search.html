@@ -9,9 +9,7 @@
     <div class="form-group">
       <!-- TODO: implement multi-select for authors -->
       <label class="form-label" for="author_0">Author</label>
-      <div class="autocomplete">
-        <input class="form-input" type="text" id="author_0" name="author[]" value="{% if search_params["author[]"] %}{{ search_params["author[]"][0]|e }}{% endif %}">
-      </div>
+      <input class="form-input" type="text" id="author_0" name="author[]" value="{% if search_params["author[]"] %}{{ search_params["author[]"][0]|e }}{% endif %}" list="authors">
     </div>
     <div class="form-group">
       <label class="form-label" for="location">Location</label>
