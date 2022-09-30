@@ -13,7 +13,7 @@
     </div>
     <div class="form-group">
       <label class="form-label" for="location">Location</label>
-      <select class="form-input form-input-narrow" id="location" name="location">
+      <select class="form-input form-input--narrow" id="location" name="location">
         <option></option>
         {% for location in locations %}
         <option value="{{ location.key|e }}" {% if search_params.location == location.key %}selected{% endif %}>{{ location.label|e }}</option>
@@ -22,7 +22,7 @@
     </div>
     <div class="form-group">
       <label class="form-label"for="match">Show</label>
-      <select class="form-input form-input-narrow" id="match" name="match">
+      <select class="form-input form-input--narrow" id="match" name="match">
         <option></option>
         <option value="only-read" {% if search_params.match == "only-read" %}selected{% endif %}>Only read books</option>
         <option value="only-unread" {% if search_params.match == "only-unread" %}selected{% endif %}>Only unread books</option>
@@ -42,7 +42,7 @@
   </div>
   <div class="form-row">
     <div class="form-group">
-      <input class="form-button form-button-submit" type="submit" value="Search">
+      <input class="form-button form-button--submit" type="submit" value="Search">
     </div>
   </div>
 </form>

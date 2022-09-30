@@ -63,7 +63,7 @@ function add_holding_entry(n, locations) {
     label_notes.innerText = "Notes";
     group_notes.appendChild(label_notes);
     let input_location = document.createElement("select");
-    input_location.setAttribute("class", "form-input form-input-narrow");
+    input_location.setAttribute("class", "form-input form-input--narrow");
     input_location.setAttribute("id", `location_${nth}`);
     input_location.setAttribute("name", "location[]");
     let option = document.createElement("option");

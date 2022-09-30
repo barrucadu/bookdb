@@ -10,7 +10,7 @@
 <form action="{% if book.id %}book/{{ book.id|e}}/edit{% else %}add{% endif %}" method="post" enctype="multipart/form-data" autocomplete="off">
   <div class="form-row">
     <div class="form-group">
-      <label class="form-label form-label-required" for="code">Code</label>
+      <label class="form-label form-label--required" for="code">Code</label>
       {% if book.id %}<span class="form-input code">{{ book.id|e }}</span>
       {% else %}
       <input class="form-input" type="text" id="code" name="code" required>
@@ -33,7 +33,7 @@
   </div>
   <div class="form-row">
     <div class="form-group">
-      <label class="form-label form-label-required" for="title">Title</label>
+      <label class="form-label form-label--required" for="title">Title</label>
       <input class="form-input" type="text" id="title" name="title" value="{{ book.title|e }}" required>
     </div>
     <div class="form-group">
@@ -58,17 +58,17 @@
   <div class="form-row">
     <div class="form-group">
       <label class="form-label" for="has_been_read">Has Been Read</label>
-      <input class="form-input form-input-zerowidth" type="checkbox" id="has_been_read" name="has_been_read" {% if book.has_been_read %} checked{% endif %}>
+      <input class="form-input form-input--zerowidth" type="checkbox" id="has_been_read" name="has_been_read" {% if book.has_been_read %} checked{% endif %}>
     </div>
     <div class="form-group">
       <label class="form-label" for="last_read_date">Last Read Date</label>
-      <input class="form-input form-input-narrow" type="date" id="last_read_date" name="last_read_date" value="{{ book.last_read_date|e }}">
+      <input class="form-input form-input--narrow" type="date" id="last_read_date" name="last_read_date" value="{{ book.last_read_date|e }}">
     </div>
   </div>
 
   <div class="form-row">
     <div class="form-group js-authors">
-      <label class="form-label form-label-required" for="author_0">Authors</label>
+      <label class="form-label form-label--required" for="author_0">Authors</label>
       {% if book.people %}{% for name in book.people.authors %}
       <input class="form-input form-input--inline" type="text" id="author_{{ (1 + loop.index)|e }}" name="author[]" value="{{ name|e }}" list="authors">
       {% endfor %}{% endif %}
@@ -100,8 +100,8 @@
   {% macro render_holding(n, location_uuid="", notes="") %}
   <div class="form-row">
     <div class="form-group">
-      <label class="form-label{% if n == 1 %} form-label-required{% endif %}" for="location_{{ n|e }}">Location #{{ n|e }}</label>
-      <select class="form-input form-input-narrow" id="location_{{ n|e }}" name="location[]">
+      <label class="form-label{% if n == 1 %} form-label--required{% endif %}" for="location_{{ n|e }}">Location #{{ n|e }}</label>
+      <select class="form-input form-input--narrow" id="location_{{ n|e }}" name="location[]">
         {% if n > 1 %}<option value=""{% if location_uuid == "" %} selected{% endif %}></option>{% endif %}
         {% for location in locations %}
         <option value="{{ location.key|e }}"{% if location_uuid == location.key %} selected{% endif %}>{{ location.label|e }}</option>
@@ -137,7 +137,7 @@
 
   <div class="form-row">
     <div class="form-group">
-      <input class="form-button form-button-submit" type="submit" value="Save">
+      <input class="form-button form-button--submit" type="submit" value="Save">
     </div>
   </div>
 </form>

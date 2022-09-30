@@ -144,7 +144,7 @@ img {
     display: block;
     font-weight: bold;
 }
-.form-label-required {
+.form-label--required {
     color: var(--label-required-text-color);
 }
 .form-input {
@@ -156,10 +156,10 @@ img {
 .form-input--inline {
     display: inline-block;
 }
-.form-input-narrow {
+.form-input--narrow {
     min-width: 100px;
 }
-.form-input-zerowidth {
+.form-input--zerowidth {
     min-width: 0;
 }
 .form-button {
@@ -169,7 +169,7 @@ img {
     box-shadow: 0 2px 0 var(--button-shadow-color);
     color: var(--button-text-color);
 }
-.form-button-submit {
+.form-button--submit {
     padding: 10px 24px;
     background-color: var(--button-submit-bg-color);
     box-shadow-color: var(--button-submit-shadow-color);
