@@ -7,12 +7,6 @@
     --table-bg-color-even: #e9e9e9;
     --link-color: #838474;
     --link-hover-color: #503941;
-    --autocomplete-bg-color: #d4d4d4;
-    --autocomplete-item-bg-color: #ffffff;
-    --autocomplete-item-border-color: #d4d4d4;
-    --autocomplete-item-hover-bg-color: #e9e9e9;
-    --autocomplete-active-bg-color: #f21565;
-    --autocomplete-active-text-color: #ffffff;
     --label-required-text-color: #ea4024;
     --button-bg-color: #20abbb;
     --button-shadow-color: #0a0969;
@@ -142,34 +136,6 @@ img {
     max-height: 500px;
 }
 
-.autocomplete {
-    position: relative;
-    display: inline-block;
-}
-.autocomplete-items {
-    position: absolute;
-    border: 1px solid var(--autocomplete-bg-color);
-    border-bottom: none;
-    border-top: none;
-    z-index: 99;
-    top: 100%;
-    left: 0;
-    right: 0;
-}
-.autocomplete-items div {
-    padding: 10px;
-    cursor: pointer;
-    background-color: var(--autocomplete-item-bg-color);
-    border-bottom: 1px solid var(--autocomplete-item-border-color);
-}
-.autocomplete-items div:hover {
-    background-color: var(--autocomplete-item-hover-bg-color);
-}
-.autocomplete-active {
-    background-color: var(--autocomplete-active-bg-color) !important;
-    color: var(--autocomplete-active-text-color);
-}
-
 .form-group {
     display: inline-block;
     padding: 10px;
@@ -178,7 +144,7 @@ img {
     display: block;
     font-weight: bold;
 }
-.form-label-required {
+.form-label--required {
     color: var(--label-required-text-color);
 }
 .form-input {
@@ -187,10 +153,13 @@ img {
     min-width: 250px;
     margin: 3px auto;
 }
-.form-input-narrow {
+.form-input--inline {
+    display: inline-block;
+}
+.form-input--narrow {
     min-width: 100px;
 }
-.form-input-zerowidth {
+.form-input--zerowidth {
     min-width: 0;
 }
 .form-button {
@@ -200,7 +169,7 @@ img {
     box-shadow: 0 2px 0 var(--button-shadow-color);
     color: var(--button-text-color);
 }
-.form-button-submit {
+.form-button--submit {
     padding: 10px 24px;
     background-color: var(--button-submit-bg-color);
     box-shadow-color: var(--button-submit-shadow-color);
