@@ -4,6 +4,7 @@ COPY requirements-freeze.txt .
 RUN pip install -r requirements-freeze.txt
 
 RUN useradd -m app
+RUN mkdir /covers && chown -R app /covers
 COPY --chown=app src /app
 COPY --chown=app config /app/config
 WORKDIR /app
