@@ -1,4 +1,4 @@
-FROM python:3.11.1
+FROM python:3.11.2
 
 COPY requirements-freeze.txt .
 RUN pip install -r requirements-freeze.txt
