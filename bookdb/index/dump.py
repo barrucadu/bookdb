@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import scan
 
