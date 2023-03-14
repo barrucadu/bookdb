@@ -17,7 +17,7 @@ docker-compose up
 You will then need to create the search index:
 
 ```bash
-docker-compose exec bookdb /app/create-index.py
+docker-compose exec bookdb python -m bookdb.index.create
 ```
 
 I run bookdb [via nix](https://github.com/barrucadu/nixfiles/blob/master/shared/bookdb/default.nix).
