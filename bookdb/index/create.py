@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from bookdb.common import fixup_book_for_index
 
 from elasticsearch import Elasticsearch
