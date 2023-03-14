@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from common import fixup_book_for_index
+from bookdb.common import fixup_book_for_index
+
 from datetime import datetime
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConflictError, ConnectionError, NotFoundError
@@ -607,5 +608,9 @@ def handle_http_exception(e):
     return fmt_http_error(request, e.code, e.description)
 
 
-if __name__ == "__main__":
+def run():
     app.run(host="0.0.0.0", port=8888)
+
+
+if __name__ == "__main__":
+    run()
