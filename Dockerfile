@@ -14,9 +14,9 @@ RUN poetry install
 FROM base AS app
 ENV PATH="/app/.venv/bin:$PATH"
 ENV ELASTIC_CLIENT_APIVERSIONING=1
-COPY --chown=app src /app
+COPY --chown=app bookdb /app/bookdb
 COPY --chown=app config /app/config
 COPY --from=poetry /app/.venv /app/.venv
 RUN mkdir /covers && chown -R app /covers
 USER app
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8888", "serve:app"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8888", "bookdb.serve:app"]
