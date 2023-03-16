@@ -32,11 +32,13 @@ THUMB_DIR = os.path.join(COVER_DIR, "thumbs")
 
 ALLOW_WRITES = os.getenv("ALLOW_WRITES", "0") == "1"
 
+UUIDS_FILE = os.getenv("UUIDS_FILE", "config/uuids.yaml")
+
 try:
-    with open("config/uuids.yaml") as f:
+    with open(UUIDS_FILE) as f:
         tree_config = yaml.safe_load(f)
 except FileNotFoundError:
-    print("Could not read config/uuids.yaml")
+    print(f"Could not read {UUIDS_FILE}")
     sys.exit(1)
 if "ordered_categories" not in tree_config:
     print("Missing ordered_categories")
