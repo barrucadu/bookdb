@@ -1,4 +1,4 @@
-FROM python:3.11.2 AS base
+FROM python:3.11.3 AS base
 RUN useradd -m app
 WORKDIR /app
 
