@@ -1,4 +1,5 @@
 from bookdb.common import fixup_book_for_index
+import bookdb.codes
 
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
@@ -105,6 +106,33 @@ SCHEMA = {
 }
 
 
+def fixup_legacy_codes(dump):
+    COVER_DIR = os.getenv("COVER_DIR", "covers")
+    THUMB_DIR = os.path.join(COVER_DIR, "thumbs")
+
+    fixed_dump = {}
+    for doc_id, doc in dump.items():
+        if bookdb.codes.validate(doc_id):
+            fixed_dump[doc_id] = doc
+            continue
+
+        for prefix in bookdb.codes.CODES:
+            candidate = prefix + "-" + doc_id
+            if bookdb.codes.validate(candidate):
+                fixed_doc_id = candidate
+                cover_file = os.path.join(COVER_DIR, doc_id)
+                thumb_file = os.path.join(THUMB_DIR, doc_id + ".jpg")
+                if os.path.isfile(cover_file):
+                    os.rename(cover_file, os.path.join(COVER_DIR, fixed_doc_id))
+                if os.path.isfile(thumb_file):
+                    os.rename(thumb_file, os.path.join(THUMB_DIR, fixed_doc_id + ".jpg"))
+                print(f"Renamed {doc_id} to {fixed_doc_id}")
+                break
+        fixed_dump[fixed_doc_id] = doc
+
+    return fixed_dump
+
+
 def run():
     es = Elasticsearch([os.getenv("ES_HOST", "http://localhost:9200")])
     try:
@@ -130,6 +158,8 @@ def run():
             sys.exit(1)
 
         try:
+            if os.getenv("FIXUP_LEGACY_CODES", "0") == "1":
+                dump = fixup_legacy_codes(dump)
             ok, errors = bulk(es, [{"_index": "bookdb", "_id": doc_id, "_source": fixup_book_for_index(doc)} for doc_id, doc in dump.items()])
             print(f"Indexed {ok} records")
             if errors:
