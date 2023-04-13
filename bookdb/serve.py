@@ -226,26 +226,26 @@ def do_search(request_args):
 ## Form helpers
 
 
-def form_to_book(form, files, this_is_an_insert=True):
+def form_to_book(form, files, fallback_bId=None):
     bId = None
     book = {}
     cover = None
     errors = []
 
     now = datetime.now().strftime(DATE_FORMAT)
-    if this_is_an_insert:
-        book["created_at"] = now
+    book["created_at"] = now
     book["updated_at"] = now
 
-    if this_is_an_insert:
-        if form.get("code"):
-            bId = form.get("code").strip()
-        if not bId:
-            errors.append("The code cannot be blank.")
-        elif not re.match("^[a-zA-Z0-9-]+$", bId):
-            errors.append("The code can only contain letters, numbers, and dashes.")
-        elif not bookdb.codes.validate(bId):
-            errors.append(f"The code '{bId}' is invalid.")
+    if form.get("code"):
+        bId = form.get("code").strip()
+    else:
+        bId = fallback_bId
+    if not bId:
+        errors.append("The code cannot be blank.")
+    elif not re.match("^[a-zA-Z0-9-]+$", bId):
+        errors.append("The code can only contain letters, numbers, and dashes.")
+    elif not bookdb.codes.validate(bId):
+        errors.append(f"The code '{bId}' is invalid.")
 
     if form.get("category"):
         uuid = form.get("category")
@@ -387,18 +387,35 @@ def do_create_book(request):
 
 
 def do_update_book(bId, book, request):
-    _, candidate, cover, errors = form_to_book(request.form, request.files, this_is_an_insert=False)
+    bIdNew, candidate, cover, errors = form_to_book(request.form, request.files, fallback_bId=bId)
+    candidate["created_at"] = book["created_at"]
     if errors:
         return fmt_errors(request, {"id": bId, **candidate}, errors), 422
 
-    es.update(index="bookdb", id=bId, doc=candidate)
-
+    cover_file = cover_file_for(bId)
+    thumb_file = thumb_file_for(bId)
     if cover:
-        cover.save(cover_file_for(bId))
-
-        thumb_file = thumb_file_for(bId)
+        cover.save(cover_file)
         if os.path.isfile(thumb_file):
             os.remove(thumb_file)
+    elif "cover_image_mimetype" in book:
+        candidate["cover_image_mimetype"] = book["cover_image_mimetype"]
+
+    if bId == bIdNew:
+        es.update(index="bookdb", id=bId, doc=candidate)
+    else:
+        try:
+            es.create(index="bookdb", id=bIdNew, document=candidate)
+        except ConflictError:
+            return fmt_errors(request, candidate, ["Code already in use"]), 409
+
+        es.delete(index="bookdb", id=bId)
+        new_cover_file = cover_file_for(bIdNew)
+        new_thumb_file = thumb_file_for(bIdNew)
+        if os.path.isfile(cover_file):
+            os.rename(cover_file, new_cover_file)
+        if os.path.isfile(thumb_file):
+            os.rename(thumb_file, new_thumb_file)
 
     return fmt_message(request, "The book has been updated.")
 
