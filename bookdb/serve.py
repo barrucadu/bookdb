@@ -1,4 +1,4 @@
-from bookdb.common import fixup_book_for_index
+from bookdb.common import COVER_DIR, THUMB_DIR, cover_file_for, thumb_file_for, fixup_book_for_index
 import bookdb.codes
 
 from datetime import datetime
@@ -27,9 +27,6 @@ app = Flask(__name__)
 es = Elasticsearch([os.getenv("ES_HOST", "http://localhost:9200")])
 
 BASE_URI = os.getenv("BASE_URI", "http://bookdb.nyarlathotep")
-
-COVER_DIR = os.getenv("COVER_DIR", "covers")
-THUMB_DIR = os.path.join(COVER_DIR, "thumbs")
 
 ALLOW_WRITES = os.getenv("ALLOW_WRITES", "0") == "1"
 
@@ -229,26 +226,26 @@ def do_search(request_args):
 ## Form helpers
 
 
-def form_to_book(form, files, this_is_an_insert=True):
+def form_to_book(form, files, fallback_bId=None):
     bId = None
     book = {}
     cover = None
     errors = []
 
     now = datetime.now().strftime(DATE_FORMAT)
-    if this_is_an_insert:
-        book["created_at"] = now
+    book["created_at"] = now
     book["updated_at"] = now
 
-    if this_is_an_insert:
-        if form.get("code"):
-            bId = form.get("code").strip()
-        if not bId:
-            errors.append("The code cannot be blank.")
-        elif not re.match("^[a-zA-Z0-9-]+$", bId):
-            errors.append("The code can only contain letters, numbers, and dashes.")
-        elif not bookdb.codes.validate(bId):
-            errors.append(f"The code '{bId}' is invalid.")
+    if form.get("code"):
+        bId = form.get("code").strip()
+    else:
+        bId = fallback_bId
+    if not bId:
+        errors.append("The code cannot be blank.")
+    elif not re.match("^[a-zA-Z0-9-]+$", bId):
+        errors.append("The code can only contain letters, numbers, and dashes.")
+    elif not bookdb.codes.validate(bId):
+        errors.append(f"The code '{bId}' is invalid.")
 
     if form.get("category"):
         uuid = form.get("category")
@@ -378,9 +375,9 @@ def do_create_book(request):
         return fmt_errors(request, candidate, ["Code already in use"]), 409
 
     if cover:
-        cover.save(os.path.join(COVER_DIR, bId))
+        cover.save(cover_file_for(bId))
 
-    thumb_file = os.path.join(THUMB_DIR, bId + ".jpg")
+    thumb_file = thumb_file_for(bId)
     if os.path.isfile(thumb_file):
         os.remove(thumb_file)
 
@@ -390,14 +387,35 @@ def do_create_book(request):
 
 
 def do_update_book(bId, book, request):
-    _, candidate, cover, errors = form_to_book(request.form, request.files, this_is_an_insert=False)
+    bIdNew, candidate, cover, errors = form_to_book(request.form, request.files, fallback_bId=bId)
+    candidate["created_at"] = book["created_at"]
     if errors:
         return fmt_errors(request, {"id": bId, **candidate}, errors), 422
 
-    es.update(index="bookdb", id=bId, doc=candidate)
-
+    cover_file = cover_file_for(bId)
+    thumb_file = thumb_file_for(bId)
     if cover:
-        cover.save(os.path.join(COVER_DIR, bId))
+        cover.save(cover_file)
+        if os.path.isfile(thumb_file):
+            os.remove(thumb_file)
+    elif "cover_image_mimetype" in book:
+        candidate["cover_image_mimetype"] = book["cover_image_mimetype"]
+
+    if bId == bIdNew:
+        es.update(index="bookdb", id=bId, doc=candidate)
+    else:
+        try:
+            es.create(index="bookdb", id=bIdNew, document=candidate)
+        except ConflictError:
+            return fmt_errors(request, candidate, ["Code already in use"]), 409
+
+        es.delete(index="bookdb", id=bId)
+        new_cover_file = cover_file_for(bIdNew)
+        new_thumb_file = thumb_file_for(bIdNew)
+        if os.path.isfile(cover_file):
+            os.rename(cover_file, new_cover_file)
+        if os.path.isfile(thumb_file):
+            os.rename(thumb_file, new_thumb_file)
 
     return fmt_message(request, "The book has been updated.")
 
@@ -405,8 +423,8 @@ def do_update_book(bId, book, request):
 def do_delete_book(bId, request):
     es.delete(index="bookdb", id=bId)
 
-    cover_file = os.path.join(COVER_DIR, bId)
-    thumb_file = os.path.join(THUMB_DIR, bId + ".jpg")
+    cover_file = cover_file_for(bId)
+    thumb_file = thumb_file_for(bId)
     if os.path.isfile(cover_file):
         os.remove(cover_file)
     if os.path.isfile(thumb_file):
@@ -543,7 +561,7 @@ def book_cover(bId):
         abort(404)
     return send_from_directory(
         COVER_DIR,
-        bId,
+        os.path.basename(cover_file_for(bId)),
         max_age=COVER_MAX_AGE,
         last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
         mimetype=book["cover_image_mimetype"],
@@ -558,14 +576,13 @@ def book_thumb(bId):
     if not book["cover_image_mimetype"]:
         abort(404)
 
-    cover_file = os.path.join(COVER_DIR, bId)
-    thumb_file = os.path.join(THUMB_DIR, bId + ".jpg")
+    thumb_file = thumb_file_for(bId)
     if not os.path.isfile(thumb_file):
-        subprocess.run(["convert", cover_file, "-resize", "16x24", thumb_file])
+        subprocess.run(["convert", cover_file_for(bId), "-resize", "16x24", thumb_file])
 
     return send_from_directory(
         THUMB_DIR,
-        bId + ".jpg",
+        os.path.basename(thumb_file),
         max_age=THUMB_MAX_AGE,
         last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
         mimetype="image/jpeg",
