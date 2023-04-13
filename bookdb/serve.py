@@ -396,6 +396,10 @@ def do_update_book(bId, book, request):
     if cover:
         cover.save(cover_file_for(bId))
 
+        thumb_file = thumb_file_for(bId)
+        if os.path.isfile(thumb_file):
+            os.remove(thumb_file)
+
     return fmt_message(request, "The book has been updated.")
 
 
