@@ -1,4 +1,4 @@
-from bookdb.common import fixup_book_for_index
+from bookdb.common import cover_file_for, thumb_file_for, fixup_book_for_index
 import bookdb.codes
 
 from elasticsearch import Elasticsearch
@@ -107,9 +107,6 @@ SCHEMA = {
 
 
 def fixup_legacy_codes(dump):
-    COVER_DIR = os.getenv("COVER_DIR", "covers")
-    THUMB_DIR = os.path.join(COVER_DIR, "thumbs")
-
     fixed_dump = {}
     for doc_id, doc in dump.items():
         if bookdb.codes.validate(doc_id):
@@ -120,12 +117,12 @@ def fixup_legacy_codes(dump):
             candidate = prefix + "-" + doc_id
             if bookdb.codes.validate(candidate):
                 fixed_doc_id = candidate
-                cover_file = os.path.join(COVER_DIR, doc_id)
-                thumb_file = os.path.join(THUMB_DIR, doc_id + ".jpg")
+                cover_file = cover_file_for(doc_id)
+                thumb_file = thumb_file_for(doc_id)
                 if os.path.isfile(cover_file):
-                    os.rename(cover_file, os.path.join(COVER_DIR, fixed_doc_id))
+                    os.rename(cover_file, cover_file_for(fixed_doc_id))
                 if os.path.isfile(thumb_file):
-                    os.rename(thumb_file, os.path.join(THUMB_DIR, fixed_doc_id + ".jpg"))
+                    os.rename(thumb_file, thumb_file_for(fixed_doc_id))
                 print(f"Renamed {doc_id} to {fixed_doc_id}")
                 break
         fixed_dump[fixed_doc_id] = doc

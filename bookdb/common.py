@@ -1,3 +1,17 @@
+import os
+
+COVER_DIR = os.getenv("COVER_DIR", "covers")
+THUMB_DIR = os.path.join(COVER_DIR, "thumbs")
+
+
+def cover_file_for(bId):
+    return os.path.join(COVER_DIR, bId)
+
+
+def thumb_file_for(bId):
+    return os.path.join(THUMB_DIR, bId + ".jpg")
+
+
 def display_title(book):
     """Compute the display title of a book."""
 

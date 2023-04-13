@@ -1,4 +1,4 @@
-from bookdb.common import fixup_book_for_index
+from bookdb.common import COVER_DIR, THUMB_DIR, cover_file_for, thumb_file_for, fixup_book_for_index
 import bookdb.codes
 
 from datetime import datetime
@@ -27,9 +27,6 @@ app = Flask(__name__)
 es = Elasticsearch([os.getenv("ES_HOST", "http://localhost:9200")])
 
 BASE_URI = os.getenv("BASE_URI", "http://bookdb.nyarlathotep")
-
-COVER_DIR = os.getenv("COVER_DIR", "covers")
-THUMB_DIR = os.path.join(COVER_DIR, "thumbs")
 
 ALLOW_WRITES = os.getenv("ALLOW_WRITES", "0") == "1"
 
@@ -378,9 +375,9 @@ def do_create_book(request):
         return fmt_errors(request, candidate, ["Code already in use"]), 409
 
     if cover:
-        cover.save(os.path.join(COVER_DIR, bId))
+        cover.save(cover_file_for(bId))
 
-    thumb_file = os.path.join(THUMB_DIR, bId + ".jpg")
+    thumb_file = thumb_file_for(bId)
     if os.path.isfile(thumb_file):
         os.remove(thumb_file)
 
@@ -397,7 +394,7 @@ def do_update_book(bId, book, request):
     es.update(index="bookdb", id=bId, doc=candidate)
 
     if cover:
-        cover.save(os.path.join(COVER_DIR, bId))
+        cover.save(cover_file_for(bId))
 
     return fmt_message(request, "The book has been updated.")
 
@@ -405,8 +402,8 @@ def do_update_book(bId, book, request):
 def do_delete_book(bId, request):
     es.delete(index="bookdb", id=bId)
 
-    cover_file = os.path.join(COVER_DIR, bId)
-    thumb_file = os.path.join(THUMB_DIR, bId + ".jpg")
+    cover_file = cover_file_for(bId)
+    thumb_file = thumb_file_for(bId)
     if os.path.isfile(cover_file):
         os.remove(cover_file)
     if os.path.isfile(thumb_file):
@@ -543,7 +540,7 @@ def book_cover(bId):
         abort(404)
     return send_from_directory(
         COVER_DIR,
-        bId,
+        os.path.basename(cover_file_for(bId)),
         max_age=COVER_MAX_AGE,
         last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
         mimetype=book["cover_image_mimetype"],
@@ -558,14 +555,13 @@ def book_thumb(bId):
     if not book["cover_image_mimetype"]:
         abort(404)
 
-    cover_file = os.path.join(COVER_DIR, bId)
-    thumb_file = os.path.join(THUMB_DIR, bId + ".jpg")
+    thumb_file = thumb_file_for(bId)
     if not os.path.isfile(thumb_file):
-        subprocess.run(["convert", cover_file, "-resize", "16x24", thumb_file])
+        subprocess.run(["convert", cover_file_for(bId), "-resize", "16x24", thumb_file])
 
     return send_from_directory(
         THUMB_DIR,
-        bId + ".jpg",
+        os.path.basename(thumb_file),
         max_age=THUMB_MAX_AGE,
         last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
         mimetype="image/jpeg",
