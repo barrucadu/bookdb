@@ -408,9 +408,9 @@ def do_delete_book(bId, request):
     cover_file = os.path.join(COVER_DIR, bId)
     thumb_file = os.path.join(THUMB_DIR, bId + ".jpg")
     if os.path.isfile(cover_file):
-        os.delete(cover_file)
+        os.remove(cover_file)
     if os.path.isfile(thumb_file):
-        os.delete(thumb_file)
+        os.remove(thumb_file)
 
     return fmt_message(request, "The book has been deleted.")
 
