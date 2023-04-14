@@ -147,7 +147,7 @@ def sort_key_for_book(book):
 
 def get_book(bId):
     try:
-        book = es.get(index=bookdb.index.NAME, id=bId)
+        book = bookdb.index.get(es, bId)
         return transform_book(bId, book["_source"])
     except NotFoundError:
         return None
@@ -155,70 +155,39 @@ def get_book(bId):
 
 def do_search(request_args):
     search_params = {}
-    queries = [{"match_all": {}}]
+    query_args = {}
     for k in request_args:
         vs = [v for v in request_args.getlist(k) if v]
         v = request_args.get(k)
         if k == "keywords" and v:
             search_params[k] = v
-            queries.append({"query_string": {"query": v, "default_field": "display_title"}})
+            query_args["query_string"] = v
         elif k == "match" and v:
             search_params[k] = v
-            queries.append({"term": {"has_been_read": v == "only-read"}})
+            query_args["has_been_read"] = v == "only-read"
         elif k == "location" and v:
             search_params[k] = v
-            queries.append({"nested": {"path": "holdings", "query": {"bool": {"must": {"term": {"holdings.location_uuid": v}}}}}})
+            query_args["location_uuid"] = v
         elif k == "category" and v:
             search_params[k] = v
-            queries.append({"terms": {"category_uuid": children_categories(v)}})
+            query_args["category_uuid"] = children_categories(v)
         elif k == "author[]" and vs:
             search_params[k] = vs
-            queries.append({"terms": {"people.authors": vs}})
+            query_args["authors"] = vs
         elif k == "editor[]" and vs:
             search_params[k] = vs
-            queries.append({"terms": {"people.editors": vs}})
+            query_args["editors"] = vs
         elif k == "translator[]" and vs:
             search_params[k] = vs
-            queries.append({"terms": {"people.translators": vs}})
+            query_args["translators"] = vs
 
-    results = es.search(
-        index=bookdb.index.NAME,
-        body={
-            "query": {"bool": {"must": queries}},
-            "aggs": {
-                "author": {"terms": {"field": "people.authors", "size": 1000}},
-                "editor": {"terms": {"field": "people.editors", "size": 500}},
-                "translator": {"terms": {"field": "people.translators", "size": 500}},
-                "has_been_read": {"terms": {"field": "has_been_read", "size": 500}},
-                "category_uuid": {"terms": {"field": "category_uuid", "size": 500}},
-                "holdings": {"nested": {"path": "holdings"}, "aggs": {"location_uuid": {"terms": {"field": "holdings.location_uuid", "size": 500}}}},
-            },
-            "size": 5000,
-        },
-    )
+    results = bookdb.index.search(es, **query_args)
+    results["aggregations"]["category"] = {k: {"expanded": expand_category(k), "count": v} for k, v in results["aggregations"]["category"].items()}
+    results["aggregations"]["location"] = {k: {"expanded": expand_location(k), "count": v} for k, v in results["aggregations"]["location"].items()}
+    results["books"] = sorted([transform_book(bId, book) for bId, book in results["books"]], key=sort_key_for_book)
+    results["search_params"] = search_params
 
-    agg_match = {}
-    read = list(d["doc_count"] for d in results["aggregations"]["has_been_read"]["buckets"] if d["key_as_string"] == "true")
-    unread = list(d["doc_count"] for d in results["aggregations"]["has_been_read"]["buckets"] if d["key_as_string"] == "false")
-    if read:
-        agg_match["only-read"] = min(read)
-    if unread:
-        agg_match["only-unread"] = min(unread)
-
-    hits = results["hits"]["hits"]
-    return {
-        "aggregations": {
-            "author": {d["key"]: d["doc_count"] for d in results["aggregations"]["author"]["buckets"]},
-            "editor": {d["key"]: d["doc_count"] for d in results["aggregations"]["editor"]["buckets"]},
-            "translator": {d["key"]: d["doc_count"] for d in results["aggregations"]["translator"]["buckets"]},
-            "match": agg_match,
-            "category": {d["key"]: {"expanded": expand_category(d["key"]), "count": d["doc_count"]} for d in results["aggregations"]["category_uuid"]["buckets"]},
-            "location": {d["key"]: {"expanded": expand_location(d["key"]), "count": d["doc_count"]} for d in results["aggregations"]["holdings"]["location_uuid"]["buckets"]},
-        },
-        "books": sorted([transform_book(hit["_id"], hit["_source"]) for hit in hits], key=sort_key_for_book),
-        "count": len(hits),
-        "search_params": search_params,
-    }
+    return results
 
 
 ###############################################################################
@@ -369,7 +338,7 @@ def do_create_book(request):
         return fmt_errors(request, candidate, errors), 422
 
     try:
-        es.create(index=bookdb.index.NAME, id=bId, document=candidate)
+        bookdb.index.insert(es, bId, candidate)
     except ConflictError:
         return fmt_errors(request, candidate, ["Code already in use"]), 409
 
@@ -401,21 +370,21 @@ def do_update_book(bId, book, request):
         candidate["cover_image_mimetype"] = book["cover_image_mimetype"]
 
     if bId == bIdNew:
-        es.update(index=bookdb.index.NAME, id=bId, doc=candidate)
+        bookdb.index.update(es, bId, candidate)
     else:
         try:
-            es.create(index=bookdb.index.NAME, id=bIdNew, document=candidate)
+            bookdb.index.insert(es, bIdNew, candidate)
         except ConflictError:
             return fmt_errors(request, candidate, ["Code already in use"]), 409
 
-        es.delete(index=bookdb.index.NAME, id=bId)
+        bookdb.index.delete(es, bId)
         bookdb.rename_cover_and_thumb(bId, bIdNew)
 
     return fmt_message(request, "The book has been updated.")
 
 
 def do_delete_book(bId, request):
-    es.delete(index=bookdb.index.NAME, id=bId)
+    bookdb.index.delete(es, bId)
     bookdb.delete_cover_and_thumb(bId)
 
     return fmt_message(request, "The book has been deleted.")

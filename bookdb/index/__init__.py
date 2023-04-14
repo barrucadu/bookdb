@@ -97,6 +97,78 @@ SCHEMA = {
 }
 
 
+def get(es, bId):
+    return es.get(index=NAME, id=bId)
+
+
+def insert(es, bId, book):
+    es.create(index=NAME, id=bId, document=book)
+
+
+def update(es, bId, book):
+    es.update(index=NAME, id=bId, doc=book)
+
+
+def delete(es, bId):
+    es.delete(index=NAME, id=bId)
+
+
+def search(es, query_string=None, has_been_read=None, location_uuid=None, category_uuid=None, authors=None, editors=None, translators=None):
+    queries = [{"match_all": {}}]
+    if query_string is not None:
+        queries.append({"query_string": {"query": query_string, "default_field": "display_title"}})
+    if has_been_read is not None:
+        queries.append({"term": {"has_been_read": has_been_read}})
+    if location_uuid is not None:
+        queries.append({"nested": {"path": "holdings", "query": {"bool": {"must": {"term": {"holdings.location_uuid": location_uuid}}}}}})
+    if category_uuid is not None:
+        queries.append({"terms": {"category_uuid": category_uuid}})
+    if authors is not None:
+        queries.append({"terms": {"people.authors": authors}})
+    if editors is not None:
+        queries.append({"terms": {"people.editors": editors}})
+    if translators is not None:
+        queries.append({"terms": {"people.translators": translators}})
+
+    results = es.search(
+        index=NAME,
+        body={
+            "query": {"bool": {"must": queries}},
+            "aggs": {
+                "author": {"terms": {"field": "people.authors", "size": 1000}},
+                "editor": {"terms": {"field": "people.editors", "size": 500}},
+                "translator": {"terms": {"field": "people.translators", "size": 500}},
+                "has_been_read": {"terms": {"field": "has_been_read", "size": 500}},
+                "category_uuid": {"terms": {"field": "category_uuid", "size": 500}},
+                "holdings": {"nested": {"path": "holdings"}, "aggs": {"location_uuid": {"terms": {"field": "holdings.location_uuid", "size": 500}}}},
+            },
+            "size": 5000,
+        },
+    )
+
+    agg_match = {}
+    read = list(d["doc_count"] for d in results["aggregations"]["has_been_read"]["buckets"] if d["key_as_string"] == "true")
+    unread = list(d["doc_count"] for d in results["aggregations"]["has_been_read"]["buckets"] if d["key_as_string"] == "false")
+    if read:
+        agg_match["only-read"] = min(read)
+    if unread:
+        agg_match["only-unread"] = min(unread)
+
+    hits = results["hits"]["hits"]
+    return {
+        "aggregations": {
+            "author": {d["key"]: d["doc_count"] for d in results["aggregations"]["author"]["buckets"]},
+            "editor": {d["key"]: d["doc_count"] for d in results["aggregations"]["editor"]["buckets"]},
+            "translator": {d["key"]: d["doc_count"] for d in results["aggregations"]["translator"]["buckets"]},
+            "match": agg_match,
+            "category": {d["key"]: d["doc_count"] for d in results["aggregations"]["category_uuid"]["buckets"]},
+            "location": {d["key"]: d["doc_count"] for d in results["aggregations"]["holdings"]["location_uuid"]["buckets"]},
+        },
+        "books": [(hit["_id"], hit["_source"]) for hit in hits],
+        "count": len(hits),
+    }
+
+
 def fixup_book(book):
     """Get a book ready to be indexed."""
 
