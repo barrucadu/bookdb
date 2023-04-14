@@ -1,5 +1,4 @@
 import bookdb
-import bookdb.codes
 import bookdb.index
 
 from datetime import datetime
@@ -244,7 +243,7 @@ def form_to_book(form, files, fallback_bId=None):
         errors.append("The code cannot be blank.")
     elif not re.match("^[a-zA-Z0-9-]+$", bId):
         errors.append("The code can only contain letters, numbers, and dashes.")
-    elif not bookdb.codes.validate(bId):
+    elif not bookdb.validate_code(bId):
         errors.append(f"The code '{bId}' is invalid.")
 
     if form.get("category"):

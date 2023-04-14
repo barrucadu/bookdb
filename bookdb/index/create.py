@@ -1,5 +1,4 @@
 import bookdb
-import bookdb.codes
 import bookdb.index
 
 from elasticsearch.exceptions import RequestError
@@ -13,13 +12,13 @@ import yaml
 def fixup_legacy_codes(dump):
     fixed_dump = {}
     for doc_id, doc in dump.items():
-        if bookdb.codes.validate(doc_id):
+        if bookdb.validate_code(doc_id):
             fixed_dump[doc_id] = doc
             continue
 
-        for prefix in bookdb.codes.CODES:
+        for prefix in bookdb.CODE_PREFIXES:
             candidate = prefix + "-" + doc_id
-            if bookdb.codes.validate(candidate):
+            if bookdb.validate_code(candidate):
                 fixed_doc_id = candidate
                 bookdb.rename_cover_and_thumb(doc_id, fixed_doc_id)
                 print(f"Renamed {doc_id} to {fixed_doc_id}")
