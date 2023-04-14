@@ -1,4 +1,4 @@
-INDEX = "bookdb"
+NAME = "bookdb"
 
 SCHEMA = {
     "title": {
