@@ -106,21 +106,7 @@ def expand_location(uuid):
     return LOCATIONS.get(uuid, uuid)
 
 
-def transform_book(bId, book):
-    def convert_bit(bit):
-        try:
-            return int(bit)
-        except ValueError:
-            return bit
-
-    book = {k: v for k, v in book.items() if v}
-    book["id"] = bId
-    book["has_cover_image"] = "cover_image_mimetype" in book
-
-    if "volume_number" in book:
-        book["volume_number"]["bits"] = [convert_bit(bit) for bit in book["volume_number"]["bits"]]
-    if "fascicle_number" in book:
-        book["fascicle_number"]["bits"] = [convert_bit(bit) for bit in book["fascicle_number"]["bits"]]
+def expand_book(book):
     if "holdings" in book:
         for holding in book["holdings"]:
             holding["location"] = expand_location(holding["location_uuid"])
@@ -134,21 +120,9 @@ def transform_book(bId, book):
 ## Search helpers
 
 
-def sort_key_for_book(book):
-    return (
-        book["bucket"],
-        book["title"].lower(),
-        book.get("volume_number", {}).get("bits", []),
-        book.get("fascicle_number", {}).get("bits", []),
-        book.get("subtitle", "").lower(),
-        book.get("volume_title", "").lower(),
-    )
-
-
 def get_book(bId):
     try:
-        book = bookdb.index.get(es, bId)
-        return transform_book(bId, book["_source"])
+        return expand_book(bookdb.index.get(es, bId))
     except NotFoundError:
         return None
 
@@ -184,7 +158,7 @@ def do_search(request_args):
     results = bookdb.index.search(es, **query_args)
     results["aggregations"]["category"] = {k: {"expanded": expand_category(k), "count": v} for k, v in results["aggregations"]["category"].items()}
     results["aggregations"]["location"] = {k: {"expanded": expand_location(k), "count": v} for k, v in results["aggregations"]["location"].items()}
-    results["books"] = sorted([transform_book(bId, book) for bId, book in results["books"]], key=sort_key_for_book)
+    results["books"] = [expand_book(book) for book in results["books"]]
     results["search_params"] = search_params
 
     return results

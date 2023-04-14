@@ -98,7 +98,7 @@ SCHEMA = {
 
 
 def get(es, bId):
-    return es.get(index=NAME, id=bId)
+    return __fixup_get(bId, es.get(index=NAME, id=bId)["_source"])
 
 
 def insert(es, bId, book):
@@ -164,9 +164,41 @@ def search(es, query_string=None, has_been_read=None, location_uuid=None, catego
             "category": {d["key"]: d["doc_count"] for d in results["aggregations"]["category_uuid"]["buckets"]},
             "location": {d["key"]: d["doc_count"] for d in results["aggregations"]["holdings"]["location_uuid"]["buckets"]},
         },
-        "books": [(hit["_id"], hit["_source"]) for hit in hits],
+        "books": sorted([__fixup_get(hit["_id"], hit["_source"]) for hit in hits], key=lambda book: book["sort_key"]),
         "count": len(hits),
     }
+
+
+def __fixup_get(bId, book):
+    def convert_bit(bit):
+        try:
+            return int(bit)
+        except ValueError:
+            return bit
+
+    book = {k: v for k, v in book.items() if v}
+    book["id"] = bId
+    book["has_cover_image"] = "cover_image_mimetype" in book
+
+    if "volume_number" in book:
+        book["volume_number"]["bits"] = [convert_bit(bit) for bit in book["volume_number"]["bits"]]
+    if "fascicle_number" in book:
+        book["fascicle_number"]["bits"] = [convert_bit(bit) for bit in book["fascicle_number"]["bits"]]
+
+    book["sort_key"] = __sort_key_for_book(book)
+
+    return book
+
+
+def __sort_key_for_book(book):
+    return (
+        book["bucket"],
+        book["title"].lower(),
+        book.get("volume_number", {}).get("bits", []),
+        book.get("fascicle_number", {}).get("bits", []),
+        book.get("subtitle", "").lower(),
+        book.get("volume_title", "").lower(),
+    )
 
 
 def fixup_book(book):
