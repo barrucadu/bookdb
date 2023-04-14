@@ -1,7 +1,14 @@
 import os
 
+from elasticsearch import Elasticsearch
+
 COVER_DIR = os.getenv("COVER_DIR", "covers")
 THUMB_DIR = os.path.join(COVER_DIR, "thumbs")
+ES_HOST = os.getenv("ES_HOST", "http://localhost:9200")
+
+
+def elasticsearch():
+    return Elasticsearch([ES_HOST])
 
 
 def cover_file_for(bId):

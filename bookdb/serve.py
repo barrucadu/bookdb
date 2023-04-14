@@ -2,7 +2,6 @@ import bookdb
 import bookdb.codes
 
 from datetime import datetime
-from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConflictError, ConnectionError, NotFoundError
 from flask import Flask, abort, jsonify, make_response, redirect, render_template, request, send_from_directory
 from werkzeug.exceptions import HTTPException
@@ -24,7 +23,7 @@ def flatten_tree_config(cfg, out, parent=None):
 
 app = Flask(__name__)
 
-es = Elasticsearch([os.getenv("ES_HOST", "http://localhost:9200")])
+es = bookdb.elasticsearch()
 
 BASE_URI = os.getenv("BASE_URI", "http://bookdb.nyarlathotep")
 

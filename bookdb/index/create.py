@@ -1,7 +1,6 @@
 import bookdb
 import bookdb.codes
 
-from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
 from elasticsearch.helpers import bulk
 
@@ -131,7 +130,7 @@ def fixup_legacy_codes(dump):
 
 
 def run():
-    es = Elasticsearch([os.getenv("ES_HOST", "http://localhost:9200")])
+    es = bookdb.elasticsearch()
     try:
         es.indices.create(index="bookdb", mappings={"properties": SCHEMA})
     except RequestError:
