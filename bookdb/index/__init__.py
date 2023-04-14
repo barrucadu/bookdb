@@ -102,11 +102,11 @@ def get(es, bId):
 
 
 def insert(es, bId, book):
-    es.create(index=NAME, id=bId, document=book)
+    es.create(index=NAME, id=bId, document=__fixup_put(book))
 
 
 def update(es, bId, book):
-    es.update(index=NAME, id=bId, doc=book)
+    es.update(index=NAME, id=bId, doc=__fixup_put(book))
 
 
 def delete(es, bId):
@@ -201,7 +201,7 @@ def __sort_key_for_book(book):
     )
 
 
-def fixup_book(book):
+def __fixup_put(book):
     """Get a book ready to be indexed."""
 
     book = {k: v for k, v in book.items() if v}

@@ -244,7 +244,7 @@ def form_to_book(form, files, fallback_bId=None):
             else:
                 errors.append("Cover filename must be of the form [a-zA-Z0-9-]+.{gif,jpg,jpeg,png}")
 
-    return bId, bookdb.index.fixup_book(book), cover, errors
+    return bId, book, cover, errors
 
 
 ###############################################################################
