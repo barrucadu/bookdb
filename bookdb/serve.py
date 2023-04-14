@@ -1,4 +1,4 @@
-from bookdb.common import COVER_DIR, THUMB_DIR, cover_file_for, thumb_file_for, fixup_book_for_index
+import bookdb
 import bookdb.codes
 
 from datetime import datetime
@@ -45,8 +45,8 @@ if "ordered_locations" not in tree_config:
     print("Missing ordered_locations")
     sys.exit(1)
 
-if not os.path.isdir(THUMB_DIR):
-    os.makedirs(THUMB_DIR)
+if not os.path.isdir(bookdb.THUMB_DIR):
+    os.makedirs(bookdb.THUMB_DIR)
 
 COVER_MAX_AGE = 60 * 60 * 24 * 7 * 4 * 3
 THUMB_MAX_AGE = COVER_MAX_AGE
@@ -302,7 +302,7 @@ def form_to_book(form, files, fallback_bId=None):
             else:
                 errors.append("Cover filename must be of the form [a-zA-Z0-9-]+.{gif,jpg,jpeg,png}")
 
-    return bId, fixup_book_for_index(book), cover, errors
+    return bId, bookdb.fixup_book_for_index(book), cover, errors
 
 
 ###############################################################################
@@ -375,9 +375,9 @@ def do_create_book(request):
         return fmt_errors(request, candidate, ["Code already in use"]), 409
 
     if cover:
-        cover.save(cover_file_for(bId))
+        cover.save(bookdb.cover_file_for(bId))
 
-    thumb_file = thumb_file_for(bId)
+    thumb_file = bookdb.thumb_file_for(bId)
     if os.path.isfile(thumb_file):
         os.remove(thumb_file)
 
@@ -392,8 +392,8 @@ def do_update_book(bId, book, request):
     if errors:
         return fmt_errors(request, {"id": bId, **candidate}, errors), 422
 
-    cover_file = cover_file_for(bId)
-    thumb_file = thumb_file_for(bId)
+    cover_file = bookdb.cover_file_for(bId)
+    thumb_file = bookdb.thumb_file_for(bId)
     if cover:
         cover.save(cover_file)
         if os.path.isfile(thumb_file):
@@ -410,8 +410,8 @@ def do_update_book(bId, book, request):
             return fmt_errors(request, candidate, ["Code already in use"]), 409
 
         es.delete(index="bookdb", id=bId)
-        new_cover_file = cover_file_for(bIdNew)
-        new_thumb_file = thumb_file_for(bIdNew)
+        new_cover_file = bookdb.cover_file_for(bIdNew)
+        new_thumb_file = bookdb.thumb_file_for(bIdNew)
         if os.path.isfile(cover_file):
             os.rename(cover_file, new_cover_file)
         if os.path.isfile(thumb_file):
@@ -423,8 +423,8 @@ def do_update_book(bId, book, request):
 def do_delete_book(bId, request):
     es.delete(index="bookdb", id=bId)
 
-    cover_file = cover_file_for(bId)
-    thumb_file = thumb_file_for(bId)
+    cover_file = bookdb.cover_file_for(bId)
+    thumb_file = bookdb.thumb_file_for(bId)
     if os.path.isfile(cover_file):
         os.remove(cover_file)
     if os.path.isfile(thumb_file):
@@ -560,8 +560,8 @@ def book_cover(bId):
     if not book["cover_image_mimetype"]:
         abort(404)
     return send_from_directory(
-        COVER_DIR,
-        os.path.basename(cover_file_for(bId)),
+        bookdb.COVER_DIR,
+        os.path.basename(bookdb.cover_file_for(bId)),
         max_age=COVER_MAX_AGE,
         last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
         mimetype=book["cover_image_mimetype"],
@@ -576,12 +576,12 @@ def book_thumb(bId):
     if not book["cover_image_mimetype"]:
         abort(404)
 
-    thumb_file = thumb_file_for(bId)
+    thumb_file = bookdb.thumb_file_for(bId)
     if not os.path.isfile(thumb_file):
-        subprocess.run(["convert", cover_file_for(bId), "-resize", "16x24", thumb_file])
+        subprocess.run(["convert", bookdb.cover_file_for(bId), "-resize", "16x24", thumb_file])
 
     return send_from_directory(
-        THUMB_DIR,
+        bookdb.THUMB_DIR,
         os.path.basename(thumb_file),
         max_age=THUMB_MAX_AGE,
         last_modified=datetime.strptime(book["updated_at"], DATE_FORMAT),
