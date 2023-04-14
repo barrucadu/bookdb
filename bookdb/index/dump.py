@@ -1,4 +1,5 @@
 import bookdb
+import bookdb.index
 
 from elasticsearch.helpers import scan
 
@@ -8,7 +9,7 @@ import json
 def run():
     out = {}
 
-    for doc in scan(bookdb.elasticsearch(), index="bookdb"):
+    for doc in scan(bookdb.elasticsearch(), index=bookdb.index.NAME):
         out[doc["_id"]] = doc["_source"]
 
     print(json.dumps(out))

@@ -1,5 +1,6 @@
 import bookdb
 import bookdb.codes
+import bookdb.index
 
 from datetime import datetime
 from elasticsearch.exceptions import ConflictError, ConnectionError, NotFoundError
@@ -147,7 +148,7 @@ def sort_key_for_book(book):
 
 def get_book(bId):
     try:
-        book = es.get(index="bookdb", id=bId)
+        book = es.get(index=bookdb.index.NAME, id=bId)
         return transform_book(bId, book["_source"])
     except NotFoundError:
         return None
@@ -182,7 +183,7 @@ def do_search(request_args):
             queries.append({"terms": {"people.translators": vs}})
 
     results = es.search(
-        index="bookdb",
+        index=bookdb.index.NAME,
         body={
             "query": {"bool": {"must": queries}},
             "aggs": {
@@ -301,7 +302,7 @@ def form_to_book(form, files, fallback_bId=None):
             else:
                 errors.append("Cover filename must be of the form [a-zA-Z0-9-]+.{gif,jpg,jpeg,png}")
 
-    return bId, bookdb.fixup_book_for_index(book), cover, errors
+    return bId, bookdb.index.fixup_book(book), cover, errors
 
 
 ###############################################################################
@@ -369,7 +370,7 @@ def do_create_book(request):
         return fmt_errors(request, candidate, errors), 422
 
     try:
-        es.create(index="bookdb", id=bId, document=candidate)
+        es.create(index=bookdb.index.NAME, id=bId, document=candidate)
     except ConflictError:
         return fmt_errors(request, candidate, ["Code already in use"]), 409
 
@@ -401,21 +402,21 @@ def do_update_book(bId, book, request):
         candidate["cover_image_mimetype"] = book["cover_image_mimetype"]
 
     if bId == bIdNew:
-        es.update(index="bookdb", id=bId, doc=candidate)
+        es.update(index=bookdb.index.NAME, id=bId, doc=candidate)
     else:
         try:
-            es.create(index="bookdb", id=bIdNew, document=candidate)
+            es.create(index=bookdb.index.NAME, id=bIdNew, document=candidate)
         except ConflictError:
             return fmt_errors(request, candidate, ["Code already in use"]), 409
 
-        es.delete(index="bookdb", id=bId)
+        es.delete(index=bookdb.index.NAME, id=bId)
         bookdb.rename_cover_and_thumb(bId, bIdNew)
 
     return fmt_message(request, "The book has been updated.")
 
 
 def do_delete_book(bId, request):
-    es.delete(index="bookdb", id=bId)
+    es.delete(index=bookdb.index.NAME, id=bId)
     bookdb.delete_cover_and_thumb(bId)
 
     return fmt_message(request, "The book has been deleted.")
