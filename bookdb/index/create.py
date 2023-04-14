@@ -116,12 +116,7 @@ def fixup_legacy_codes(dump):
             candidate = prefix + "-" + doc_id
             if bookdb.codes.validate(candidate):
                 fixed_doc_id = candidate
-                cover_file = bookdb.cover_file_for(doc_id)
-                thumb_file = bookdb.thumb_file_for(doc_id)
-                if os.path.isfile(cover_file):
-                    os.rename(cover_file, bookdb.cover_file_for(fixed_doc_id))
-                if os.path.isfile(thumb_file):
-                    os.rename(thumb_file, bookdb.thumb_file_for(fixed_doc_id))
+                bookdb.rename_cover_and_thumb(doc_id, fixed_doc_id)
                 print(f"Renamed {doc_id} to {fixed_doc_id}")
                 break
         fixed_dump[fixed_doc_id] = doc

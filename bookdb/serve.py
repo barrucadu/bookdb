@@ -391,9 +391,9 @@ def do_update_book(bId, book, request):
     if errors:
         return fmt_errors(request, {"id": bId, **candidate}, errors), 422
 
-    cover_file = bookdb.cover_file_for(bId)
-    thumb_file = bookdb.thumb_file_for(bId)
     if cover:
+        cover_file = bookdb.cover_file_for(bId)
+        thumb_file = bookdb.thumb_file_for(bId)
         cover.save(cover_file)
         if os.path.isfile(thumb_file):
             os.remove(thumb_file)
@@ -409,25 +409,14 @@ def do_update_book(bId, book, request):
             return fmt_errors(request, candidate, ["Code already in use"]), 409
 
         es.delete(index="bookdb", id=bId)
-        new_cover_file = bookdb.cover_file_for(bIdNew)
-        new_thumb_file = bookdb.thumb_file_for(bIdNew)
-        if os.path.isfile(cover_file):
-            os.rename(cover_file, new_cover_file)
-        if os.path.isfile(thumb_file):
-            os.rename(thumb_file, new_thumb_file)
+        bookdb.rename_cover_and_thumb(bId, bIdNew)
 
     return fmt_message(request, "The book has been updated.")
 
 
 def do_delete_book(bId, request):
     es.delete(index="bookdb", id=bId)
-
-    cover_file = bookdb.cover_file_for(bId)
-    thumb_file = bookdb.thumb_file_for(bId)
-    if os.path.isfile(cover_file):
-        os.remove(cover_file)
-    if os.path.isfile(thumb_file):
-        os.remove(thumb_file)
+    bookdb.delete_cover_and_thumb(bId)
 
     return fmt_message(request, "The book has been deleted.")
 
