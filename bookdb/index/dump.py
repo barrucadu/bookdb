@@ -1,15 +1,15 @@
-from elasticsearch import Elasticsearch
+import bookdb
+import bookdb.index
+
 from elasticsearch.helpers import scan
 
 import json
-import os
 
 
 def run():
-    es = Elasticsearch([os.getenv("ES_HOST", "http://localhost:9200")])
     out = {}
 
-    for doc in scan(es, index="bookdb"):
+    for doc in scan(bookdb.elasticsearch(), index=bookdb.index.NAME):
         out[doc["_id"]] = doc["_source"]
 
     print(json.dumps(out))
