@@ -55,7 +55,7 @@ def run():
         try:
             if os.getenv("FIXUP_LEGACY_CODES", "0") == "1":
                 dump = fixup_legacy_codes(dump)
-            ok, errors = bulk(es, [{"_index": bookdb.index.NAME, "_id": doc_id, "_source": bookdb.index.fixup_book(doc)} for doc_id, doc in dump.items()])
+            ok, errors = bulk(es, [{"_index": bookdb.index.NAME, "_id": doc_id, "_source": bookdb.index.__fixup_put(doc)} for doc_id, doc in dump.items()])
             print(f"Indexed {ok} records")
             if errors:
                 print("")
