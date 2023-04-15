@@ -34,4 +34,6 @@ jobs:
           set -ex
           poetry install --no-interaction
           poetry check
+      - name: PyTest
+        run: |
           poetry run pytest
