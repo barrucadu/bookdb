@@ -91,14 +91,14 @@ develop = ["aiohttp", "mock", "pytest", "pytest-asyncio", "pytest-cov", "pytest-
 
 [[package]]
 name = "elasticsearch"
-version = "8.7.0"
+version = "8.8.0"
 description = "Python client for Elasticsearch"
 category = "main"
 optional = false
 python-versions = ">=3.6, <4"
 files = [
-    {file = "elasticsearch-8.7.0-py3-none-any.whl", hash = "sha256:a06482f4c338ab6ace5cf89ee351cf3ee1854083f29a3b875433e608424fb48c"},
-    {file = "elasticsearch-8.7.0.tar.gz", hash = "sha256:1849356db4192fbb75b2b8f3d55edb0fb07f8d855f386b318a7889222b49591f"},
+    {file = "elasticsearch-8.8.0-py3-none-any.whl", hash = "sha256:2223ee9daaa3c80c25b28ec3f7c48e66fce6b767a338333d9a81886046a07df6"},
+    {file = "elasticsearch-8.8.0.tar.gz", hash = "sha256:6878313cd598c7c90079fed1d4be72e198da35cba57f4083e6bee91f9c70b0eb"},
 ]
 
 [package.dependencies]
@@ -519,4 +519,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "2a312acf44b51f851de49e62644acf71d8bb32b9660003bd8dd2fa6e325fc78a"
+content-hash = "83fdc29c2f227a7ff720f98e885d29e1d1cb9825bb27a9706102ddb5038ab4fe"
