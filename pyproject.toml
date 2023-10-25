@@ -20,7 +20,7 @@ create-index = "bookdb.index.create:run"
 dump-index = "bookdb.index.dump:run"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4.2"
+pytest = "^7.4.3"
 hypothesis = "^6.88.1"
 
 [build-system]
