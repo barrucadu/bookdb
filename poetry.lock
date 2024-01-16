@@ -160,13 +160,13 @@ tornado = ["tornado (>=0.2)"]
 
 [[package]]
 name = "hypothesis"
-version = "6.92.7"
+version = "6.94.0"
 description = "A library for property-based testing"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "hypothesis-6.92.7-py3-none-any.whl", hash = "sha256:dd73ed486acd0e2d3c2d6d4b5dd9141f30ab1cde6cff9a2bf0451db5332d63a9"},
-    {file = "hypothesis-6.92.7.tar.gz", hash = "sha256:5208b726b779fb78e3ae7d9274402215259579ef3b460fc5a3d0a66b12a2876c"},
+    {file = "hypothesis-6.94.0-py3-none-any.whl", hash = "sha256:69bdaff4a8d87ca6b07e48a5ee28652bba766429ddcef1d74d7729b9de4026d0"},
+    {file = "hypothesis-6.94.0.tar.gz", hash = "sha256:bfe02236bd701eaf1056fd7023ced31fc583c6d136ca534a55cd2d64617059aa"},
 ]
 
 [package.dependencies]
@@ -487,4 +487,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "885acbddeb663d8266c6e3aefc3a24e818ed8744dcc90434a8ad84be75c29cf0"
+content-hash = "7bb765d18d85b423de0a5a77e604c660db5038fffa98dc41f87e7b99b49f3178"
