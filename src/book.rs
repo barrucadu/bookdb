@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::convert::From;
 use std::fmt;
@@ -11,7 +12,7 @@ static ISBN13_WEIGHTS: [u32; 13] = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1];
 static EAN8_WEIGHTS: [u32; 8] = [3, 1, 3, 1, 3, 1, 3, 1];
 static EAN13_WEIGHTS: [u32; 13] = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1];
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct Book {
     pub code: Code,
     pub title: String,
@@ -153,6 +154,19 @@ impl fmt::Display for ParseCodeError {
     }
 }
 
+impl Serialize for Code {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'a> Deserialize<'a> for Code {
+    fn deserialize<D: serde::Deserializer<'a>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = <&str>::deserialize(deserializer)?;
+        s.parse::<Code>().map_err(serde::de::Error::custom)
+    }
+}
+
 fn validate_weight_sum(code: &str, weights: &[u32], x_is_ten: bool, modulus: u32) -> bool {
     if code.len() != weights.len() {
         return false;
@@ -172,7 +186,7 @@ fn validate_weight_sum(code: &str, weights: &[u32], x_is_ten: bool, modulus: u32
     weight_sum % modulus == 0
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct Holding {
     pub location: Slug,
     pub note: Option<String>,
@@ -293,6 +307,9 @@ mod tests {
             let code = Code::ISBN10(format!("{s}{check}"));
             assert!(code.is_valid());
 
+            let serialised = serde_json::to_string(&code).unwrap();
+            assert_eq!(code, serde_json::from_str(&serialised).unwrap());
+
             let display = format!("isbn-{s}{check}");
             assert_eq!(Ok(code.clone()), display.parse());
             assert_eq!(code.to_string(), display);
@@ -315,6 +332,9 @@ mod tests {
             let check = isbn13_check_char(&s);
             let code = Code::ISBN13(format!("{s}{check}"));
             assert!(code.is_valid());
+
+            let serialised = serde_json::to_string(&code).unwrap();
+            assert_eq!(code, serde_json::from_str(&serialised).unwrap());
 
             let display = format!("isbn-{s}{check}");
             assert_eq!(Ok(code.clone()), display.parse());
@@ -351,6 +371,9 @@ mod tests {
             let code = Code::EAN8(format!("{s}{check}"));
             assert!(code.is_valid());
 
+            let serialised = serde_json::to_string(&code).unwrap();
+            assert_eq!(code, serde_json::from_str(&serialised).unwrap());
+
             let display = format!("ean-{s}{check}");
             assert_eq!(Ok(code.clone()), display.parse());
             assert_eq!(code.to_string(), display);
@@ -373,6 +396,9 @@ mod tests {
             let check = ean13_check_char(&s);
             let code = Code::EAN13(format!("{s}{check}"));
             assert!(code.is_valid());
+
+            let serialised = serde_json::to_string(&code).unwrap();
+            assert_eq!(code, serde_json::from_str(&serialised).unwrap());
 
             let display = format!("ean-{s}{check}");
             assert_eq!(Ok(code.clone()), display.parse());
@@ -407,6 +433,9 @@ mod tests {
         fn valid_nonstandard(s in "[a-zA-Z0-9-]+") {
             let code = Code::Nonstandard(s.to_string());
             assert!(code.is_valid());
+
+            let serialised = serde_json::to_string(&code).unwrap();
+            assert_eq!(code, serde_json::from_str(&serialised).unwrap());
 
             let display = format!("x-{s}");
             assert_eq!(Ok(code.clone()), display.parse());

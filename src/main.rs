@@ -1,6 +1,7 @@
 use clap::Parser;
 use elasticsearch::{http::transport::Transport, Elasticsearch};
 use std::env;
+use std::io;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process;
@@ -106,7 +107,13 @@ async fn create_index(client: &Elasticsearch, args: CreateIndexArgs) {
 }
 
 async fn export_index(client: &Elasticsearch) {
-    bookdb::index::export(client).await;
+    match bookdb::index::export(client).await {
+        Ok(books) => serde_json::to_writer(io::stdout(), &books).unwrap(),
+        Err(error) => {
+            tracing::error!(?error, "could not export index");
+            process::exit(1);
+        }
+    }
 }
 
 async fn import_index(client: &Elasticsearch, args: CreateIndexArgs) {
