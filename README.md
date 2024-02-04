@@ -8,14 +8,13 @@ A database and web app to keep track of all my books, deployed to
 Development
 -----------
 
-Install `rustup`, `clang`, and `binutils`, and then install the
-nightly toolchain:
+Install `rustup` and `openssl`, and then install the default toolchain:
 
 ```bash
-rustup toolchain install nightly
+rustup show
 ```
 
-Then, compile in release mode;
+Then, compile in release mode:
 
 ```bash
 cargo build --release
@@ -26,6 +25,16 @@ Run the unit tests with:
 ```bash
 cargo test
 ```
+
+### With nix
+
+Open a development shell:
+
+```bash
+nix develop
+```
+
+And run cargo commands in there.
 
 
 Usage
