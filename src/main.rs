@@ -101,8 +101,17 @@ async fn main() {
 
 async fn create_index(client: &Elasticsearch, args: CreateIndexArgs) {
     if args.drop_existing {
-        bookdb::index::drop(client).await;
+        match bookdb::index::drop(client).await {
+            Ok(_) => {
+                println!("dropped index");
+            }
+            Err(error) => {
+                tracing::error!(?error, "could not drop index");
+                process::exit(1);
+            }
+        }
     }
+
     match bookdb::index::create(client).await {
         Ok(_) => {
             println!("created index");
@@ -126,7 +135,8 @@ async fn export_index(client: &Elasticsearch) {
 
 async fn import_index(client: &Elasticsearch, args: CreateIndexArgs) {
     if args.drop_existing {
-        bookdb::index::drop(client).await;
+        // drop and then recreate
+        create_index(client, args).await;
     }
     bookdb::index::import(client).await;
 }

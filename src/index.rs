@@ -1,4 +1,4 @@
-use elasticsearch::indices::IndicesCreateParts;
+use elasticsearch::indices::{IndicesCreateParts, IndicesDeleteParts};
 use elasticsearch::{ClearScrollParts, Elasticsearch, Error, ScrollParts, SearchParts};
 use serde_json::{json, Value};
 use time::macros::*;
@@ -45,8 +45,13 @@ pub async fn create(client: &Elasticsearch) -> Result<(), Error> {
         .map(|_| ())
 }
 
-pub async fn drop(_client: &Elasticsearch) {
-    println!("bookdb::index::drop");
+pub async fn drop(client: &Elasticsearch) -> Result<(), Error> {
+    client
+        .indices()
+        .delete(IndicesDeleteParts::Index(&[INDEX_NAME]))
+        .send()
+        .await
+        .map(|_| ())
 }
 
 pub async fn export(client: &Elasticsearch) -> Result<Vec<Book>, Error> {
