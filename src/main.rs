@@ -138,7 +138,29 @@ async fn import_index(client: &Elasticsearch, args: CreateIndexArgs) {
         // drop and then recreate
         create_index(client, args).await;
     }
-    bookdb::index::import(client).await;
+    match io::read_to_string(io::stdin()) {
+        Ok(stdin) => match serde_json::from_str(&stdin) {
+            Ok(books) => match bookdb::index::import(client, books).await {
+                Ok(Some(num)) => println!("imported {num} records"),
+                Ok(None) => {
+                    tracing::error!(error = "bulk index failed", "could not import records");
+                    process::exit(1);
+                }
+                Err(error) => {
+                    tracing::error!(?error, "could not import records");
+                    process::exit(1);
+                }
+            },
+            Err(error) => {
+                tracing::error!(?error, "could not deserialise records");
+                process::exit(1);
+            }
+        },
+        Err(error) => {
+            tracing::error!(?error, "could not read stdin");
+            process::exit(1);
+        }
+    }
 }
 
 async fn serve(client: &Elasticsearch, args: ServeArgs) {

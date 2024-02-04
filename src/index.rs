@@ -1,5 +1,6 @@
+use elasticsearch::http::request::JsonBody;
 use elasticsearch::indices::{IndicesCreateParts, IndicesDeleteParts};
-use elasticsearch::{ClearScrollParts, Elasticsearch, Error, ScrollParts, SearchParts};
+use elasticsearch::{BulkParts, ClearScrollParts, Elasticsearch, Error, ScrollParts, SearchParts};
 use serde_json::{json, Value};
 use time::macros::*;
 use time::Date;
@@ -87,8 +88,27 @@ pub async fn export(client: &Elasticsearch) -> Result<Vec<Book>, Error> {
     Ok(books)
 }
 
-pub async fn import(_client: &Elasticsearch) {
-    println!("bookdb::index::import");
+pub async fn import(client: &Elasticsearch, books: Vec<Book>) -> Result<Option<usize>, Error> {
+    let mut body: Vec<JsonBody<_>> = Vec::with_capacity(books.len() * 2);
+    for book in &books {
+        let value = Into::<Value>::into(book);
+        let id = value["_id"].as_str().unwrap();
+        let source = value["_source"].as_object().unwrap().clone();
+        body.push(json!({"index": {"_id": id}}).into());
+        body.push(Value::Object(source).into());
+    }
+
+    let response = client
+        .bulk(BulkParts::Index(INDEX_NAME))
+        .body(body)
+        .send()
+        .await?;
+    let response_body = response.json::<Value>().await?;
+    if response_body["errors"].as_bool().unwrap() {
+        Ok(None)
+    } else {
+        Ok(Some(books.len()))
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -124,6 +144,30 @@ impl TryFrom<&Value> for Book {
             holdings: get_holdings(source, "holdings").ok_or(ValueToBookError::MissingHoldings)?,
             bucket: get_string(source, "bucket").ok_or(ValueToBookError::MissingBucket)?,
             category: get_slug(source, "category").ok_or(ValueToBookError::MissingCategory)?,
+        })
+    }
+}
+
+impl From<&Book> for Value {
+    fn from(book: &Book) -> Self {
+        json!({
+            "_id": book.code.to_string(),
+            "_source": {
+                "title": book.title,
+                "subtitle": book.subtitle,
+                "volume_title": book.volume_title,
+                "volume_number": book.volume_number,
+                "fascicle_number": book.fascicle_number,
+                "authors": book.authors,
+                "translators": book.translators,
+                "editors": book.editors,
+                "has_been_read": book.has_been_read,
+                "last_read_date": book.last_read_date,
+                "cover_image_mimetype": book.cover_image_mimetype,
+                "holdings": book.holdings,
+                "bucket": book.bucket,
+                "category": book.category
+            }
         })
     }
 }
@@ -211,4 +255,9 @@ fn get_string(source: &serde_json::Map<String, serde_json::Value>, key: &str) ->
         Some(Value::String(s)) => Some(s.to_string()),
         _ => None,
     }
+}
+
+#[cfg(test)]
+mod tests {
+    // TODO tests that Book <-> Value round-trips
 }
