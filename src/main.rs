@@ -103,7 +103,15 @@ async fn create_index(client: &Elasticsearch, args: CreateIndexArgs) {
     if args.drop_existing {
         bookdb::index::drop(client).await;
     }
-    bookdb::index::create(client).await;
+    match bookdb::index::create(client).await {
+        Ok(_) => {
+            println!("created index");
+        }
+        Err(error) => {
+            tracing::error!(?error, "could not create index");
+            process::exit(1);
+        }
+    }
 }
 
 async fn export_index(client: &Elasticsearch) {

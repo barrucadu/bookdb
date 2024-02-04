@@ -1,3 +1,4 @@
+use elasticsearch::indices::IndicesCreateParts;
 use elasticsearch::{ClearScrollParts, Elasticsearch, Error, ScrollParts, SearchParts};
 use serde_json::{json, Value};
 use time::macros::*;
@@ -8,8 +9,40 @@ use crate::config::Slug;
 
 static INDEX_NAME: &str = "bookdb";
 
-pub async fn create(_client: &Elasticsearch) {
-    println!("bookdb::index::create");
+pub async fn create(client: &Elasticsearch) -> Result<(), Error> {
+    client
+        .indices()
+        .create(IndicesCreateParts::Index(INDEX_NAME))
+        .body(json!({
+            "mappings": {
+                "properties": {
+                    "title": { "type": "text", "analyzer": "english" },
+                    "subtitle": { "type": "text", "analyzer": "english" },
+                    "volume_title": { "type": "text", "analyzer": "english" },
+                    "volume_number": { "type": "keyword" },
+                    "fascicle_number": { "type": "keyword" },
+                    "authors": { "type": "keyword" },
+                    "translators": { "type": "keyword" },
+                    "editors": { "type": "keyword" },
+                    "has_been_read": { "type": "boolean" },
+                    "last_read_date": { "type": "date", "format": "yyyy-MM-dd" },
+                    "cover_image_mimetype": { "type": "keyword" },
+                    "holdings": {
+                        "type": "nested",
+                        "dynamic": "strict",
+                        "properties": {
+                            "location": { "type": "keyword" },
+                            "note": { "type": "text" },
+                        },
+                    },
+                    "bucket": { "type": "keyword" },
+                    "category": { "type": "keyword" },
+                }
+            }
+        }))
+        .send()
+        .await
+        .map(|_| ())
 }
 
 pub async fn drop(_client: &Elasticsearch) {
