@@ -1,22 +1,27 @@
-use actix_web::{error, get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{error, get, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use elasticsearch::http::transport::Transport;
 use elasticsearch::Elasticsearch;
+use serde_html_form;
 use std::io;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use crate::config::Config;
+use crate::index as es;
 
 #[get("/")]
 async fn index() -> impl Responder {
-    HttpResponse::Ok().body("redirect to /search")
+    web::Redirect::to("/search").permanent()
 }
 
 #[get("/search")]
-async fn search(data: web::Data<AppState>) -> impl Responder {
-    match data.elasticsearch() {
-        Ok(_es) => HttpResponse::Ok().body("search"),
-        Err(error) => error::ErrorInternalServerError(error.to_string()).into(),
+async fn search(request: HttpRequest, data: web::Data<AppState>) -> impl Responder {
+    match serde_html_form::from_str(request.query_string()) {
+        Ok(query) => match data.search(query).await {
+            Ok(response) => HttpResponse::Ok().json(response),
+            Err(error) => error::ErrorInternalServerError(error.to_string()).into(),
+        },
+        Err(error) => error::ErrorBadRequest(error.to_string()).into(),
     }
 }
 
@@ -79,6 +84,14 @@ struct AppState {
 impl AppState {
     fn elasticsearch(&self) -> Result<Elasticsearch, elasticsearch::Error> {
         Transport::single_node(&self.es_host).map(Elasticsearch::new)
+    }
+
+    async fn search(
+        &self,
+        query: es::SearchQuery,
+    ) -> Result<es::SearchResult, elasticsearch::Error> {
+        let client = self.elasticsearch()?;
+        es::search(&client, query).await
     }
 }
 

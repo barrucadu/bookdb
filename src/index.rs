@@ -1,8 +1,9 @@
 use elasticsearch::http::request::JsonBody;
 use elasticsearch::indices::{IndicesCreateParts, IndicesDeleteParts};
 use elasticsearch::{BulkParts, ClearScrollParts, Elasticsearch, Error, ScrollParts, SearchParts};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::collections::HashMap;
 use time::macros::*;
 use time::Date;
 
@@ -20,6 +21,7 @@ pub async fn create(client: &Elasticsearch) -> Result<(), Error> {
             "mappings": {
                 "properties": {
                     "_serialiser": { "type": "keyword" },
+                    "_keywords": { "type": "text", "analyzer": "english" },
                     "title": { "type": "text", "analyzer": "english" },
                     "subtitle": { "type": "text", "analyzer": "english" },
                     "volume_title": { "type": "text", "analyzer": "english" },
@@ -58,18 +60,174 @@ pub async fn drop(client: &Elasticsearch) -> Result<(), Error> {
         .map(|_| ())
 }
 
+#[derive(Deserialize)]
+pub struct SearchQuery {
+    pub keywords: Option<String>,
+    pub r#match: Option<Match>,
+    pub location: Option<Slug>,
+    pub category: Option<Slug>,
+    #[serde(default, alias = "person[]")]
+    pub person: Vec<String>,
+    #[serde(default, alias = "author[]")]
+    pub author: Vec<String>,
+    #[serde(default, alias = "translator[]")]
+    pub translator: Vec<String>,
+    #[serde(default, alias = "editor[]")]
+    pub editor: Vec<String>,
+}
+
+#[derive(Deserialize)]
+pub enum Match {
+    #[serde(rename = "only-read")]
+    OnlyRead,
+    #[serde(rename = "only-unread")]
+    OnlyUnread,
+}
+
+#[derive(Serialize)]
+pub struct SearchResult {
+    pub count: usize,
+    pub hits: Vec<Book>,
+    pub aggs: SearchResultAggs,
+}
+
+#[derive(Serialize)]
+pub struct SearchResultAggs {
+    pub author: HashMap<String, u64>,
+    pub translator: HashMap<String, u64>,
+    pub editor: HashMap<String, u64>,
+    pub read: u64,
+    pub unread: u64,
+    pub category: HashMap<Slug, u64>,
+    pub location: HashMap<Slug, u64>,
+}
+
+pub async fn search(client: &Elasticsearch, query: SearchQuery) -> Result<SearchResult, Error> {
+    let mut queries = Vec::new();
+    queries.push(json!({"match_all": {}}));
+    if let Some(keywords) = query.keywords {
+        queries.push(json!({"query_string": {"query": keywords, "default_field": "_keywords"}}));
+    }
+    match query.r#match {
+        Some(Match::OnlyRead) => queries.push(json!({"term": {"has_been_read": true}})),
+        Some(Match::OnlyUnread) => queries.push(json!({"term": {"has_been_read": false}})),
+        None => (),
+    }
+    if let Some(location) = query.location {
+        queries.push(json!({"nested": {"path": "holdings", "query": {"bool": {"must": {"term": {"holdings.location": location}}}}}}));
+    }
+    if let Some(category) = query.category {
+        queries.push(json!({"term": {"category": category}}));
+    }
+    if !query.person.is_empty() {
+        queries.push(json!({
+            "bool": {
+                "should": [
+                    {"terms": {"authors": query.person}},
+                    {"terms": {"editors": query.person}},
+                    {"terms": {"translators": query.person}},
+                ],
+            },
+        }));
+    }
+    if !query.author.is_empty() {
+        queries.push(json!({"terms": {"authors": query.author}}))
+    }
+    if !query.translator.is_empty() {
+        queries.push(json!({"terms": {"authors": query.translator}}))
+    }
+    if !query.editor.is_empty() {
+        queries.push(json!({"terms": {"authors": query.editor}}))
+    }
+
+    let res = scroll(client, json!({
+        "query": {"bool": {"must": queries}},
+        "aggs": {
+            "author": {"terms": {"field": "authors", "size": 1000}},
+            "editor": {"terms": {"field": "editors", "size": 500}},
+            "translator": {"terms": {"field": "translators", "size": 500}},
+            "has_been_read": {"terms": {"field": "has_been_read", "size": 500}},
+            "category": {"terms": {"field": "category", "size": 500}},
+            "holdings": {"nested": {"path": "holdings"}, "aggs": {"location": {"terms": {"field": "holdings.location", "size": 500}}}},
+        },
+    })).await?;
+
+    let mut aggs = SearchResultAggs {
+        author: HashMap::new(),
+        editor: HashMap::new(),
+        translator: HashMap::new(),
+        read: 0,
+        unread: 0,
+        category: HashMap::new(),
+        location: HashMap::new(),
+    };
+    for bucket in res.aggs["author"]["buckets"].as_array().unwrap() {
+        let key = bucket["key"].as_str().unwrap().to_string();
+        let doc_count = bucket["doc_count"].as_u64().unwrap();
+        aggs.author.insert(key, doc_count);
+    }
+    for bucket in res.aggs["editor"]["buckets"].as_array().unwrap() {
+        let key = bucket["key"].as_str().unwrap().to_string();
+        let doc_count = bucket["doc_count"].as_u64().unwrap();
+        aggs.editor.insert(key, doc_count);
+    }
+    for bucket in res.aggs["translator"]["buckets"].as_array().unwrap() {
+        let key = bucket["key"].as_str().unwrap().to_string();
+        let doc_count = bucket["doc_count"].as_u64().unwrap();
+        aggs.translator.insert(key, doc_count);
+    }
+    for bucket in res.aggs["has_been_read"]["buckets"].as_array().unwrap() {
+        let key = bucket["key_as_string"].as_str().unwrap().to_string();
+        let doc_count = bucket["doc_count"].as_u64().unwrap();
+        if key == "true" {
+            aggs.read = doc_count;
+        } else {
+            aggs.unread = doc_count;
+        }
+    }
+    for bucket in res.aggs["category"]["buckets"].as_array().unwrap() {
+        let key = bucket["key"].as_str().unwrap().to_string();
+        let doc_count = bucket["doc_count"].as_u64().unwrap();
+        aggs.category.insert(Slug(key), doc_count);
+    }
+    for bucket in res.aggs["holdings"]["location"]["buckets"]
+        .as_array()
+        .unwrap()
+    {
+        let key = bucket["key"].as_str().unwrap().to_string();
+        let doc_count = bucket["doc_count"].as_u64().unwrap();
+        aggs.location.insert(Slug(key), doc_count);
+    }
+    Ok(SearchResult {
+        count: res.hits.len(),
+        hits: res.hits,
+        aggs,
+    })
+}
+
 pub async fn export(client: &Elasticsearch) -> Result<Vec<Book>, Error> {
+    let res = scroll(client, json!({"query": {"match_all": {}}})).await?;
+    Ok(res.hits)
+}
+
+struct ScrollResult {
+    hits: Vec<Book>,
+    aggs: Value,
+}
+
+async fn scroll(client: &Elasticsearch, body: Value) -> Result<ScrollResult, Error> {
     let mut books = Vec::new();
 
     let mut response = client
         .search(SearchParts::Index(&[INDEX_NAME]))
         .scroll("5m")
-        .body(json!({"query": {"match_all": {}}}))
+        .body(body)
         .send()
         .await?;
     let mut response_body = response.json::<Value>().await?;
     let mut scroll_id = response_body["_scroll_id"].as_str().unwrap();
     let mut hits = response_body["hits"]["hits"].as_array().unwrap();
+    let aggs = response_body["aggregations"].clone();
 
     while !hits.is_empty() {
         books.extend(hits.iter().map(|hit| Book::try_from(hit).unwrap()));
@@ -88,7 +246,8 @@ pub async fn export(client: &Elasticsearch) -> Result<Vec<Book>, Error> {
         .send()
         .await?;
 
-    Ok(books)
+    books.sort();
+    Ok(ScrollResult { hits: books, aggs })
 }
 
 pub async fn import(client: &Elasticsearch, books: Vec<Book>) -> Result<Option<usize>, Error> {
@@ -152,6 +311,7 @@ impl From<&Book> for Value {
             "_serialiser".to_string(),
             Value::String(SERIALISER_ES_SERDE_1.to_string()),
         );
+        map.insert("_keywords".to_string(), Value::String(book.display_title()));
         map.remove("code");
         json!({ "_id": book.code.to_string(), "_source": source })
     }
