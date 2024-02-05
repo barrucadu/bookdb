@@ -678,6 +678,26 @@ pub mod test_helpers {
         }
     }
 
+    pub fn number_bits_vec(bsk: &BookSortKey, volume: bool) -> Vec<String> {
+        let sbits = if volume {
+            &bsk.volume_number_bits
+        } else {
+            &bsk.fascicle_number_bits
+        };
+        if let Some(bits) = sbits {
+            let mut out = Vec::with_capacity(bits.len());
+            for bit in bits {
+                match bit {
+                    NumberPart::Str(s) => out.push(s.clone()),
+                    NumberPart::Num(n) => out.push(n.to_string()),
+                }
+            }
+            out
+        } else {
+            Vec::new()
+        }
+    }
+
     pub fn isbn10_check_char(digits: &str) -> char {
         let digits = digits.chars().collect::<Vec<char>>();
         let wsum = unwrap_digit(digits[0], true) * 10

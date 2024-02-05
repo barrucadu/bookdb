@@ -260,7 +260,8 @@ fn get_string(source: &serde_json::Map<String, serde_json::Value>, key: &str) ->
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::book::test_helpers::arbitrary_book;
+    use crate::book::test_helpers::{arbitrary_book, number_bits_vec};
+    use crate::book::BookSortKey;
 
     use proptest::prelude::*;
 
@@ -269,6 +270,47 @@ mod tests {
         fn book_serialise_deserialise_roundtrip(book in arbitrary_book()) {
             let serialised = Into::<Value>::into(&book);
             let deserialised = Book::try_from(&serialised).unwrap();
+            assert_eq!(book, deserialised);
+        }
+
+        #[test]
+        fn deserialise_bookdbpy(book in arbitrary_book()) {
+            let sort_key = Into::<BookSortKey>::into(&book);
+            let volume_number = book.volume_number.as_ref().
+                map(|num| json!({"raw": num, "bits": number_bits_vec(&sort_key, true)}));
+            let fascicle_number = book.fascicle_number.as_ref().
+                map(|num| json!({"raw": num, "bits": number_bits_vec(&sort_key, false)}));
+            let mut holdings = Vec::with_capacity(book.holdings.len());
+            for holding in &book.holdings {
+                holdings.push(json!({ "location_uuid": holding.location.0, "notes": holding.note }));
+            }
+
+            let bookdbpy = json!({
+                "_id": book.code.to_string(),
+                "_source": {
+                    "title": book.title,
+                    "subtitle": book.subtitle,
+                    "volume_title": book.volume_title,
+                    "display_title": book.display_title(),
+                    "volume_number": volume_number,
+                    "fascicle_number": fascicle_number,
+                    "people": {
+                        "authors": book.authors,
+                        "translators": book.translators,
+                        "editors": book.editors,
+                    },
+                    "has_been_read": book.has_been_read,
+                    "last_read_date": book.last_read_date,
+                    "cover_image_mimetype": book.cover_image_mimetype,
+                    "holdings": holdings,
+                    "bucket": book.bucket,
+                    "category_uuid": book.category.0,
+                    "created_at": "1234-05-06T07:08:09",
+                    "updated_at": "1234-05-06T07:08:09",
+                },
+            });
+
+            let deserialised = Book::try_from(&bookdbpy).unwrap();
             assert_eq!(book, deserialised);
         }
     }
