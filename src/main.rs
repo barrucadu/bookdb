@@ -1,5 +1,6 @@
 use clap::Parser;
-use elasticsearch::{http::transport::Transport, Elasticsearch};
+use elasticsearch::http::transport::Transport;
+use elasticsearch::Elasticsearch;
 use std::env;
 use std::io;
 use std::net::SocketAddr;
@@ -89,7 +90,7 @@ async fn main() {
                 ArgsCommand::CreateIndex(cmd_args) => create_index(client, cmd_args).await,
                 ArgsCommand::ExportIndex => export_index(client).await,
                 ArgsCommand::ImportIndex(cmd_args) => import_index(client, cmd_args).await,
-                ArgsCommand::Serve(cmd_args) => serve(client, cmd_args).await,
+                ArgsCommand::Serve(cmd_args) => serve(args.es_host, cmd_args).await,
             }
         }
         Err(error) => {
@@ -163,18 +164,22 @@ async fn import_index(client: &Elasticsearch, args: CreateIndexArgs) {
     }
 }
 
-async fn serve(client: &Elasticsearch, args: ServeArgs) {
+async fn serve(es_host: String, args: ServeArgs) {
     match fs::read_to_string(args.config).await {
         Ok(config_str) => match serde_yaml::from_str(&config_str) {
             Ok(config) => {
-                bookdb::web::serve(
-                    client,
+                if let Err(error) = bookdb::web::serve(
+                    es_host,
                     args.address,
                     args.allow_writes,
                     args.upload_dir,
                     config,
                 )
-                .await;
+                .await
+                {
+                    tracing::error!(?error, "could not serve");
+                    process::exit(1);
+                }
             }
             Err(error) => {
                 tracing::error!(?error, "could not parse config file");
