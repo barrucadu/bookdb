@@ -278,6 +278,7 @@ fn alphanum_to_bits(alphanum: String) -> Vec<NumberPart> {
 
 #[cfg(test)]
 mod tests {
+    use super::test_helpers::*;
     use super::*;
 
     use proptest::prelude::*;
@@ -522,69 +523,6 @@ mod tests {
         assert_eq!('5', ean13_check_char("237001149059"));
     }
 
-    fn isbn10_check_char(digits: &str) -> char {
-        let digits = digits.chars().collect::<Vec<char>>();
-        let wsum = unwrap_digit(digits[0], true) * 10
-            + unwrap_digit(digits[1], true) * 9
-            + unwrap_digit(digits[2], true) * 8
-            + unwrap_digit(digits[3], true) * 7
-            + unwrap_digit(digits[4], true) * 6
-            + unwrap_digit(digits[5], true) * 5
-            + unwrap_digit(digits[6], true) * 4
-            + unwrap_digit(digits[7], true) * 3
-            + unwrap_digit(digits[8], true) * 2;
-        let modulus = (11 - (wsum % 11)) % 11;
-        if modulus == 10 {
-            'X'
-        } else {
-            char::from_digit(modulus, 10).unwrap()
-        }
-    }
-
-    fn isbn13_check_char(digits: &str) -> char {
-        let digits = digits.chars().collect::<Vec<char>>();
-        let wsum = unwrap_digit(digits[0], false)
-            + unwrap_digit(digits[1], false) * 3
-            + unwrap_digit(digits[2], false)
-            + unwrap_digit(digits[3], false) * 3
-            + unwrap_digit(digits[4], false)
-            + unwrap_digit(digits[5], false) * 3
-            + unwrap_digit(digits[6], false)
-            + unwrap_digit(digits[7], false) * 3
-            + unwrap_digit(digits[8], false)
-            + unwrap_digit(digits[9], false) * 3
-            + unwrap_digit(digits[10], false)
-            + unwrap_digit(digits[11], false) * 3;
-        char::from_digit((10 - (wsum % 10)) % 10, 10).unwrap()
-    }
-
-    fn ean8_check_char(digits: &str) -> char {
-        let digits = digits.chars().collect::<Vec<char>>();
-        let wsum = unwrap_digit(digits[0], false) * 3
-            + unwrap_digit(digits[1], false)
-            + unwrap_digit(digits[2], false) * 3
-            + unwrap_digit(digits[3], false)
-            + unwrap_digit(digits[4], false) * 3
-            + unwrap_digit(digits[5], false)
-            + unwrap_digit(digits[6], false) * 3;
-        char::from_digit((10 - (wsum % 10)) % 10, 10).unwrap()
-    }
-
-    fn ean13_check_char(digits: &str) -> char {
-        // it's the same checksum algorithm
-        isbn13_check_char(digits)
-    }
-
-    fn unwrap_digit(c: char, x_is_ten: bool) -> u32 {
-        if c == 'X' && x_is_ten {
-            10
-        } else if let Some(d) = c.to_digit(10) {
-            d
-        } else {
-            panic!("could not unwrap {c}");
-        }
-    }
-
     // fixtures
 
     fn fixture_taocp_1() -> Book {
@@ -626,6 +564,180 @@ mod tests {
             holdings: Vec::new(),
             bucket: "Knuth".to_string(),
             category: Slug("computer-science".to_string()),
+        }
+    }
+}
+
+#[cfg(test)]
+pub mod test_helpers {
+    use super::*;
+
+    use proptest::prelude::*;
+
+    prop_compose! {
+        pub fn arbitrary_book() (
+            code in arbitrary_code(),
+            title in "[\\d\\s\\w]+",
+            subtitle in proptest::option::of("[\\d\\s\\w]+"),
+            volume_title in proptest::option::of("[\\d\\s\\w]+"),
+            volume_number in proptest::option::of("[\\d\\w]+"),
+            fascicle_number in proptest::option::of("[\\d\\w]+"),
+            authors in proptest::collection::vec("[\\d\\s\\w]+", 1..3),
+            translators in proptest::option::of(proptest::collection::vec("[\\d\\s\\w]+", 1..3)),
+            editors in proptest::option::of(proptest::collection::vec("[\\d\\s\\w]+", 1..3)),
+            has_been_read in proptest::bool::ANY,
+            last_read_date in proptest::option::of(arbitrary_date()),
+            cover_image_mimetype in proptest::option::of("[a-z]+/[a-z]+"),
+            holdings in proptest::collection::vec(arbitrary_holding(), 1..3),
+            bucket in "[a-z]+",
+            category in arbitrary_slug()
+        ) -> Book {
+            Book {
+                code,
+                title,
+                subtitle,
+                volume_title,
+                volume_number,
+                fascicle_number,
+                authors,
+                translators,
+                editors,
+                has_been_read,
+                last_read_date,
+                cover_image_mimetype,
+                holdings,
+                bucket,
+                category
+            }
+        }
+    }
+
+    fn arbitrary_code() -> BoxedStrategy<Code> {
+        prop_oneof![
+            arbitrary_isbn10_code(),
+            arbitrary_isbn13_code(),
+            arbitrary_ean8_code(),
+            arbitrary_ean13_code(),
+            arbitrary_nonstandard_code(),
+        ]
+        .boxed()
+    }
+
+    prop_compose! {
+        fn arbitrary_isbn10_code()(s in "[0-9X]{9}") -> Code {
+            let check = isbn10_check_char(&s);
+            Code::ISBN10(format!("{s}{check}"))
+        }
+    }
+
+    prop_compose! {
+        fn arbitrary_isbn13_code()(s in "[0-9]{12}") -> Code {
+            let check = isbn13_check_char(&s);
+            Code::ISBN13(format!("{s}{check}"))
+        }
+    }
+
+    prop_compose! {
+        fn arbitrary_ean8_code()(s in "[0-9]{7}") -> Code {
+            let check = ean8_check_char(&s);
+            Code::EAN8(format!("{s}{check}"))
+        }
+    }
+
+    prop_compose! {
+        fn arbitrary_ean13_code()(s in "[0-9]{12}") -> Code {
+            let check = ean13_check_char(&s);
+            Code::EAN13(format!("{s}{check}"))
+        }
+    }
+
+    prop_compose! {
+        fn arbitrary_nonstandard_code()(s in "[a-zA-Z0-9-]+") -> Code {
+            Code::Nonstandard(s)
+        }
+    }
+
+    prop_compose! {
+        fn arbitrary_slug()(s in "[a-z0-9-]+") -> Slug {
+            Slug(s)
+        }
+    }
+
+    prop_compose! {
+        fn arbitrary_date()(y in 2000i32..2100, m in 1u8..12, d in 1u8..28) -> Date {
+            Date::from_calendar_date(y, time::Month::January.nth_next(m), d).unwrap()
+        }
+    }
+
+    prop_compose! {
+        fn arbitrary_holding()(
+            location in arbitrary_slug(),
+            note in proptest::option::of("[\\d\\s\\w]+")
+        ) -> Holding {
+            Holding { location, note }
+        }
+    }
+
+    pub fn isbn10_check_char(digits: &str) -> char {
+        let digits = digits.chars().collect::<Vec<char>>();
+        let wsum = unwrap_digit(digits[0], true) * 10
+            + unwrap_digit(digits[1], true) * 9
+            + unwrap_digit(digits[2], true) * 8
+            + unwrap_digit(digits[3], true) * 7
+            + unwrap_digit(digits[4], true) * 6
+            + unwrap_digit(digits[5], true) * 5
+            + unwrap_digit(digits[6], true) * 4
+            + unwrap_digit(digits[7], true) * 3
+            + unwrap_digit(digits[8], true) * 2;
+        let modulus = (11 - (wsum % 11)) % 11;
+        if modulus == 10 {
+            'X'
+        } else {
+            char::from_digit(modulus, 10).unwrap()
+        }
+    }
+
+    pub fn isbn13_check_char(digits: &str) -> char {
+        let digits = digits.chars().collect::<Vec<char>>();
+        let wsum = unwrap_digit(digits[0], false)
+            + unwrap_digit(digits[1], false) * 3
+            + unwrap_digit(digits[2], false)
+            + unwrap_digit(digits[3], false) * 3
+            + unwrap_digit(digits[4], false)
+            + unwrap_digit(digits[5], false) * 3
+            + unwrap_digit(digits[6], false)
+            + unwrap_digit(digits[7], false) * 3
+            + unwrap_digit(digits[8], false)
+            + unwrap_digit(digits[9], false) * 3
+            + unwrap_digit(digits[10], false)
+            + unwrap_digit(digits[11], false) * 3;
+        char::from_digit((10 - (wsum % 10)) % 10, 10).unwrap()
+    }
+
+    pub fn ean8_check_char(digits: &str) -> char {
+        let digits = digits.chars().collect::<Vec<char>>();
+        let wsum = unwrap_digit(digits[0], false) * 3
+            + unwrap_digit(digits[1], false)
+            + unwrap_digit(digits[2], false) * 3
+            + unwrap_digit(digits[3], false)
+            + unwrap_digit(digits[4], false) * 3
+            + unwrap_digit(digits[5], false)
+            + unwrap_digit(digits[6], false) * 3;
+        char::from_digit((10 - (wsum % 10)) % 10, 10).unwrap()
+    }
+
+    pub fn ean13_check_char(digits: &str) -> char {
+        // it's the same checksum algorithm
+        isbn13_check_char(digits)
+    }
+
+    fn unwrap_digit(c: char, x_is_ten: bool) -> u32 {
+        if c == 'X' && x_is_ten {
+            10
+        } else if let Some(d) = c.to_digit(10) {
+            d
+        } else {
+            panic!("could not unwrap {c}");
         }
     }
 }

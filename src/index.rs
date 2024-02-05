@@ -259,5 +259,17 @@ fn get_string(source: &serde_json::Map<String, serde_json::Value>, key: &str) ->
 
 #[cfg(test)]
 mod tests {
-    // TODO tests that Book <-> Value round-trips
+    use super::*;
+    use crate::book::test_helpers::arbitrary_book;
+
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn book_serialise_deserialise_roundtrip(book in arbitrary_book()) {
+            let serialised = Into::<Value>::into(&book);
+            let deserialised = Book::try_from(&serialised).unwrap();
+            assert_eq!(book, deserialised);
+        }
+    }
 }
