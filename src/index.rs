@@ -1,6 +1,8 @@
 use elasticsearch::http::request::JsonBody;
 use elasticsearch::indices::{IndicesCreateParts, IndicesDeleteParts};
-use elasticsearch::{BulkParts, ClearScrollParts, Elasticsearch, Error, ScrollParts, SearchParts};
+use elasticsearch::{
+    BulkParts, ClearScrollParts, Elasticsearch, Error, GetParts, ScrollParts, SearchParts,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -58,6 +60,15 @@ pub async fn drop(client: &Elasticsearch) -> Result<(), Error> {
         .send()
         .await
         .map(|_| ())
+}
+
+pub async fn get(client: &Elasticsearch, code: Code) -> Result<Option<Book>, Error> {
+    let response = client
+        .get(GetParts::IndexId(INDEX_NAME, &code.to_string()))
+        .send()
+        .await?;
+    let response_body = response.json::<Value>().await?;
+    Ok(Book::try_from(&response_body).ok())
 }
 
 #[derive(Deserialize)]
