@@ -21,7 +21,7 @@ dump-index = "bookdb.index.dump:run"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
-hypothesis = "^6.97.4"
+hypothesis = "^6.98.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
