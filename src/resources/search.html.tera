@@ -84,9 +84,9 @@
           <tbody>
             {% for book in books %}
             <tr>
-              <td>{% if book.has_cover_image %}<a href="/book/{{ book.code }}/cover" class="preview" name="preview[]" title="{{ book.title }}"><img src="/book/{{ book.code }}/cover" alt=" {{book.title }}" loading="lazy"></a>{% endif %}</td>
+              <td>{% if book.has_cover_image %}<a href="/book/{{ book.code }}/cover" class="preview" name="preview[]" title="{{ book.display_title }}"><img src="/book/{{ book.code }}/cover" alt="{{book.display_title }}" loading="lazy"></a>{% endif %}</td>
               <td class="code">{{ book.code }}</td>
-              <td>{{ book.title }}</td>
+              <td>{{ book.display_title }}</td>
               <td>
                 <ol class="detail-list">
                   {% for name in book.authors %}<li>{{ name }}</li>{% endfor %}
@@ -109,10 +109,7 @@
               <td>
                 <ol class="detail-list">
                   {% for holding in book.holdings %}
-                  <li>
-                    {{ holding.location_name }}
-                    {% if holding.note %}({{ holding.note }}){% endif %}
-                  </li>
+                  <li>{{ holding.location }}{% if holding.note %} ({{ holding.note }}){% endif %}</li>
                   {% endfor %}
                 </ol>
               </td>

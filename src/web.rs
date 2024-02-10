@@ -24,10 +24,10 @@ use crate::index as es;
 lazy_static! {
     static ref TEMPLATES: Tera = {
         let mut tera = Tera::default();
-        let res = tera.add_raw_templates(vec![(
-            "search.html",
-            include_str!("resources/search.html.tera"),
-        )]);
+        let res = tera.add_raw_templates(vec![
+            ("edit.html", include_str!("resources/edit.html.tera")),
+            ("search.html", include_str!("resources/search.html.tera")),
+        ]);
         if let Err(error) = res {
             panic!("could not parse templates: {error}");
         }
@@ -73,13 +73,7 @@ async fn search(request: HttpRequest, data: web::Data<AppState>) -> impl Respond
             let books: Vec<Value> = result
                 .hits
                 .into_iter()
-                .map(|b| {
-                    to_search_result_table_row(
-                        b,
-                        &data.category_fullname_map,
-                        &data.location_name_map,
-                    )
-                })
+                .map(|b| to_book_context(b, &data.category_fullname_map, &data.location_name_map))
                 .collect();
             context.insert("num_books", &result.count);
             context.insert("books", &books);
@@ -129,10 +123,39 @@ async fn thumb(data: web::Data<AppState>, code: web::Path<String>) -> Result<Nam
 
 #[get("/new")]
 async fn new_book(data: web::Data<AppState>) -> impl Responder {
-    match data.elasticsearch() {
-        Ok(_es) => HttpResponse::Ok().body("create book form"),
-        Err(error) => error::ErrorInternalServerError(error.to_string()).into(),
+    let (mut context, ok) = data.context().await;
+    if !ok {
+        return error::ErrorInternalServerError("could not connect to search server").into();
     }
+
+    context.insert("action", "/new");
+    context.insert(
+        "book",
+        &json!({
+            "has_cover_image": false,
+            "code": "",
+            "display_title": "",
+            "title": "",
+            "subtitle": "",
+            "volume_title": "",
+            "volume_number": "",
+            "fascicle_number": "",
+            "authors": Vec::<String>::new(),
+            "translators": Vec::<String>::new(),
+            "editors": Vec::<String>::new(),
+            "has_been_read": false,
+            "last_read_date": "",
+            "category": "",
+            "category_slug": "",
+            "holdings": Vec::<Value>::new(),
+            "bucket": "",
+        }),
+    );
+
+    let rendered = TEMPLATES.render("edit.html", &context).unwrap();
+    HttpResponse::Ok()
+        .content_type(mime::TEXT_HTML_UTF_8)
+        .body(rendered)
 }
 
 #[post("/new")]
@@ -161,9 +184,25 @@ async fn delete_book_commit(data: web::Data<AppState>, code: web::Path<String>) 
 
 #[get("/book/{code}/edit")]
 async fn edit_book(data: web::Data<AppState>, code: web::Path<String>) -> impl Responder {
-    match data.elasticsearch() {
-        Ok(_es) => HttpResponse::Ok().body(format!("edit book '{code}")),
-        Err(error) => error::ErrorInternalServerError(error.to_string()).into(),
+    let (mut context, ok) = data.context().await;
+    if !ok {
+        return error::ErrorInternalServerError("could not connect to search server").into();
+    }
+
+    context.insert("action", &format!("/book/{code}/edit"));
+
+    match find_book_by_code(&data, code).await {
+        Ok(book) => {
+            context.insert(
+                "book",
+                &to_book_context(book, &data.category_fullname_map, &data.location_name_map),
+            );
+            let rendered = TEMPLATES.render("edit.html", &context).unwrap();
+            HttpResponse::Ok()
+                .content_type(mime::TEXT_HTML_UTF_8)
+                .body(rendered)
+        }
+        Err(error) => error.into(),
     }
 }
 
@@ -389,7 +428,7 @@ fn category_fullname_map(
     out
 }
 
-fn to_search_result_table_row(
+fn to_book_context(
     book: Book,
     category_fullname_map: &HashMap<Slug, Vec<String>>,
     location_name_map: &HashMap<Slug, String>,
@@ -397,19 +436,30 @@ fn to_search_result_table_row(
     let mut holdings = Vec::with_capacity(book.holdings.len());
     for holding in &book.holdings {
         let location_name = location_name_map.get(&holding.location).unwrap();
-        holdings.push(json!({ "location_name": location_name, "note": holding.note.clone() }));
+        holdings.push(json!({
+            "location": location_name,
+            "location_slug": holding.location,
+            "note": holding.note.clone(),
+        }));
     }
 
     json!({
         "has_cover_image": book.cover_image_mimetype.is_some(),
         "code": book.code,
-        "title": book.display_title(),
+        "display_title": book.display_title(),
+        "title": book.title,
+        "subtitle": book.subtitle.unwrap_or_default(),
+        "volume_title": book.volume_title.unwrap_or_default(),
+        "volume_number": book.volume_number.unwrap_or_default(),
+        "fascicle_number": book.fascicle_number.unwrap_or_default(),
         "authors": book.authors,
         "translators": book.translators.unwrap_or_default(),
         "editors": book.editors.unwrap_or_default(),
         "has_been_read": book.has_been_read,
         "last_read_date": book.last_read_date,
         "category": category_fullname_map.get(&book.category).unwrap(),
+        "category_slug": book.category,
         "holdings": holdings,
+        "bucket": book.bucket,
     })
 }
