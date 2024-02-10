@@ -3,7 +3,7 @@ use elasticsearch::indices::{IndicesCreateParts, IndicesDeleteParts};
 use elasticsearch::{
     BulkParts, ClearScrollParts, Elasticsearch, Error, GetParts, ScrollParts, SearchParts,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use time::macros::*;
@@ -71,38 +71,20 @@ pub async fn get(client: &Elasticsearch, code: Code) -> Result<Option<Book>, Err
     Ok(Book::try_from(&response_body).ok())
 }
 
-#[derive(Deserialize)]
 pub struct SearchQuery {
     pub keywords: Option<String>,
-    pub r#match: Option<Match>,
+    pub read: Option<bool>,
     pub location: Option<Slug>,
-    pub category: Option<Slug>,
-    #[serde(default, alias = "person[]")]
-    pub person: Vec<String>,
-    #[serde(default, alias = "author[]")]
-    pub author: Vec<String>,
-    #[serde(default, alias = "translator[]")]
-    pub translator: Vec<String>,
-    #[serde(default, alias = "editor[]")]
-    pub editor: Vec<String>,
+    pub categories: Vec<Slug>,
+    pub people: Vec<String>,
 }
 
-#[derive(Deserialize)]
-pub enum Match {
-    #[serde(rename = "only-read")]
-    OnlyRead,
-    #[serde(rename = "only-unread")]
-    OnlyUnread,
-}
-
-#[derive(Serialize)]
 pub struct SearchResult {
     pub count: usize,
     pub hits: Vec<Book>,
     pub aggs: SearchResultAggs,
 }
 
-#[derive(Serialize)]
 pub struct SearchResultAggs {
     pub author: HashMap<String, u64>,
     pub translator: HashMap<String, u64>,
@@ -119,36 +101,32 @@ pub async fn search(client: &Elasticsearch, query: SearchQuery) -> Result<Search
     if let Some(keywords) = query.keywords {
         queries.push(json!({"query_string": {"query": keywords, "default_field": "_keywords"}}));
     }
-    match query.r#match {
-        Some(Match::OnlyRead) => queries.push(json!({"term": {"has_been_read": true}})),
-        Some(Match::OnlyUnread) => queries.push(json!({"term": {"has_been_read": false}})),
+    match query.read {
+        Some(true) => queries.push(json!({"term": {"has_been_read": true}})),
+        Some(false) => queries.push(json!({"term": {"has_been_read": false}})),
         None => (),
     }
     if let Some(location) = query.location {
-        queries.push(json!({"nested": {"path": "holdings", "query": {"bool": {"must": {"term": {"holdings.location": location}}}}}}));
-    }
-    if let Some(category) = query.category {
-        queries.push(json!({"term": {"category": category}}));
-    }
-    if !query.person.is_empty() {
         queries.push(json!({
-            "bool": {
-                "should": [
-                    {"terms": {"authors": query.person}},
-                    {"terms": {"editors": query.person}},
-                    {"terms": {"translators": query.person}},
-                ],
+            "nested": {
+                "path": "holdings",
+                "query": {"bool": {"must": {"term": {"holdings.location": location}}}},
             },
         }));
     }
-    if !query.author.is_empty() {
-        queries.push(json!({"terms": {"authors": query.author}}))
+    if !query.categories.is_empty() {
+        queries.push(json!({"terms": {"category": query.categories}}));
     }
-    if !query.translator.is_empty() {
-        queries.push(json!({"terms": {"authors": query.translator}}))
-    }
-    if !query.editor.is_empty() {
-        queries.push(json!({"terms": {"authors": query.editor}}))
+    if !query.people.is_empty() {
+        queries.push(json!({
+            "bool": {
+                "should": [
+                    {"terms": {"authors": query.people}},
+                    {"terms": {"editors": query.people}},
+                    {"terms": {"translators": query.people}},
+                ],
+            },
+        }));
     }
 
     let res = scroll(client, json!({
