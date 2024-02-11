@@ -19,7 +19,7 @@ use tera::Tera;
 
 use crate::book::{Book, Code};
 use crate::config::{Config, NameSlug, Slug};
-use crate::index as es;
+use crate::es;
 
 lazy_static! {
     static ref TEMPLATES: Tera = {

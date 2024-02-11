@@ -102,7 +102,7 @@ async fn main() {
 
 async fn create_index(client: &Elasticsearch, args: CreateIndexArgs) {
     if args.drop_existing {
-        match bookdb::index::drop(client).await {
+        match bookdb::es::drop(client).await {
             Ok(_) => {
                 println!("dropped index");
             }
@@ -113,7 +113,7 @@ async fn create_index(client: &Elasticsearch, args: CreateIndexArgs) {
         }
     }
 
-    match bookdb::index::create(client).await {
+    match bookdb::es::create(client).await {
         Ok(_) => {
             println!("created index");
         }
@@ -125,7 +125,7 @@ async fn create_index(client: &Elasticsearch, args: CreateIndexArgs) {
 }
 
 async fn export_index(client: &Elasticsearch) {
-    match bookdb::index::export(client).await {
+    match bookdb::es::export(client).await {
         Ok(books) => serde_json::to_writer(io::stdout(), &books).unwrap(),
         Err(error) => {
             tracing::error!(?error, "could not export index");
@@ -141,7 +141,7 @@ async fn import_index(client: &Elasticsearch, args: CreateIndexArgs) {
     }
     match io::read_to_string(io::stdin()) {
         Ok(stdin) => match serde_json::from_str(&stdin) {
-            Ok(books) => match bookdb::index::import(client, books).await {
+            Ok(books) => match bookdb::es::import(client, books).await {
                 Ok(Some(num)) => println!("imported {num} records"),
                 Ok(None) => {
                     tracing::error!(error = "bulk index failed", "could not import records");
