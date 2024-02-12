@@ -36,7 +36,7 @@ body {
     padding: 25px;
 }
 
-.info {
+#notice {
     background-color: var(--content-bg-color);
     border: 5px solid var(--content-border-color);
     width: 600px;

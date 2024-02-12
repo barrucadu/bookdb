@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Information</title>
+
+    <meta http-equiv="refresh" content="2;URL='/search'">
+
+    <link rel="stylesheet" href="/style.css" type="text/css">
+  </head>
+
+  <body>
+    <main id="notice">
+      <p>{{ message }}</p>
+      <p><a href="/search">Click here to continue.</a></p>
+    </main>
+  </body>
+</html>

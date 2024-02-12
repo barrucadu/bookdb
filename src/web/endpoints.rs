@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::default::Default;
 use std::path::PathBuf;
 use tera::Tera;
+use tokio::fs;
 
 use crate::book::Book;
 use crate::config::Slug;
@@ -21,7 +22,9 @@ lazy_static! {
     static ref TEMPLATES: Tera = {
         let mut tera = Tera::default();
         let res = tera.add_raw_templates(vec![
+            ("delete.html", include_str!("_resources/delete.html.tera")),
             ("edit.html", include_str!("_resources/edit.html.tera")),
+            ("notice.html", include_str!("_resources/notice.html.tera")),
             ("search.html", include_str!("_resources/search.html.tera")),
         ]);
         if let Err(error) = res {
@@ -168,22 +171,39 @@ pub async fn new_book_commit(state: web::Data<AppState>) -> impl Responder {
 }
 
 #[get("/book/{code}/delete")]
-pub async fn delete_book(state: web::Data<AppState>, code: web::Path<String>) -> impl Responder {
-    match state.elasticsearch() {
-        Ok(_es) => HttpResponse::Ok().body(format!("delete book '{code}'")),
-        Err(_) => errors::cannot_connect_to_search_server().into(),
-    }
+pub async fn delete_book(
+    state: web::Data<AppState>,
+    code: web::Path<String>,
+) -> Result<HttpResponse, errors::Error> {
+    let book = state.get(code.into_inner()).await?;
+
+    let mut context = tera::Context::new();
+    context.insert(
+        "book",
+        &to_book_context(book, &state.category_fullname_map, &state.location_name_map),
+    );
+
+    let rendered = TEMPLATES.render("delete.html", &context).unwrap();
+    Ok(HttpResponse::Ok()
+        .content_type(mime::TEXT_HTML_UTF_8)
+        .body(rendered))
 }
 
 #[post("/book/{code}/delete")]
 pub async fn delete_book_commit(
     state: web::Data<AppState>,
     code: web::Path<String>,
-) -> impl Responder {
-    match state.elasticsearch() {
-        Ok(_es) => HttpResponse::Ok().body(format!("actually delete book '{code}'")),
-        Err(_) => errors::cannot_connect_to_search_server().into(),
-    }
+) -> Result<HttpResponse, errors::Error> {
+    let book = state.get(code.into_inner()).await?;
+    state.delete(book).await?;
+
+    let mut context = tera::Context::new();
+    context.insert("message", "The book has been deleted.");
+
+    let rendered = TEMPLATES.render("notice.html", &context).unwrap();
+    Ok(HttpResponse::Ok()
+        .content_type(mime::TEXT_HTML_UTF_8)
+        .body(rendered))
 }
 
 #[get("/book/{code}/edit")]
@@ -355,5 +375,21 @@ impl AppState {
         } else {
             Err(errors::book_not_found())
         }
+    }
+
+    async fn delete(&self, book: Book) -> Result<(), errors::Error> {
+        let client = self
+            .elasticsearch()
+            .map_err(|_| errors::cannot_connect_to_search_server())?;
+
+        es::delete(&client, book.code.clone())
+            .await
+            .map_err(|_| errors::cannot_connect_to_search_server())?;
+
+        // swallow errors deleting the files, they're not super important
+        let _ = fs::remove_file(self.cover_image_path(book.code.clone())).await;
+        let _ = fs::remove_file(self.cover_thumb_path(book.code.clone())).await;
+
+        Ok(())
     }
 }
