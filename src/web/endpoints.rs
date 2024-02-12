@@ -63,12 +63,9 @@ pub async fn search(
 ) -> Result<HttpResponse, errors::Error> {
     let query =
         serde_html_form::from_str(request.query_string()).unwrap_or(FormSearchQuery::default());
-    let (mut context, ok) = state.context().await;
-    context.insert("query", &query);
 
-    if !ok {
-        return Err(errors::cannot_connect_to_search_server());
-    }
+    let mut context = state.context().await?;
+    context.insert("query", &query);
 
     let result = state.search(query).await?;
     let books: Vec<Value> = result
@@ -85,10 +82,7 @@ pub async fn search(
         &((result.aggs.read as f64 / result.count as f64 * 100.0) as u64),
     );
 
-    let rendered = TEMPLATES.render("search.html", &context).unwrap();
-    Ok(HttpResponse::Ok()
-        .content_type(mime::TEXT_HTML_UTF_8)
-        .body(rendered))
+    render_html("search.html", context)
 }
 
 #[get("/book/{code}/cover")]
@@ -126,12 +120,8 @@ pub async fn thumb(
 }
 
 #[get("/new")]
-pub async fn new_book(state: web::Data<AppState>) -> impl Responder {
-    let (mut context, ok) = state.context().await;
-    if !ok {
-        return errors::cannot_connect_to_search_server().into();
-    }
-
+pub async fn new_book(state: web::Data<AppState>) -> Result<HttpResponse, errors::Error> {
+    let mut context = state.context().await?;
     context.insert("action", "/new");
     context.insert(
         "book",
@@ -156,10 +146,7 @@ pub async fn new_book(state: web::Data<AppState>) -> impl Responder {
         }),
     );
 
-    let rendered = TEMPLATES.render("edit.html", &context).unwrap();
-    HttpResponse::Ok()
-        .content_type(mime::TEXT_HTML_UTF_8)
-        .body(rendered)
+    render_html("edit.html", context)
 }
 
 #[post("/new")]
@@ -183,10 +170,7 @@ pub async fn delete_book(
         &to_book_context(book, &state.category_fullname_map, &state.location_name_map),
     );
 
-    let rendered = TEMPLATES.render("delete.html", &context).unwrap();
-    Ok(HttpResponse::Ok()
-        .content_type(mime::TEXT_HTML_UTF_8)
-        .body(rendered))
+    render_html("delete.html", context)
 }
 
 #[post("/book/{code}/delete")]
@@ -200,34 +184,24 @@ pub async fn delete_book_commit(
     let mut context = tera::Context::new();
     context.insert("message", "The book has been deleted.");
 
-    let rendered = TEMPLATES.render("notice.html", &context).unwrap();
-    Ok(HttpResponse::Ok()
-        .content_type(mime::TEXT_HTML_UTF_8)
-        .body(rendered))
+    render_html("notice.html", context)
 }
 
 #[get("/book/{code}/edit")]
-pub async fn edit_book(state: web::Data<AppState>, code: web::Path<String>) -> impl Responder {
-    let (mut context, ok) = state.context().await;
-    if !ok {
-        return errors::cannot_connect_to_search_server().into();
-    }
-
+pub async fn edit_book(
+    state: web::Data<AppState>,
+    code: web::Path<String>,
+) -> Result<HttpResponse, errors::Error> {
+    let mut context = state.context().await?;
     context.insert("action", &format!("/book/{code}/edit"));
 
-    match state.get(code.into_inner()).await {
-        Ok(book) => {
-            context.insert(
-                "book",
-                &to_book_context(book, &state.category_fullname_map, &state.location_name_map),
-            );
-            let rendered = TEMPLATES.render("edit.html", &context).unwrap();
-            HttpResponse::Ok()
-                .content_type(mime::TEXT_HTML_UTF_8)
-                .body(rendered)
-        }
-        Err(error) => error.into(),
-    }
+    let book = state.get(code.into_inner()).await?;
+    context.insert(
+        "book",
+        &to_book_context(book, &state.category_fullname_map, &state.location_name_map),
+    );
+
+    render_html("edit.html", context)
 }
 
 #[post("/book/{code}/edit")]
@@ -257,6 +231,15 @@ fn serve_static_file(path: PathBuf, mime: Mime) -> Result<NamedFile, errors::Err
             disposition: DispositionType::Inline,
             parameters: vec![],
         }))
+}
+
+fn render_html(template: &str, context: tera::Context) -> Result<HttpResponse, errors::Error> {
+    match TEMPLATES.render(template, &context) {
+        Ok(rendered) => Ok(HttpResponse::Ok()
+            .content_type(mime::TEXT_HTML_UTF_8)
+            .body(rendered)),
+        Err(_) => Err(errors::cannot_render_template(template)),
+    }
 }
 
 fn to_book_context(
@@ -296,38 +279,36 @@ fn to_book_context(
 }
 
 impl AppState {
-    async fn context(&self) -> (tera::Context, bool) {
+    async fn context(&self) -> Result<tera::Context, errors::Error> {
         let mut context = tera::Context::new();
         context.insert("allow_writes", &self.allow_writes);
         context.insert("locations", &self.locations);
         context.insert("categories", &self.categories);
 
-        if let Ok(result) = self.search(FormSearchQuery::default()).await {
-            let mut authors: Vec<String> = result.aggs.author.keys().cloned().collect();
-            authors.sort();
-            context.insert("authors", &authors);
+        let result = self.search(FormSearchQuery::default()).await?;
 
-            let mut translators: Vec<String> = result.aggs.translator.keys().cloned().collect();
-            translators.sort();
-            context.insert("translators", &translators);
+        let mut authors: Vec<String> = result.aggs.author.keys().cloned().collect();
+        authors.sort();
+        context.insert("authors", &authors);
 
-            let mut editors: Vec<String> = result.aggs.editor.keys().cloned().collect();
-            editors.sort();
-            context.insert("editors", &editors);
+        let mut translators: Vec<String> = result.aggs.translator.keys().cloned().collect();
+        translators.sort();
+        context.insert("translators", &translators);
 
-            let mut people: Vec<String> =
-                Vec::with_capacity(authors.len() + translators.len() + editors.len());
-            people.extend(authors.clone());
-            people.extend(translators.clone());
-            people.extend(editors.clone());
-            people.sort();
-            people.dedup();
-            context.insert("people", &people);
+        let mut editors: Vec<String> = result.aggs.editor.keys().cloned().collect();
+        editors.sort();
+        context.insert("editors", &editors);
 
-            (context, true)
-        } else {
-            (context, false)
-        }
+        let mut people: Vec<String> =
+            Vec::with_capacity(authors.len() + translators.len() + editors.len());
+        people.extend(authors.clone());
+        people.extend(translators.clone());
+        people.extend(editors.clone());
+        people.sort();
+        people.dedup();
+        context.insert("people", &people);
+
+        Ok(context)
     }
 
     async fn search(&self, query: FormSearchQuery) -> Result<es::SearchResult, errors::Error> {

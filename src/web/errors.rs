@@ -19,3 +19,7 @@ pub fn invalid_code() -> Error {
 pub fn file_not_found() -> Error {
     actix_web::error::ErrorNotFound("file not found")
 }
+
+pub fn cannot_render_template(template: &str) -> Error {
+    actix_web::error::ErrorInternalServerError(format!("cannot render template: {template}"))
+}
