@@ -2,7 +2,7 @@ pub mod endpoints;
 pub mod errors;
 pub mod state;
 
-use actix_web::{web, App, HttpServer};
+use actix_web::{web, App, HttpResponse, HttpServer, ResponseError};
 use std::io;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -26,6 +26,7 @@ pub async fn serve(
     HttpServer::new(move || {
         let ro_app = App::new()
             .app_data(app_state.clone())
+            .default_service(web::to(fallback_404))
             .service(endpoints::index)
             .service(endpoints::search)
             .service(endpoints::cover)
@@ -46,4 +47,9 @@ pub async fn serve(
     .bind(address)?
     .run()
     .await
+}
+
+// this needs to be `async` for `web::to` above to work
+async fn fallback_404() -> HttpResponse {
+    errors::file_not_found().error_response()
 }

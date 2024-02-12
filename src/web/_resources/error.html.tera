@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Error {{ status_code }}</title>
+
+    <link rel="stylesheet" href="/style.css" type="text/css">
+  </head>
+
+  <body>
+    <main id="notice">
+      <p>{{ message }}</p>
+      <p><a href="/search">Click here to continue.</a></p>
+    </div>
+  </body>
+</html>

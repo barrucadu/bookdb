@@ -12,7 +12,7 @@ use std::path::PathBuf;
 use tera::Tera;
 use tokio::fs;
 
-use crate::book::Book;
+use crate::book::{Book, Code};
 use crate::config::Slug;
 use crate::es;
 use crate::web::errors;
@@ -98,7 +98,7 @@ pub async fn cover(
             mime.parse().unwrap(),
         )
     } else {
-        Err(errors::book_does_not_have_cover_image())
+        Err(errors::book_does_not_have_cover_image(&book))
     }
 }
 
@@ -115,7 +115,7 @@ pub async fn thumb(
         serve_static_file(thumb_path, mime::IMAGE_JPEG)
             .or(serve_static_file(cover_path, mime.parse().unwrap()))
     } else {
-        Err(errors::book_does_not_have_cover_image())
+        Err(errors::book_does_not_have_cover_image(&book))
     }
 }
 
@@ -150,10 +150,10 @@ pub async fn new_book(state: web::Data<AppState>) -> Result<HttpResponse, errors
 }
 
 #[post("/new")]
-pub async fn new_book_commit(state: web::Data<AppState>) -> impl Responder {
+pub async fn new_book_commit(state: web::Data<AppState>) -> Result<HttpResponse, errors::Error> {
     match state.elasticsearch() {
-        Ok(_es) => HttpResponse::Ok().body("actually create a book"),
-        Err(_) => errors::cannot_connect_to_search_server().into(),
+        Ok(_es) => Ok(HttpResponse::Ok().body("actually create a book")),
+        Err(_) => Err(errors::cannot_connect_to_search_server()),
     }
 }
 
@@ -208,10 +208,10 @@ pub async fn edit_book(
 pub async fn edit_book_commit(
     state: web::Data<AppState>,
     code: web::Path<String>,
-) -> impl Responder {
+) -> Result<HttpResponse, errors::Error> {
     match state.elasticsearch() {
-        Ok(_es) => HttpResponse::Ok().body(format!("actually edit book '{code}'")),
-        Err(_) => errors::cannot_connect_to_search_server().into(),
+        Ok(_es) => Ok(HttpResponse::Ok().body(format!("actually edit book '{code}'"))),
+        Err(_) => Err(errors::cannot_connect_to_search_server()),
     }
 }
 
@@ -238,7 +238,7 @@ fn render_html(template: &str, context: tera::Context) -> Result<HttpResponse, e
         Ok(rendered) => Ok(HttpResponse::Ok()
             .content_type(mime::TEXT_HTML_UTF_8)
             .body(rendered)),
-        Err(_) => Err(errors::cannot_render_template(template)),
+        Err(_) => Err(errors::something_went_wrong()),
     }
 }
 
@@ -343,18 +343,18 @@ impl AppState {
     }
 
     async fn get(&self, code: String) -> Result<Book, errors::Error> {
-        let code = code.parse().map_err(|_| errors::invalid_code())?;
+        let code: Code = code.parse().map_err(|_| errors::invalid_code(&code))?;
         let client = self
             .elasticsearch()
             .map_err(|_| errors::cannot_connect_to_search_server())?;
-        let result = es::get(&client, code)
+        let result = es::get(&client, code.clone())
             .await
             .map_err(|_| errors::cannot_connect_to_search_server())?;
 
         if let Some(book) = result {
             Ok(book)
         } else {
-            Err(errors::book_not_found())
+            Err(errors::book_not_found(&code))
         }
     }
 
