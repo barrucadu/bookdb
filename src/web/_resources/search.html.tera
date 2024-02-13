@@ -84,7 +84,7 @@
           <tbody>
             {% for book in books %}
             <tr>
-              <td>{% if book.has_cover_image %}<a href="/book/{{ book.code }}/cover" class="preview" name="preview[]" title="{{ book.display_title }}"><img src="/book/{{ book.code }}/cover" alt="{{book.display_title }}" loading="lazy"></a>{% endif %}</td>
+              <td>{% if book.has_cover_image %}<a href="/book/{{ book.code }}/cover" class="preview" name="preview[]" title="{{ book.display_title }}"><img src="/book/{{ book.code }}/thumb" alt="{{book.display_title }}" loading="lazy"></a>{% endif %}</td>
               <td class="code">{{ book.code }}</td>
               <td>{{ book.display_title }}</td>
               <td>
