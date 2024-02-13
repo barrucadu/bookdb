@@ -149,6 +149,8 @@ fn validate_putbook(
     let mut errors = Vec::new();
     let code = multipart_str(form.code);
     let title = multipart_str(form.title);
+    let volume_number = multipart_str(form.volume_number);
+    let fascicle_number = multipart_str(form.fascicle_number);
     let authors = multipart_vec(form.authors);
     let last_read_date = multipart_str(form.last_read_date);
     let category_slug = multipart_str(form.category);
@@ -163,6 +165,12 @@ fn validate_putbook(
     }
     if title.is_none() {
         errors.push("The title cannot be blank.".to_string());
+    }
+    if !volume_number.as_deref().map(is_alnum).unwrap_or(true) {
+        errors.push("The volume number can only contain letters and numbers.".to_string());
+    }
+    if !fascicle_number.as_deref().map(is_alnum).unwrap_or(true) {
+        errors.push("The fascicle number can only contain letters and numbers.".to_string());
     }
     if authors.is_none() {
         errors.push("There must be at least one author.".to_string());
@@ -199,8 +207,8 @@ fn validate_putbook(
         "title": title,
         "subtitle": multipart_str(form.subtitle),
         "volume_title": multipart_str(form.volume_title),
-        "volume_number": multipart_str(form.volume_number),
-        "fascicle_number": multipart_str(form.fascicle_number),
+        "volume_number": volume_number,
+        "fascicle_number": fascicle_number,
         "authors": authors.unwrap_or_default(),
         "translators": multipart_vec(form.translators).unwrap_or_default(),
         "editors": multipart_vec(form.editors).unwrap_or_default(),
@@ -218,6 +226,10 @@ fn allowed_image_type(mime: &Mime) -> bool {
     let ty = mime.type_();
     let subty = mime.subtype();
     ty == mime::IMAGE && (subty == mime::JPEG || subty == mime::PNG)
+}
+
+fn is_alnum(s: &str) -> bool {
+    s.chars().all(|c| c.is_alphanumeric())
 }
 
 fn multipart_str(txt: Option<Text<String>>) -> Option<String> {
