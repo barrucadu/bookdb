@@ -1,5 +1,6 @@
 pub mod endpoints;
 pub mod errors;
+pub mod multipart;
 pub mod state;
 
 use actix_web::{web, App, HttpResponse, HttpServer, ResponseError};
