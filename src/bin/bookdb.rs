@@ -1,8 +1,5 @@
 use clap::Parser;
-use elasticsearch::http::transport::Transport;
-use elasticsearch::Elasticsearch;
 use std::env;
-use std::io;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process;
@@ -21,31 +18,6 @@ struct Args {
     )]
     es_host: String,
 
-    #[command(subcommand)]
-    command: ArgsCommand,
-}
-
-#[derive(Clone, Debug, clap::Subcommand)]
-enum ArgsCommand {
-    /// Create the Elasticsearch index
-    CreateIndex(CreateIndexArgs),
-    /// Dump the Elasticsearch index as json to stdout
-    ExportIndex,
-    /// Import a dump of the Elasticsearch index, as json from stdin
-    ImportIndex(CreateIndexArgs),
-    /// Serve the web app
-    Serve(ServeArgs),
-}
-
-#[derive(Clone, Debug, clap::Args)]
-struct CreateIndexArgs {
-    /// Drop the existing index.  This will delete data!
-    #[clap(long, value_parser, default_value_t = false)]
-    drop_existing: bool,
-}
-
-#[derive(Clone, Debug, clap::Args)]
-struct ServeArgs {
     /// Address to listen on (in `ip:port` form)
     #[clap(
         long,
@@ -83,93 +55,12 @@ async fn main() {
     begin_logging();
 
     let args = Args::parse();
-    match Transport::single_node(&args.es_host) {
-        Ok(transport) => {
-            let client = &Elasticsearch::new(transport);
-            match args.command {
-                ArgsCommand::CreateIndex(cmd_args) => create_index(client, cmd_args).await,
-                ArgsCommand::ExportIndex => export_index(client).await,
-                ArgsCommand::ImportIndex(cmd_args) => import_index(client, cmd_args).await,
-                ArgsCommand::Serve(cmd_args) => serve(args.es_host, cmd_args).await,
-            }
-        }
-        Err(error) => {
-            tracing::error!(?error, "could not initialise elasticsearch transport");
-            process::exit(1);
-        }
-    }
-}
 
-async fn create_index(client: &Elasticsearch, args: CreateIndexArgs) {
-    if args.drop_existing {
-        match bookdb::es::drop(client).await {
-            Ok(_) => {
-                println!("dropped index");
-            }
-            Err(error) => {
-                tracing::error!(?error, "could not drop index");
-                process::exit(1);
-            }
-        }
-    }
-
-    match bookdb::es::create(client).await {
-        Ok(_) => {
-            println!("created index");
-        }
-        Err(error) => {
-            tracing::error!(?error, "could not create index");
-            process::exit(1);
-        }
-    }
-}
-
-async fn export_index(client: &Elasticsearch) {
-    match bookdb::es::export(client).await {
-        Ok(books) => serde_json::to_writer(io::stdout(), &books).unwrap(),
-        Err(error) => {
-            tracing::error!(?error, "could not export index");
-            process::exit(1);
-        }
-    }
-}
-
-async fn import_index(client: &Elasticsearch, args: CreateIndexArgs) {
-    if args.drop_existing {
-        // drop and then recreate
-        create_index(client, args).await;
-    }
-    match io::read_to_string(io::stdin()) {
-        Ok(stdin) => match serde_json::from_str(&stdin) {
-            Ok(books) => match bookdb::es::import(client, books).await {
-                Ok(Some(num)) => println!("imported {num} records"),
-                Ok(None) => {
-                    tracing::error!(error = "bulk index failed", "could not import records");
-                    process::exit(1);
-                }
-                Err(error) => {
-                    tracing::error!(?error, "could not import records");
-                    process::exit(1);
-                }
-            },
-            Err(error) => {
-                tracing::error!(?error, "could not deserialise records");
-                process::exit(1);
-            }
-        },
-        Err(error) => {
-            tracing::error!(?error, "could not read stdin");
-            process::exit(1);
-        }
-    }
-}
-
-async fn serve(es_host: String, args: ServeArgs) {
     match fs::read_to_string(args.config).await {
         Ok(config_str) => match serde_yaml::from_str(&config_str) {
             Ok(config) => {
                 if let Err(error) = bookdb::web::serve(
-                    es_host,
+                    args.es_host,
                     args.address,
                     args.allow_writes,
                     args.upload_dir,
