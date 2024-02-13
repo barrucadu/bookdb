@@ -110,7 +110,7 @@
 
           <div class="js-holdings">
             {% for holding in book.holdings %}
-            {{ self::render_holding(index=loop.index, slug=holding.location_slug, notes=holding.notes) }}
+            {{ self::render_holding(index=loop.index, slug=holding.location_slug, note=holding.note) }}
             {% endfor %}
             {{ self::render_holding(index=book.holdings|length+1) }}
             <div class="form-row js-insert-before">

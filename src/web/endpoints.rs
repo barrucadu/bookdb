@@ -160,7 +160,6 @@ pub async fn new_book_commit(
 ) -> Result<HttpResponse, errors::Error> {
     match putbook_to_book(
         form.into_inner(),
-        None,
         &state.category_fullname_map,
         &state.location_name_map,
     ) {
@@ -207,7 +206,7 @@ pub async fn delete_book_commit(
     code: web::Path<String>,
 ) -> Result<HttpResponse, errors::Error> {
     let book = state.get(code.into_inner()).await?;
-    state.delete(book).await?;
+    state.delete(book, true).await?;
 
     let mut context = tera::Context::new();
     context.insert("message", "The book has been deleted.");
@@ -236,10 +235,35 @@ pub async fn edit_book(
 pub async fn edit_book_commit(
     state: web::Data<AppState>,
     code: web::Path<String>,
+    form: MultipartForm<PutBook>,
 ) -> Result<HttpResponse, errors::Error> {
-    match state.elasticsearch() {
-        Ok(_es) => Ok(HttpResponse::Ok().body(format!("actually edit book '{code}'"))),
-        Err(_) => Err(errors::cannot_connect_to_search_server()),
+    let original = state.get(code.clone()).await?;
+
+    match putbook_to_book(
+        form.into_inner(),
+        &state.category_fullname_map,
+        &state.location_name_map,
+    ) {
+        Ok((mut book, tempfile)) => {
+            book.cover_image_mimetype = book
+                .cover_image_mimetype
+                .or(original.cover_image_mimetype.clone());
+            state.replace(original.clone(), book.clone()).await?;
+            if let Some(tempfile) = tempfile {
+                state.save_cover_image(book.code.clone(), tempfile).await?;
+            }
+
+            let mut context = tera::Context::new();
+            context.insert("message", "The book has been updated.");
+            render_html("notice.html", context)
+        }
+        Err((partial_book, errors)) => {
+            let mut context = state.context().await?;
+            context.insert("action", &format!("/book/{code}/edit"));
+            context.insert("errors", &errors);
+            context.insert("book", &partial_book);
+            render_html("edit.html", context)
+        }
     }
 }
 
@@ -398,7 +422,7 @@ impl AppState {
         Ok(())
     }
 
-    async fn delete(&self, book: Book) -> Result<(), errors::Error> {
+    async fn delete(&self, book: Book, delete_files: bool) -> Result<(), errors::Error> {
         let client = self
             .elasticsearch()
             .map_err(|_| errors::cannot_connect_to_search_server())?;
@@ -407,9 +431,39 @@ impl AppState {
             .await
             .map_err(|_| errors::cannot_connect_to_search_server())?;
 
-        // swallow errors deleting the files, they're not super important
-        let _ = fs::remove_file(self.cover_image_path(book.code.clone())).await;
-        let _ = fs::remove_file(self.cover_thumb_path(book.code.clone())).await;
+        if book.cover_image_mimetype.is_some() && delete_files {
+            fs::remove_file(self.cover_image_path(book.code.clone()))
+                .await
+                .map_err(|_| errors::something_went_wrong())?;
+            fs::remove_file(self.cover_thumb_path(book.code.clone()))
+                .await
+                .map_err(|_| errors::something_went_wrong())?;
+        }
+
+        Ok(())
+    }
+
+    async fn replace(&self, from: Book, to: Book) -> Result<(), errors::Error> {
+        let old_images_exist = from.cover_image_mimetype.is_some();
+        let new_images_exist = to.cover_image_mimetype.is_some();
+
+        self.delete(from.clone(), !new_images_exist).await?;
+        self.put(to.clone()).await?;
+
+        if from.code != to.code && old_images_exist && new_images_exist {
+            fs::rename(
+                self.cover_image_path(from.code.clone()),
+                self.cover_image_path(to.code.clone()),
+            )
+            .await
+            .map_err(|_| errors::something_went_wrong())?;
+            fs::rename(
+                self.cover_thumb_path(from.code.clone()),
+                self.cover_thumb_path(to.code.clone()),
+            )
+            .await
+            .map_err(|_| errors::something_went_wrong())?;
+        }
 
         Ok(())
     }
@@ -584,7 +638,6 @@ fn validate_putbook(
 
 fn putbook_to_book(
     form: PutBook,
-    original: Option<Book>,
     category_fullname_map: &HashMap<Slug, Vec<String>>,
     location_name_map: &HashMap<Slug, String>,
 ) -> Result<(Book, Option<multipart::tempfile::TempFile>), (Value, Vec<String>)> {
@@ -595,25 +648,22 @@ fn putbook_to_book(
         return Err((book_json, errors));
     }
 
-    let fallback_cover = (original.and_then(|b| b.cover_image_mimetype), None);
     let cover_image = if let Some(tempfile) = cover_image {
         if tempfile.size > 0 {
             match tempfile.content_type {
-                Some(ref mime) if allowed_image_type(mime) => {
-                    Ok((Some(mime.essence_str().to_string()), Some(tempfile)))
-                }
+                Some(ref mime) if allowed_image_type(mime) => Ok(Some(tempfile)),
                 Some(_) => Err("Cover image must be a JPEG or PNG.".to_string()),
-                None => Ok(fallback_cover),
+                None => Ok(None),
             }
         } else {
-            Ok(fallback_cover)
+            Ok(None)
         }
     } else {
-        Ok(fallback_cover)
+        Ok(None)
     };
 
     match cover_image {
-        Ok((cover_image_mimetype, tempfile)) => {
+        Ok(tempfile) => {
             let nonempty_strvec = |s: Vec<String>| if s.is_empty() { None } else { Some(s) };
             let nonempty_str = |s: String| if s.is_empty() { None } else { Some(s) };
             // all the unsafe stuff is fine here because of the prior validation
@@ -634,6 +684,9 @@ fn putbook_to_book(
             let has_been_read = book_json["has_been_read"].as_bool().unwrap();
             let last_read_date = get_json_str("last_read_date")
                 .and_then(|s| Date::parse(&s, format_description!("[year]-[month]-[day]")).ok());
+            let cover_image_mimetype = tempfile
+                .as_ref()
+                .map(|f| f.content_type.clone().unwrap().essence_str().to_string());
             let holdings = {
                 let arr = book_json["holdings"].as_array().unwrap();
                 let mut out = Vec::with_capacity(arr.len());
