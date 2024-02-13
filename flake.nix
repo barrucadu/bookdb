@@ -22,6 +22,7 @@
       devShells.${system}.default = pkgs.mkShell {
         packages = [
           toolchain
+          pkgs.imagemagick
           pkgs.openssl
           pkgs.pkg-config
         ];

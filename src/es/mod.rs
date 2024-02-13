@@ -3,9 +3,10 @@ pub mod legacy;
 
 use elasticsearch::http::request::JsonBody;
 use elasticsearch::indices::{IndicesCreateParts, IndicesDeleteParts};
+use elasticsearch::params::OpType;
 use elasticsearch::{
-    BulkParts, ClearScrollParts, DeleteParts, Elasticsearch, Error, GetParts, ScrollParts,
-    SearchParts,
+    BulkParts, ClearScrollParts, DeleteParts, Elasticsearch, Error, GetParts, IndexParts,
+    ScrollParts, SearchParts,
 };
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -70,6 +71,17 @@ pub async fn get(client: &Elasticsearch, code: Code) -> Result<Option<Book>, Err
         .await?;
     let response_body = response.json::<Value>().await?;
     Ok(try_deserialise(&response_body).ok())
+}
+
+pub async fn put(client: &Elasticsearch, book: Book) -> Result<(), Error> {
+    let source = &serialise(&book)["_source"];
+    client
+        .index(IndexParts::IndexId(INDEX_NAME, &book.code.to_string()))
+        .op_type(OpType::Create)
+        .body(source)
+        .send()
+        .await?;
+    Ok(())
 }
 
 pub async fn delete(client: &Elasticsearch, code: Code) -> Result<(), Error> {
