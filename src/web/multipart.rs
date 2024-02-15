@@ -48,94 +48,68 @@ pub fn putbook_to_book(
     category_fullname_map: &HashMap<Slug, Vec<String>>,
     location_name_map: &HashMap<Slug, String>,
 ) -> Result<(Book, Option<TempFile>), (Value, Vec<String>)> {
-    let (book_json, cover_image, errors) =
+    let (book_json, tempfile, errors) =
         validate_putbook(form, category_fullname_map, location_name_map);
 
     if !errors.is_empty() {
         return Err((book_json, errors));
     }
 
-    let cover_image = if let Some(tempfile) = cover_image {
-        if tempfile.size > 0 {
-            match tempfile.content_type {
-                Some(ref mime) if allowed_image_type(mime) => Ok(Some(tempfile)),
-                Some(_) => Err("Cover image must be a JPEG or PNG.".to_string()),
-                None => Ok(None),
-            }
-        } else {
-            Ok(None)
-        }
-    } else {
-        Ok(None)
+    // all the unsafe stuff is fine here because of the prior validation
+    let nonempty_strvec = |s: Vec<String>| if s.is_empty() { None } else { Some(s) };
+    let nonempty_str = |s: String| if s.is_empty() { None } else { Some(s) };
+    let json_str = |s: Value| s.as_str().map(|s| s.to_string());
+    let get_json_str = |k| json_str(book_json[k].clone());
+    let get_json_strvec = |k| {
+        book_json[k]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| json_str(v.clone()).unwrap())
+            .collect()
     };
 
-    match cover_image {
-        Ok(tempfile) => {
-            let nonempty_strvec = |s: Vec<String>| if s.is_empty() { None } else { Some(s) };
-            let nonempty_str = |s: String| if s.is_empty() { None } else { Some(s) };
-            // all the unsafe stuff is fine here because of the prior validation
-            let json_str = |s: Value| s.as_str().map(|s| s.to_string());
-            let get_json_str = |k| json_str(book_json[k].clone());
-            let get_json_strvec = |k| {
-                book_json[k]
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .map(|v| json_str(v.clone()).unwrap())
-                    .collect()
-            };
-
-            let code = get_json_str("code").unwrap().parse().unwrap();
-            let title = get_json_str("title").unwrap();
-            let authors: Vec<String> = get_json_strvec("authors");
-            let has_been_read = book_json["has_been_read"].as_bool().unwrap();
-            let last_read_date = get_json_str("last_read_date")
-                .and_then(|s| Date::parse(&s, format_description!("[year]-[month]-[day]")).ok());
-            let cover_image_mimetype = tempfile
-                .as_ref()
-                .map(|f| f.content_type.clone().unwrap().essence_str().to_string());
-            let holdings = {
-                let arr = book_json["holdings"].as_array().unwrap();
-                let mut out = Vec::with_capacity(arr.len());
-                for h in arr {
-                    let location = Slug(json_str(h["location_slug"].clone()).unwrap());
-                    let note = json_str(h["notes"].clone());
-                    out.push(Holding { location, note });
-                }
-                out
-            };
-            let bucket = if let Some(b) = get_json_str("bucket").and_then(nonempty_str) {
-                b
-            } else {
-                let mut surnames: Vec<String> = authors
-                    .iter()
-                    .map(|a| a.split_whitespace().last().unwrap().to_string())
-                    .collect();
-                surnames.sort();
-                surnames[0].clone()
-            };
-            let category = Slug(get_json_str("category_slug").unwrap());
-            let book = Book {
-                code,
-                title,
-                subtitle: get_json_str("subtitle").and_then(nonempty_str),
-                volume_title: get_json_str("volume_title").and_then(nonempty_str),
-                volume_number: get_json_str("volume_number").and_then(nonempty_str),
-                fascicle_number: get_json_str("fascicle_number").and_then(nonempty_str),
-                authors,
-                editors: nonempty_strvec(get_json_strvec("editors")),
-                translators: nonempty_strvec(get_json_strvec("translators")),
-                has_been_read,
-                last_read_date,
-                cover_image_mimetype,
-                holdings,
-                bucket,
-                category,
-            };
-            Ok((book, tempfile))
-        }
-        Err(error) => Err((book_json, vec![error])),
-    }
+    let authors: Vec<String> = get_json_strvec("authors");
+    let bucket = if let Some(b) = get_json_str("bucket").and_then(nonempty_str) {
+        b
+    } else {
+        let mut surnames: Vec<String> = authors
+            .iter()
+            .map(|a| a.split_whitespace().last().unwrap().to_string())
+            .collect();
+        surnames.sort();
+        surnames[0].clone()
+    };
+    let book = Book {
+        code: get_json_str("code").unwrap().parse().unwrap(),
+        title: get_json_str("title").unwrap(),
+        subtitle: get_json_str("subtitle").and_then(nonempty_str),
+        volume_title: get_json_str("volume_title").and_then(nonempty_str),
+        volume_number: get_json_str("volume_number").and_then(nonempty_str),
+        fascicle_number: get_json_str("fascicle_number").and_then(nonempty_str),
+        authors,
+        editors: nonempty_strvec(get_json_strvec("editors")),
+        translators: nonempty_strvec(get_json_strvec("translators")),
+        has_been_read: book_json["has_been_read"].as_bool().unwrap(),
+        last_read_date: get_json_str("last_read_date")
+            .and_then(|s| Date::parse(&s, format_description!("[year]-[month]-[day]")).ok()),
+        cover_image_mimetype: tempfile
+            .as_ref()
+            .map(|f| f.content_type.clone().unwrap().essence_str().to_string()),
+        holdings: {
+            let arr = book_json["holdings"].as_array().unwrap();
+            let mut out = Vec::with_capacity(arr.len());
+            for h in arr {
+                let location = Slug(json_str(h["location_slug"].clone()).unwrap());
+                let note = json_str(h["notes"].clone());
+                out.push(Holding { location, note });
+            }
+            out
+        },
+        bucket,
+        category: Slug(get_json_str("category_slug").unwrap()),
+    };
+    Ok((book, tempfile))
 }
 
 // this has to return something that can be stuck into a template context, so
@@ -201,6 +175,13 @@ fn validate_putbook(
     if holdings.is_empty() {
         errors.push("There must be at least one holding.".to_string());
     }
+    let cover = match validate_image(form.cover) {
+        Ok(cover) => cover,
+        Err(error) => {
+            errors.push(error);
+            None
+        }
+    };
 
     let book_json = json!({
         "code": code,
@@ -219,7 +200,21 @@ fn validate_putbook(
         "bucket": multipart_str(form.bucket),
     });
 
-    (book_json, form.cover, errors)
+    (book_json, cover, errors)
+}
+
+fn validate_image(image: Option<TempFile>) -> Result<Option<TempFile>, String> {
+    if let Some(tempfile) = image {
+        if tempfile.size > 0 {
+            return match tempfile.content_type {
+                Some(ref mime) if allowed_image_type(mime) => Ok(Some(tempfile)),
+                Some(_) => Err("Cover image must be a JPEG or PNG.".to_string()),
+                None => Ok(None),
+            };
+        }
+    }
+
+    Ok(None)
 }
 
 fn allowed_image_type(mime: &Mime) -> bool {
