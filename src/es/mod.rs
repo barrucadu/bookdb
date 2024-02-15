@@ -110,10 +110,8 @@ impl SearchQuery {
                 json!({"query_string": {"query": keywords, "default_field": "_display_title"}}),
             );
         }
-        match self.read {
-            Some(true) => queries.push(json!({"term": {"has_been_read": true}})),
-            Some(false) => queries.push(json!({"term": {"has_been_read": false}})),
-            None => (),
+        if let Some(has_been_read) = self.read {
+            queries.push(json!({"term": {"has_been_read": has_been_read}}));
         }
         if let Some(location) = self.location {
             queries.push(json!({
