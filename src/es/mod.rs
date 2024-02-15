@@ -25,7 +25,7 @@ pub async fn create(client: &Elasticsearch) -> Result<(), Error> {
             "mappings": {
                 "properties": {
                     "_serialiser": { "type": "keyword" },
-                    "_keywords": { "type": "text", "analyzer": "english" },
+                    "_display_title": { "type": "text", "analyzer": "english" },
                     "title": { "type": "text", "analyzer": "english" },
                     "subtitle": { "type": "text", "analyzer": "english" },
                     "volume_title": { "type": "text", "analyzer": "english" },
@@ -106,8 +106,9 @@ impl SearchQuery {
         let mut queries = vec![json!({"match_all": {}})];
 
         if let Some(keywords) = self.keywords {
-            queries
-                .push(json!({"query_string": {"query": keywords, "default_field": "_keywords"}}));
+            queries.push(
+                json!({"query_string": {"query": keywords, "default_field": "_display_title"}}),
+            );
         }
         match self.read {
             Some(true) => queries.push(json!({"term": {"has_been_read": true}})),

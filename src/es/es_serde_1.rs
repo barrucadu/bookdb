@@ -20,7 +20,10 @@ pub fn serialise(book: &Book) -> Value {
         "_serialiser".to_string(),
         Value::String(SERIALISER.to_string()),
     );
-    map.insert("_keywords".to_string(), Value::String(book.display_title()));
+    map.insert(
+        "_display_title".to_string(),
+        Value::String(book.display_title()),
+    );
     map.remove("code");
     json!({ "_id": book.code.to_string(), "_source": source })
 }
