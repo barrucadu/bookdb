@@ -5,7 +5,8 @@ use actix_multipart::form::MultipartForm;
 use mime::Mime;
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use time::macros::*;
+use std::string::ToString;
+use time::macros::format_description;
 use time::Date;
 
 use crate::book::{Book, Code, Holding};
@@ -58,7 +59,7 @@ pub fn putbook_to_book(
     // all the unsafe stuff is fine here because of the prior validation
     let nonempty_strvec = |s: Vec<String>| if s.is_empty() { None } else { Some(s) };
     let nonempty_str = |s: String| if s.is_empty() { None } else { Some(s) };
-    let json_str = |s: Value| s.as_str().map(|s| s.to_string());
+    let json_str = |s: Value| s.as_str().map(ToString::to_string);
     let get_json_str = |k| json_str(book_json[k].clone());
     let get_json_strvec = |k| {
         book_json[k]
@@ -140,10 +141,10 @@ fn validate_putbook(
     if title.is_none() {
         errors.push("The title cannot be blank.".to_string());
     }
-    if !volume_number.as_deref().map(is_alnum).unwrap_or(true) {
+    if !volume_number.as_deref().map_or(true, is_alnum) {
         errors.push("The volume number can only contain letters and numbers.".to_string());
     }
-    if !fascicle_number.as_deref().map(is_alnum).unwrap_or(true) {
+    if !fascicle_number.as_deref().map_or(true, is_alnum) {
         errors.push("The fascicle number can only contain letters and numbers.".to_string());
     }
     if authors.is_none() {
@@ -224,7 +225,7 @@ fn allowed_image_type(mime: &Mime) -> bool {
 }
 
 fn is_alnum(s: &str) -> bool {
-    s.chars().all(|c| c.is_alphanumeric())
+    s.chars().all(char::is_alphanumeric)
 }
 
 fn multipart_str(txt: Option<Text<String>>) -> Option<String> {
@@ -242,7 +243,7 @@ fn multipart_str(txt: Option<Text<String>>) -> Option<String> {
 fn multipart_vec(vec: Vec<Text<String>>) -> Option<Vec<String>> {
     let flattened: Vec<String> = vec
         .into_iter()
-        .flat_map(|s| multipart_str(Some(s)))
+        .filter_map(|s| multipart_str(Some(s)))
         .collect();
     if flattened.is_empty() {
         None

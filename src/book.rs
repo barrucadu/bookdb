@@ -41,13 +41,13 @@ impl Book {
         match (&self.volume_number, &self.fascicle_number) {
             (Some(volume_number), Some(fascicle_number)) => {
                 display_title =
-                    format!("{display_title} (vol. {volume_number}; fas. {fascicle_number})")
+                    format!("{display_title} (vol. {volume_number}; fas. {fascicle_number})");
             }
             (Some(volume_number), None) => {
-                display_title = format!("{display_title} (vol. {volume_number})")
+                display_title = format!("{display_title} (vol. {volume_number})");
             }
             (None, Some(fascicle_number)) => {
-                display_title = format!("{display_title} (fas. {fascicle_number})")
+                display_title = format!("{display_title} (fas. {fascicle_number})");
             }
             (None, None) => {}
         }
@@ -95,10 +95,8 @@ impl Code {
 impl fmt::Display for Code {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Code::ISBN10(code) => write!(f, "isbn-{code}"),
-            Code::ISBN13(code) => write!(f, "isbn-{code}"),
-            Code::EAN8(code) => write!(f, "ean-{code}"),
-            Code::EAN13(code) => write!(f, "ean-{code}"),
+            Code::ISBN10(code) | Code::ISBN13(code) => write!(f, "isbn-{code}"),
+            Code::EAN8(code) | Code::EAN13(code) => write!(f, "ean-{code}"),
             Code::Nonstandard(code) => write!(f, "x-{code}"),
         }
     }
@@ -217,8 +215,8 @@ impl From<&Book> for BookSortKey {
         Self {
             bucket: book.bucket.to_lowercase(),
             title: book.title.to_lowercase(),
-            volume_number_bits: book.volume_number.clone().map(alphanum_to_bits),
-            fascicle_number_bits: book.fascicle_number.clone().map(alphanum_to_bits),
+            volume_number_bits: book.volume_number.as_deref().map(alphanum_to_bits),
+            fascicle_number_bits: book.fascicle_number.as_deref().map(alphanum_to_bits),
             subtitle: book.subtitle.clone(),
             volume_title: book.volume_title.clone(),
         }
@@ -231,7 +229,8 @@ enum NumberPart {
     Num(i32),
 }
 
-fn alphanum_to_bits(alphanum: String) -> Vec<NumberPart> {
+#[allow(clippy::cast_possible_wrap)]
+fn alphanum_to_bits(alphanum: &str) -> Vec<NumberPart> {
     let mut bits = Vec::new();
 
     let mut subint = -1;
@@ -456,7 +455,7 @@ mod tests {
         fn num_to_bits(s in "[0-9]{1,3}") {
             let as_num = s.parse().unwrap();
             assert_eq!(
-                alphanum_to_bits(s.clone()),
+                alphanum_to_bits(&s),
                 vec![NumberPart::Num(as_num)]
             );
         }
@@ -464,7 +463,7 @@ mod tests {
         #[test]
         fn alpha_to_bits(s in "[^0-9]+") {
             assert_eq!(
-                alphanum_to_bits(s.clone()),
+                alphanum_to_bits(&s),
                 vec![NumberPart::Str(s)]
             );
         }
@@ -491,7 +490,7 @@ mod tests {
             }
 
             assert_eq!(
-                alphanum_to_bits(s),
+                alphanum_to_bits(&s),
                 expected
             );
         }

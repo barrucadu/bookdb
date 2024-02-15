@@ -28,7 +28,7 @@ pub fn serialise(book: &Book) -> Value {
     json!({ "_id": book.code.to_string(), "_source": source })
 }
 
-pub fn try_deserialise(code: Code, source: &Value) -> Result<Book, Error> {
+pub fn try_deserialise(code: &Code, source: &Value) -> Result<Book, Error> {
     if source["_serialiser"].as_str() != Some(SERIALISER) {
         return Err(Error::IncorrectSerialiser);
     }
@@ -51,7 +51,7 @@ mod tests {
         #[test]
         fn roundtrip(book in arbitrary_book()) {
             let serialised = serialise(&book);
-            if let Ok(deserialised) = try_deserialise(book.code.clone(), &serialised["_source"]) {
+            if let Ok(deserialised) = try_deserialise(&book.code, &serialised["_source"]) {
                 assert_eq!(book, deserialised);
             } else {
                 panic!("could not deserialise");

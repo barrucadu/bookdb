@@ -28,7 +28,7 @@ impl Config {
     pub fn category_name_map(&self) -> HashMap<Slug, String> {
         let category_map = category_map_recursive(&self.categories);
         let mut out = HashMap::with_capacity(category_map.len());
-        for (slug, cats) in category_map.into_iter() {
+        for (slug, cats) in category_map {
             out.insert(slug, cats[0].name.clone());
         }
         out
@@ -37,7 +37,7 @@ impl Config {
     pub fn category_parents_map(&self) -> HashMap<Slug, Vec<Slug>> {
         let category_map = category_map_recursive(&self.categories);
         let mut out = HashMap::with_capacity(category_map.len());
-        for (slug, cats) in category_map.into_iter() {
+        for (slug, cats) in category_map {
             out.insert(slug, cats.into_iter().map(|c| c.slug).collect());
         }
         out
@@ -72,7 +72,7 @@ fn category_map_recursive(nested_categories: &[Category]) -> Vec<(Slug, Vec<Cate
     for ncat in nested_categories {
         out.push((ncat.slug.clone(), vec![ncat.clone()]));
         if let Some(children) = &ncat.children {
-            for (ck, mut cv) in category_map_recursive(children).into_iter() {
+            for (ck, mut cv) in category_map_recursive(children) {
                 cv.push(ncat.clone());
                 out.push((ck, cv));
             }
@@ -86,7 +86,7 @@ fn category_child_map_recursive(nested_categories: &[Category]) -> Vec<(Slug, Ve
     for ncat in nested_categories {
         let mut mine = if let Some(children) = &ncat.children {
             let mut mine = Vec::with_capacity(children.len());
-            for (ck, cv) in category_child_map_recursive(children).into_iter() {
+            for (ck, cv) in category_child_map_recursive(children) {
                 mine.push(ck.clone());
                 mine.append(&mut cv.clone());
                 out.push((ck, cv));

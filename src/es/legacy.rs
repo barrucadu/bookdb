@@ -1,5 +1,5 @@
 use serde_json::Value;
-use time::macros::*;
+use time::macros::format_description;
 use time::Date;
 
 use crate::book::{Book, Code, Holding};
@@ -22,10 +22,10 @@ pub fn try_deserialise(code: Code, source: &Value) -> Result<Book, Error> {
         volume_title: get_string(source, "volume_title"),
         volume_number: source["volume_number"]["raw"]
             .as_str()
-            .map(|s| s.to_string()),
+            .map(ToString::to_string),
         fascicle_number: source["fascicle_number"]["raw"]
             .as_str()
-            .map(|s| s.to_string()),
+            .map(ToString::to_string),
         authors: get_person_list(source, "authors").ok_or(Error::MissingAuthors)?,
         translators: get_person_list(source, "translators"),
         editors: get_person_list(source, "editors"),
@@ -80,7 +80,7 @@ fn get_holdings(source: &Value) -> Option<Vec<Holding>> {
 }
 
 fn get_string(source: &Value, key: &str) -> Option<String> {
-    source[key].as_str().map(|s| s.to_string())
+    source[key].as_str().map(ToString::to_string)
 }
 
 #[cfg(test)]

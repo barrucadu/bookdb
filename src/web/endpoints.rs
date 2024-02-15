@@ -78,12 +78,9 @@ pub async fn search(
     context.insert("books", &books);
     context.insert("num_authors", &result.aggs.author.len());
     context.insert("num_read", &result.aggs.read);
-    context.insert(
-        "percent_read",
-        &((result.aggs.read as f64 / result.count as f64 * 100.0) as u64),
-    );
+    context.insert("percent_read", &percent(result.aggs.read, result.count));
 
-    render_html("search.html", context)
+    render_html("search.html", &context)
 }
 
 #[get("/book/{code}/cover")]
@@ -94,10 +91,7 @@ pub async fn cover(
     let book = state.get(code.into_inner()).await?;
 
     if let Some(mime) = book.cover_image_mimetype {
-        serve_static_file(
-            state.cover_image_path(book.code.clone()),
-            mime.parse().unwrap(),
-        )
+        serve_static_file(state.cover_image_path(&book.code), mime.parse().unwrap())
     } else {
         Err(errors::book_does_not_have_cover_image(&book))
     }
@@ -111,8 +105,8 @@ pub async fn thumb(
     let book = state.get(code.into_inner()).await?;
 
     if let Some(mime) = book.cover_image_mimetype {
-        let thumb_path = state.cover_thumb_path(book.code.clone());
-        let cover_path = state.cover_image_path(book.code.clone());
+        let thumb_path = state.cover_thumb_path(&book.code);
+        let cover_path = state.cover_image_path(&book.code);
         serve_static_file(thumb_path, mime::IMAGE_JPEG)
             .or(serve_static_file(cover_path, mime.parse().unwrap()))
     } else {
@@ -147,7 +141,7 @@ pub async fn new_book(state: web::Data<AppState>) -> Result<HttpResponse, errors
         }),
     );
 
-    render_html("edit.html", context)
+    render_html("edit.html", &context)
 }
 
 #[post("/new")]
@@ -169,14 +163,14 @@ pub async fn new_book_commit(
 
             let mut context = tera::Context::new();
             context.insert("message", "The book has been created.");
-            render_html("notice.html", context)
+            render_html("notice.html", &context)
         }
         Err((partial_book, errors)) => {
             let mut context = state.context().await?;
             context.insert("action", "/new");
             context.insert("errors", &errors);
             context.insert("book", &partial_book);
-            render_html("edit.html", context)
+            render_html("edit.html", &context)
         }
     }
 }
@@ -194,7 +188,7 @@ pub async fn delete_book(
         &to_book_context(book, &state.category_fullname_map, &state.location_name_map),
     );
 
-    render_html("delete.html", context)
+    render_html("delete.html", &context)
 }
 
 #[post("/book/{code}/delete")]
@@ -208,7 +202,7 @@ pub async fn delete_book_commit(
     let mut context = tera::Context::new();
     context.insert("message", "The book has been deleted.");
 
-    render_html("notice.html", context)
+    render_html("notice.html", &context)
 }
 
 #[get("/book/{code}/edit")]
@@ -225,7 +219,7 @@ pub async fn edit_book(
         &to_book_context(book, &state.category_fullname_map, &state.location_name_map),
     );
 
-    render_html("edit.html", context)
+    render_html("edit.html", &context)
 }
 
 #[post("/book/{code}/edit")]
@@ -252,14 +246,14 @@ pub async fn edit_book_commit(
 
             let mut context = tera::Context::new();
             context.insert("message", "The book has been updated.");
-            render_html("notice.html", context)
+            render_html("notice.html", &context)
         }
         Err((partial_book, errors)) => {
             let mut context = state.context().await?;
             context.insert("action", &format!("/book/{code}/edit"));
             context.insert("errors", &errors);
             context.insert("book", &partial_book);
-            render_html("edit.html", context)
+            render_html("edit.html", &context)
         }
     }
 }
@@ -282,8 +276,8 @@ fn serve_static_file(path: PathBuf, mime: Mime) -> Result<NamedFile, errors::Err
         }))
 }
 
-fn render_html(template: &str, context: tera::Context) -> Result<HttpResponse, errors::Error> {
-    match TEMPLATES.render(template, &context) {
+fn render_html(template: &str, context: &tera::Context) -> Result<HttpResponse, errors::Error> {
+    match TEMPLATES.render(template, context) {
         Ok(rendered) => Ok(HttpResponse::Ok()
             .content_type(mime::TEXT_HTML_UTF_8)
             .body(rendered)),
@@ -429,10 +423,10 @@ impl AppState {
             .map_err(|_| errors::cannot_connect_to_search_server())?;
 
         if book.cover_image_mimetype.is_some() && delete_files {
-            fs::remove_file(self.cover_image_path(book.code.clone()))
+            fs::remove_file(self.cover_image_path(&book.code))
                 .await
                 .map_err(|_| errors::something_went_wrong())?;
-            fs::remove_file(self.cover_thumb_path(book.code.clone()))
+            fs::remove_file(self.cover_thumb_path(&book.code))
                 .await
                 .map_err(|_| errors::something_went_wrong())?;
         }
@@ -449,14 +443,14 @@ impl AppState {
 
         if from.code != to.code && old_images_exist && new_images_exist {
             fs::rename(
-                self.cover_image_path(from.code.clone()),
-                self.cover_image_path(to.code.clone()),
+                self.cover_image_path(&from.code),
+                self.cover_image_path(&to.code),
             )
             .await
             .map_err(|_| errors::something_went_wrong())?;
             fs::rename(
-                self.cover_thumb_path(from.code.clone()),
-                self.cover_thumb_path(to.code.clone()),
+                self.cover_thumb_path(&from.code),
+                self.cover_thumb_path(&to.code),
             )
             .await
             .map_err(|_| errors::something_went_wrong())?;
@@ -467,8 +461,8 @@ impl AppState {
 
     async fn save_cover_image(&self, code: Code, file: TempFile) -> Result<(), errors::Error> {
         let tmp_path = file.file.path();
-        let cover_path = self.cover_image_path(code.clone());
-        let thumb_path = self.cover_thumb_path(code.clone());
+        let cover_path = self.cover_image_path(&code);
+        let thumb_path = self.cover_thumb_path(&code);
 
         // copy / remove to handle the case where the temporary directory is on
         // a different mountpoint (e.g. a tmpfs)
@@ -520,4 +514,11 @@ async fn generate_thumbnail_task(cover_path: String, thumb_path: String) {
             "could not spawn imagemagick process"
         ),
     }
+}
+
+#[allow(clippy::cast_possible_truncation)]
+#[allow(clippy::cast_precision_loss)]
+#[allow(clippy::cast_sign_loss)]
+fn percent(nom: u64, denom: usize) -> u64 {
+    (nom as f64 / denom as f64 * 100.0) as u64
 }

@@ -21,7 +21,7 @@ pub async fn serve(
         es_host,
         allow_writes,
         upload_dir,
-        config,
+        &config,
     ));
 
     HttpServer::new(move || {

@@ -242,7 +242,7 @@ pub fn serialise(book: &Book) -> Value {
 }
 
 pub fn try_deserialise(hit: &Value) -> Result<Book, DeserialiseBookError> {
-    let code = hit["_id"]
+    let code: Code = hit["_id"]
         .as_str()
         .unwrap()
         .parse()
@@ -250,7 +250,7 @@ pub fn try_deserialise(hit: &Value) -> Result<Book, DeserialiseBookError> {
     let source = &hit["_source"];
     match hit["_source"]["_serialiser"].as_str() {
         Some(s) if s == es_serde_1::SERIALISER => {
-            es_serde_1::try_deserialise(code, source).map_err(DeserialiseBookError::EsSerde1)
+            es_serde_1::try_deserialise(&code, source).map_err(DeserialiseBookError::EsSerde1)
         }
         Some(_) => Err(DeserialiseBookError::UnknownSerialiserVersion),
         None => legacy::try_deserialise(code, source).map_err(DeserialiseBookError::Legacy),

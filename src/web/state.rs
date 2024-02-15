@@ -18,7 +18,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(es_host: String, allow_writes: bool, upload_dir: PathBuf, config: Config) -> Self {
+    pub fn new(es_host: String, allow_writes: bool, upload_dir: PathBuf, config: &Config) -> Self {
         let category_fullname_map = category_fullname_map(
             &config.category_slugs(),
             &config.category_name_map(),
@@ -48,13 +48,13 @@ impl AppState {
         Transport::single_node(&self.es_host).map(Elasticsearch::new)
     }
 
-    pub fn cover_image_path(&self, code: Code) -> PathBuf {
+    pub fn cover_image_path(&self, code: &Code) -> PathBuf {
         let mut path = self.upload_dir.clone();
         path.push(code.to_string());
         path
     }
 
-    pub fn cover_thumb_path(&self, code: Code) -> PathBuf {
+    pub fn cover_thumb_path(&self, code: &Code) -> PathBuf {
         let mut path = self.upload_dir.clone();
         path.push("thumbs");
         path.push(format!("{code}.jpg"));
