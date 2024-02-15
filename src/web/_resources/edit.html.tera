@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>BookDB</title>
+
+    <link rel="stylesheet" href="/style.css" type="text/css">
+  </head>
+
+  <body>
+    <div id="wrapper">
+      {% if errors %}
+      <header class="error">
+        {% for error in errors %}
+        <p>{{ error }}</p>
+        {% endfor %}
+      </header>
+      {% endif %}
+
+      <main>
+        <form action="{{ action }}" method="post" enctype="multipart/form-data" autocomplete="off">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label form-label--required" for="code">Code</label>
+              <input class="form-input" type="text" id="code" name="code" value="{{ book.code }}" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cover">Image</label>
+              <input class="form-input" type="file" id="cover" name="cover">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="category">Category</label>
+              <select class="form-input" id="category" name="category">
+                {% for category in categories %}
+                <option value="{{ category.slug }}"{% if book.category_slug == category.slug %} selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label form-label--required" for="title">Title</label>
+              <input class="form-input" type="text" id="title" name="title" value="{{ book.title }}" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="subtitle">Subtitle</label>
+              <input class="form-input" type="text" id="subtitle" name="subtitle" value="{{ book.subtitle }}">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="volume_title">Volume Title</label>
+              <input class="form-input" type="text" id="volume_title" name="volume_title" value="{{ book.volume_title }}">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="volume_number">Volume Number</label>
+              <input class="form-input" type="text" id="volume_number" name="volume_number" value="{{ book.volume_number }}">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="fascicle_number">Fascicle Number</label>
+              <input class="form-input" type="text" id="fascicle_number" name="fascicle_number" value="{{ book.fascicle_number }}">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="has_been_read">Has Been Read</label>
+              <input class="form-input form-input--zerowidth" type="checkbox" id="has_been_read" name="has_been_read"{% if book.has_been_read %} checked{% endif %}>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="last_read_date">Last Read Date</label>
+              <input class="form-input form-input--narrow" type="date" id="last_read_date" name="last_read_date" value="{{ book.last_read_date }}">
+            </div>
+          </div>
+
+          {% macro render_people(label, field, list, at_least_one=false) %}
+          <div class="form-row">
+            <div class="form-group js-{{ field }}">
+              <label class="form-label{% if at_least_one %} form-label--required{% endif %}" for="{{ field }}_0">{{ label }}</label>
+              {% for name in list %}
+              <input class="form-input form-input--inline" type="text" id="{{ field }}_{{ 1 + loop.index }}" name="{{ field }}[]" value="{{ name }}" list="list-{{ field }}">
+              {% endfor %}
+              <input class="form-input form-input--inline" type="text" id="{{ field }}_0" name="{{ field }}[]" list="list-{{ field }}">
+              <input class="form-button js-insert-before" type="button" onclick="add_person_entry('{{ field }}')" value="+">
+            </div>
+          </div>
+          {% endmacro render_people %}
+
+          {{ self::render_people(label="Authors", field="authors", list=book.authors, at_least_one=true) }}
+          {{ self::render_people(label="Translators", field="translators", list=book.translators) }}
+          {{ self::render_people(label="Editors", field="editors", list=book.editors) }}
+
+          {% macro render_holding(index, slug="", note="") %}
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label{% if index == 1 %} form-label--required{% endif %}" for="locations_{{ index }}">Location #{{ index }}</label>
+              <select class="form-input form-input--narrow" id="locations_{{ index }}" name="locations[]">
+                {% if index > 1 %}<option value=""{% if slug == "" %} selected{% endif %}></option>{% endif %}
+                {% for location in locations %}
+                <option value="{{ location.slug }}"{% if slug == location.slug %} selected{% endif %}>{{ location.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="notes_{{ index }}">Notes</label>
+              <input class="form-input" type="text" id="notes_{{ index }}" name="notes[]" value="{{ note }}">
+            </div>
+          </div>
+          {% endmacro render_holding %}
+
+          <div class="js-holdings">
+            {% for holding in book.holdings %}
+            {{ self::render_holding(index=loop.index, slug=holding.location_slug, note=holding.note) }}
+            {% endfor %}
+            {{ self::render_holding(index=book.holdings|length+1) }}
+            <div class="form-row js-insert-before">
+              <div class="form-group">
+                <input class="form-button" type="button" onclick="add_holding_entry({{ book.holdings|length+1 }}, {{ locations|json_encode }})" value="+">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="bucket">Bucket</label>
+              <input class="form-input" type="text" id="bucket" name="bucket" placeholder="(automatic)" value="{{ book.bucket }}">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <input class="form-button form-button--submit" type="submit" value="Save">
+            </div>
+          </div>
+        </form>
+      </main>
+
+      <footer>
+        <nav>
+          <ul>
+            <li><a href="/new">Add new book</a></li>
+            <li><a href="https://github.com/barrucadu/bookdb">Github</a></li>
+          </ul>
+        </nav>
+      </footer>
+    </div>
+
+    <datalist id="list-authors">
+      {% for name in authors %}
+      <option value="{{ name }}">
+      {% endfor %}
+    </datalist>
+
+    <datalist id="list-editors">
+      {% for name in editors %}
+      <option value="{{ name }}">
+      {% endfor %}
+    </datalist>
+
+    <datalist id="list-translators">
+      {% for name in translators %}
+      <option value="{{ name }}">
+      {% endfor %}
+    </datalist>
+
+    <script type="text/javascript">
+      function add_person_entry(field) {
+          let container = document.getElementsByClassName(`js-${field}`)[0];
+          let position = container.getElementsByClassName("js-insert-before")[0];
+          let input = document.createElement("input");
+          input.setAttribute("class", "form-input form-input--inline");
+          input.setAttribute("type", "text");
+          input.setAttribute("name", `${field}[]`);
+          input.setAttribute("list", `list-${field}`);
+          container.insertBefore(input, position);
+          container.insertBefore(document.createTextNode(" "), position);
+      }
+
+      var location_count = 0;
+
+      function add_holding_entry(n, locations) {
+          location_count += 1;
+          let nth = n+location_count;
+
+          let container = document.getElementsByClassName("js-holdings")[0];
+          let position = container.getElementsByClassName("js-insert-before")[0];
+          let row = document.createElement("div");
+          row.setAttribute("class", "form-row");
+          let group_location = document.createElement("div");
+          group_location.setAttribute("class", "form-group");
+          let group_notes = document.createElement("div");
+          group_notes.setAttribute("class", "form-group");
+          row.appendChild(group_location);
+          row.appendChild(group_notes);
+          let label_location = document.createElement("location");
+          label_location.setAttribute("class", "form-label");
+          label_location.setAttribute("for", `location_${nth}`);
+          label_location.innerText = `Location ${nth}`;
+          group_location.appendChild(label_location);
+          let label_notes = document.createElement("location");
+          label_notes.setAttribute("class", "form-label");
+          label_notes.setAttribute("for", `notes_${nth}`);
+          label_notes.innerText = "Notes";
+          group_notes.appendChild(label_notes);
+          let input_location = document.createElement("select");
+          input_location.setAttribute("class", "form-input form-input--narrow");
+          input_location.setAttribute("id", `location_${nth}`);
+          input_location.setAttribute("name", "locations[]");
+          let option = document.createElement("option");
+          option.value = "";
+          option.selected = "";
+          input_location.add(option);
+          locations.forEach(function(loc) {
+              let option = document.createElement("option");
+              option.value = loc.slug;
+              option.text = loc.name;
+              input_location.add(option);
+          });
+          group_location.appendChild(input_location);
+          let input_notes = document.createElement("input");
+          input_notes.setAttribute("class", "form-input");
+          input_notes.setAttribute("id", `notes_${nth}`);
+          input_notes.setAttribute("name", "notes[]");
+          input_notes.setAttribute("type", "text");
+          group_notes.appendChild(input_notes);
+          container.insertBefore(row, position);
+      }
+    </script>
+  </body>
+</html>
