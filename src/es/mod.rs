@@ -1,5 +1,4 @@
 pub mod es_serde_1;
-pub mod legacy;
 
 use elasticsearch::http::request::JsonBody;
 use elasticsearch::indices::{IndicesCreateParts, IndicesDeleteParts};
@@ -234,7 +233,6 @@ pub enum DeserialiseBookError {
     InvalidCode(ParseCodeError),
     UnknownSerialiserVersion,
     EsSerde1(es_serde_1::Error),
-    Legacy(legacy::Error),
 }
 
 pub fn serialise(book: &Book) -> Value {
@@ -252,8 +250,7 @@ pub fn try_deserialise(hit: &Value) -> Result<Book, DeserialiseBookError> {
         Some(s) if s == es_serde_1::SERIALISER => {
             es_serde_1::try_deserialise(&code, source).map_err(DeserialiseBookError::EsSerde1)
         }
-        Some(_) => Err(DeserialiseBookError::UnknownSerialiserVersion),
-        None => legacy::try_deserialise(code, source).map_err(DeserialiseBookError::Legacy),
+        _ => Err(DeserialiseBookError::UnknownSerialiserVersion),
     }
 }
 
