@@ -201,7 +201,7 @@ pub struct Holding {
 /// Make this work by splitting up volume and fascicle numbers into subsequences
 /// of just letters and just numbers, and compare them that way.
 #[derive(PartialEq, PartialOrd, Eq, Ord, Clone, Debug)]
-pub struct BookSortKey {
+struct BookSortKey {
     bucket: String,
     title: String,
     volume_number_bits: Option<Vec<NumberPart>>,
@@ -674,26 +674,6 @@ pub mod test_helpers {
             note in proptest::option::of("[\\d\\s\\w]+")
         ) -> Holding {
             Holding { location, note }
-        }
-    }
-
-    pub fn number_bits_vec(bsk: &BookSortKey, volume: bool) -> Vec<String> {
-        let sbits = if volume {
-            &bsk.volume_number_bits
-        } else {
-            &bsk.fascicle_number_bits
-        };
-        if let Some(bits) = sbits {
-            let mut out = Vec::with_capacity(bits.len());
-            for bit in bits {
-                match bit {
-                    NumberPart::Str(s) => out.push(s.clone()),
-                    NumberPart::Num(n) => out.push(n.to_string()),
-                }
-            }
-            out
-        } else {
-            Vec::new()
         }
     }
 
