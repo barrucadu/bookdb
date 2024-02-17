@@ -1,5 +1,3 @@
-pub mod es_serde_1;
-
 use elasticsearch::http::request::JsonBody;
 use elasticsearch::indices::{IndicesCreateParts, IndicesDeleteParts};
 use elasticsearch::params::OpType;
@@ -7,6 +5,7 @@ use elasticsearch::{
     BulkParts, ClearScrollParts, DeleteParts, Elasticsearch, Error, GetParts, IndexParts,
     ScrollParts, SearchParts,
 };
+use serde::Deserialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::default::Default;
@@ -23,7 +22,6 @@ pub async fn create(client: &Elasticsearch) -> Result<(), Error> {
         .body(json!({
             "mappings": {
                 "properties": {
-                    "_serialiser": { "type": "keyword" },
                     "_display_title": { "type": "text", "analyzer": "english" },
                     "title": { "type": "text", "analyzer": "english" },
                     "subtitle": { "type": "text", "analyzer": "english" },
@@ -231,12 +229,18 @@ pub async fn import(client: &Elasticsearch, books: Vec<Book>) -> Result<Option<u
 #[derive(Debug)]
 pub enum DeserialiseBookError {
     InvalidCode(ParseCodeError),
-    UnknownSerialiserVersion,
-    EsSerde1(es_serde_1::Error),
+    Serde(serde_json::Error),
 }
 
 pub fn serialise(book: &Book) -> Value {
-    es_serde_1::serialise(book)
+    let mut source = serde_json::to_value(book).unwrap();
+    let map = source.as_object_mut().unwrap();
+    map.insert(
+        "_display_title".to_string(),
+        Value::String(book.display_title()),
+    );
+    map.remove("code");
+    json!({ "_id": book.code.to_string(), "_source": source })
 }
 
 pub fn try_deserialise(hit: &Value) -> Result<Book, DeserialiseBookError> {
@@ -245,13 +249,12 @@ pub fn try_deserialise(hit: &Value) -> Result<Book, DeserialiseBookError> {
         .unwrap()
         .parse()
         .map_err(DeserialiseBookError::InvalidCode)?;
-    let source = &hit["_source"];
-    match hit["_source"]["_serialiser"].as_str() {
-        Some(s) if s == es_serde_1::SERIALISER => {
-            es_serde_1::try_deserialise(&code, source).map_err(DeserialiseBookError::EsSerde1)
-        }
-        _ => Err(DeserialiseBookError::UnknownSerialiserVersion),
-    }
+
+    let mut source: Value = hit["_source"].clone();
+    let map = source.as_object_mut().unwrap();
+    map.insert("code".to_string(), json!(code));
+
+    Book::deserialize(&source).map_err(DeserialiseBookError::Serde)
 }
 
 struct ScrollResult {
