@@ -5,7 +5,6 @@ use actix_multipart::form::MultipartForm;
 use mime::Mime;
 use serde_json::{json, Value};
 use std::collections::HashMap;
-use std::string::ToString;
 use time::macros::format_description;
 use time::Date;
 

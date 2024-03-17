@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
-use std::convert::From;
 use std::fmt;
 use std::str;
 use time::Date;
