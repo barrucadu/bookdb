@@ -37,5 +37,13 @@ jobs:
       - name: Install rust
         run: rustup show
 
+      - name: Install nix
+        uses: cachix/install-nix-action@v26
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Check nix package builds
+        run: nix build
+
       - name: Run tests
         run: cargo test
