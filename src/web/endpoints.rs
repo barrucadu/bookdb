@@ -469,6 +469,13 @@ impl AppState {
             .await
             .map_err(|_| errors::something_went_wrong())?;
 
+        fs::set_permissions(
+            cover_path.clone(),
+            std::os::unix::fs::PermissionsExt::from_mode(0o644),
+        )
+        .await
+        .map_err(|_| errors::something_went_wrong())?;
+
         fs::remove_file(tmp_path)
             .await
             .map_err(|_| errors::something_went_wrong())?;
