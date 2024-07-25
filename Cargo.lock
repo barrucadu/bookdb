@@ -97,7 +97,7 @@ version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5118a26dee7e34e894f7e85aa0ee5080ae4c18bf03c0e30d49a80e418f00a53"
 dependencies = [
- "actix-multipart-derive 0.7.0",
+ "actix-multipart-derive",
  "actix-utils",
  "actix-web",
  "derive_more",
@@ -114,19 +114,6 @@ dependencies = [
  "serde_plain",
  "tempfile",
  "tokio",
-]
-
-[[package]]
-name = "actix-multipart-derive"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a0a77f836d869f700e5b47ac7c3c8b9c8bc82e4aec861954c6198abee3ebd4d"
-dependencies = [
- "darling 0.20.5",
- "parse-size",
- "proc-macro2",
- "quote",
- "syn 2.0.48",
 ]
 
 [[package]]
@@ -467,7 +454,7 @@ version = "0.1.0"
 dependencies = [
  "actix-files",
  "actix-multipart",
- "actix-multipart-derive 0.6.1",
+ "actix-multipart-derive",
  "actix-web",
  "clap",
  "elasticsearch",
