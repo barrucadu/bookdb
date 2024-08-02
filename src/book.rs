@@ -32,29 +32,7 @@ pub struct Book {
 
 impl Book {
     pub fn display_title(&self) -> String {
-        let mut display_title = self.title.clone();
-
-        if let Some(subtitle) = &self.subtitle {
-            display_title = format!("{display_title}: {subtitle}");
-        }
-        match (&self.volume_number, &self.fascicle_number) {
-            (Some(volume_number), Some(fascicle_number)) => {
-                display_title =
-                    format!("{display_title} (vol. {volume_number}; fas. {fascicle_number})");
-            }
-            (Some(volume_number), None) => {
-                display_title = format!("{display_title} (vol. {volume_number})");
-            }
-            (None, Some(fascicle_number)) => {
-                display_title = format!("{display_title} (fas. {fascicle_number})");
-            }
-            (None, None) => {}
-        }
-        if let Some(volume_title) = &self.volume_title {
-            display_title = format!("{display_title} / {volume_title}");
-        }
-
-        display_title
+        BookDisplayTitle::from(self).to_string()
     }
 }
 
@@ -187,6 +165,54 @@ fn validate_weight_sum(code: &str, weights: &[u32], x_is_ten: bool, modulus: u32
 pub struct Holding {
     pub location: Slug,
     pub note: Option<String>,
+}
+
+pub struct BookDisplayTitle {
+    pub title: String,
+    pub subtitle: Option<String>,
+    pub volume_title: Option<String>,
+    pub volume_number: Option<String>,
+    pub fascicle_number: Option<String>,
+}
+
+impl From<&Book> for BookDisplayTitle {
+    fn from(book: &Book) -> Self {
+        Self {
+            title: book.title.clone(),
+            subtitle: book.subtitle.clone(),
+            volume_title: book.volume_title.clone(),
+            volume_number: book.volume_number.clone(),
+            fascicle_number: book.fascicle_number.clone(),
+        }
+    }
+}
+
+impl std::fmt::Display for BookDisplayTitle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut display_title = self.title.clone();
+
+        if let Some(subtitle) = &self.subtitle {
+            display_title = format!("{display_title}: {subtitle}");
+        }
+        match (&self.volume_number, &self.fascicle_number) {
+            (Some(volume_number), Some(fascicle_number)) => {
+                display_title =
+                    format!("{display_title} (vol. {volume_number}; fas. {fascicle_number})");
+            }
+            (Some(volume_number), None) => {
+                display_title = format!("{display_title} (vol. {volume_number})");
+            }
+            (None, Some(fascicle_number)) => {
+                display_title = format!("{display_title} (fas. {fascicle_number})");
+            }
+            (None, None) => {}
+        }
+        if let Some(volume_title) = &self.volume_title {
+            display_title = format!("{display_title} / {volume_title}");
+        }
+
+        write!(f, "{display_title}")
+    }
 }
 
 /// Sorting books is a complex affair, especially when volume and fascicle

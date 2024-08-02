@@ -1,21 +1,22 @@
-use actix_files::NamedFile;
-use actix_web::http::header::{ContentDisposition, DispositionType};
-use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
+use axum::body::Body;
+use axum::extract::{Multipart, Path, RawQuery, State};
+use axum::http::header;
+use axum::response::{Html, IntoResponse, Redirect, Response};
 use lazy_static::lazy_static;
-use mime::Mime;
+use mime;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-use std::collections::HashMap;
+use serde_json::Value;
 use std::default::Default;
 use std::path::PathBuf;
+use tempfile::NamedTempFile;
 use tera::Tera;
-use tokio::{fs, process};
+use tokio_util::io::ReaderStream;
 
 use crate::book::{Book, Code};
 use crate::config::Slug;
 use crate::es;
 use crate::web::errors;
-use crate::web::multipart::{putbook_to_book, PutBookForm, TempFile};
+use crate::web::model::BookForm;
 use crate::web::state::AppState;
 
 lazy_static! {
@@ -34,9 +35,8 @@ lazy_static! {
     };
 }
 
-#[get("/")]
-pub async fn index() -> impl Responder {
-    web::Redirect::to("/search").permanent()
+pub async fn index() -> Redirect {
+    Redirect::permanent("/search")
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -56,13 +56,13 @@ enum Match {
     OnlyUnread,
 }
 
-#[get("/search")]
 pub async fn search(
-    request: HttpRequest,
-    state: web::Data<AppState>,
-) -> Result<HttpResponse, errors::Error> {
-    let query =
-        serde_html_form::from_str(request.query_string()).unwrap_or(FormSearchQuery::default());
+    RawQuery(query_string): RawQuery,
+    State(state): State<AppState>,
+) -> Result<Html<String>, errors::Error> {
+    let query = query_string
+        .and_then(|s| serde_html_form::from_str(&s).ok())
+        .unwrap_or(FormSearchQuery::default());
 
     let mut context = state.context().await?;
     context.insert("query", &query);
@@ -71,7 +71,7 @@ pub async fn search(
     let books: Vec<Value> = result
         .hits
         .into_iter()
-        .map(|b| to_book_context(b, &state.category_fullname_map, &state.location_name_map))
+        .map(|b| state.book_to_context(b))
         .collect();
     context.insert("num_books", &result.count);
     context.insert("books", &books);
@@ -82,120 +82,81 @@ pub async fn search(
     render_html("search.html", &context)
 }
 
-#[get("/book/{code}/cover")]
-pub async fn cover(
-    state: web::Data<AppState>,
-    code: web::Path<String>,
-) -> Result<NamedFile, errors::Error> {
-    let book = state.get(code.into_inner()).await?;
-
+pub async fn cover(Path(code): Path<String>, State(state): State<AppState>) -> impl IntoResponse {
+    let book = state.get(code).await?;
     if let Some(mime) = book.cover_image_mimetype {
-        serve_static_file(state.cover_image_path(&book.code), mime.parse().unwrap())
+        serve_static_file(state.cover_image_path(&book.code), mime.parse().unwrap()).await
     } else {
         Err(errors::book_does_not_have_cover_image(&book))
     }
 }
 
-#[get("/book/{code}/thumb")]
-pub async fn thumb(
-    state: web::Data<AppState>,
-    code: web::Path<String>,
-) -> Result<NamedFile, errors::Error> {
-    let book = state.get(code.into_inner()).await?;
+pub async fn thumb(Path(code): Path<String>, State(state): State<AppState>) -> impl IntoResponse {
+    let book = state.get(code).await?;
 
     if let Some(mime) = book.cover_image_mimetype {
-        let thumb_path = state.cover_thumb_path(&book.code);
-        let cover_path = state.cover_image_path(&book.code);
-        serve_static_file(thumb_path, mime::IMAGE_JPEG)
-            .or(serve_static_file(cover_path, mime.parse().unwrap()))
+        serve_static_file(state.cover_thumb_path(&book.code), mime::IMAGE_JPEG)
+            .await
+            .or(serve_static_file(state.cover_image_path(&book.code), mime.parse().unwrap()).await)
     } else {
         Err(errors::book_does_not_have_cover_image(&book))
     }
 }
 
-#[get("/new")]
-pub async fn new_book(state: web::Data<AppState>) -> Result<HttpResponse, errors::Error> {
-    let mut context = state.context().await?;
-    context.insert("action", "/new");
-    context.insert(
-        "book",
-        &json!({
-            "has_cover_image": false,
-            "code": "",
-            "display_title": "",
-            "title": "",
-            "subtitle": "",
-            "volume_title": "",
-            "volume_number": "",
-            "fascicle_number": "",
-            "authors": Vec::<String>::new(),
-            "translators": Vec::<String>::new(),
-            "editors": Vec::<String>::new(),
-            "has_been_read": false,
-            "last_read_date": "",
-            "category": "",
-            "category_slug": "",
-            "holdings": Vec::<Value>::new(),
-            "bucket": "",
-        }),
-    );
-
-    render_html("edit.html", &context)
+pub async fn new_book(State(state): State<AppState>) -> Result<Html<String>, errors::Error> {
+    render_book_form(
+        &state,
+        "/new",
+        &state.bookform_to_context(BookForm::default()),
+        &[],
+    )
+    .await
 }
 
-#[post("/new")]
 pub async fn new_book_commit(
-    state: web::Data<AppState>,
-    form: PutBookForm,
-) -> Result<HttpResponse, errors::Error> {
-    match putbook_to_book(
-        form.into_inner(),
-        &state.category_fullname_map,
-        &state.location_name_map,
-    ) {
-        Ok((book, tempfile)) => {
-            let code = book.code.clone();
-            state.put(book).await?;
-            if let Some(tempfile) = tempfile {
-                state.save_cover_image(code, tempfile).await?;
-            }
+    State(state): State<AppState>,
+    form: Multipart,
+) -> Result<Html<String>, errors::Error> {
+    match BookForm::from_multipart(form).await {
+        Some((bookform, tempfile)) => {
+            match bookform.to_book(&state.category_fullname_map, &state.location_name_map) {
+                Ok(book) => {
+                    let code = book.code.clone();
+                    state.put(book).await?;
+                    if let Some(tempfile) = tempfile {
+                        state.save_cover_image(code, tempfile).await?;
+                    }
 
-            let mut context = tera::Context::new();
-            context.insert("message", "The book has been created.");
-            render_html("notice.html", &context)
+                    let mut context = tera::Context::new();
+                    context.insert("message", "The book has been created.");
+                    render_html("notice.html", &context)
+                }
+                Err((book_context, errors)) => {
+                    render_book_form(&state, "/new", &book_context, &errors).await
+                }
+            }
         }
-        Err((partial_book, errors)) => {
-            let mut context = state.context().await?;
-            context.insert("action", "/new");
-            context.insert("errors", &errors);
-            context.insert("book", &partial_book);
-            render_html("edit.html", &context)
-        }
+        None => Err(errors::bad_request()),
     }
 }
 
-#[get("/book/{code}/delete")]
 pub async fn delete_book(
-    state: web::Data<AppState>,
-    code: web::Path<String>,
-) -> Result<HttpResponse, errors::Error> {
-    let book = state.get(code.into_inner()).await?;
+    Path(code): Path<String>,
+    State(state): State<AppState>,
+) -> Result<Html<String>, errors::Error> {
+    let book = state.get(code).await?;
 
     let mut context = tera::Context::new();
-    context.insert(
-        "book",
-        &to_book_context(book, &state.category_fullname_map, &state.location_name_map),
-    );
+    context.insert("book", &state.book_to_context(book));
 
     render_html("delete.html", &context)
 }
 
-#[post("/book/{code}/delete")]
 pub async fn delete_book_commit(
-    state: web::Data<AppState>,
-    code: web::Path<String>,
-) -> Result<HttpResponse, errors::Error> {
-    let book = state.get(code.into_inner()).await?;
+    Path(code): Path<String>,
+    State(state): State<AppState>,
+) -> Result<Html<String>, errors::Error> {
+    let book = state.get(code).await?;
     state.delete(book, true).await?;
 
     let mut context = tera::Context::new();
@@ -204,120 +165,94 @@ pub async fn delete_book_commit(
     render_html("notice.html", &context)
 }
 
-#[get("/book/{code}/edit")]
 pub async fn edit_book(
-    state: web::Data<AppState>,
-    code: web::Path<String>,
-) -> Result<HttpResponse, errors::Error> {
+    Path(code): Path<String>,
+    State(state): State<AppState>,
+) -> Result<Html<String>, errors::Error> {
+    let book = state.get(code.clone()).await?;
+    render_book_form(
+        &state,
+        &format!("/book/{code}/edit"),
+        &state.book_to_context(book),
+        &[],
+    )
+    .await
+}
+
+pub async fn edit_book_commit(
+    Path(code): Path<String>,
+    State(state): State<AppState>,
+    form: Multipart,
+) -> Result<Html<String>, errors::Error> {
+    let original = state.get(code.clone()).await?;
+
+    match BookForm::from_multipart(form).await {
+        Some((bookform, tempfile)) => {
+            match bookform.to_book(&state.category_fullname_map, &state.location_name_map) {
+                Ok(mut book) => {
+                    book.cover_image_mimetype = book
+                        .cover_image_mimetype
+                        .or(original.cover_image_mimetype.clone());
+                    state.replace(original.clone(), book.clone()).await?;
+                    if let Some(tempfile) = tempfile {
+                        state.save_cover_image(book.code.clone(), tempfile).await?;
+                    }
+
+                    let mut context = tera::Context::new();
+                    context.insert("message", "The book has been updated.");
+                    render_html("notice.html", &context)
+                }
+                Err((book_context, errors)) => {
+                    render_book_form(
+                        &state,
+                        &format!("/book/{code}/edit"),
+                        &book_context,
+                        &errors,
+                    )
+                    .await
+                }
+            }
+        }
+        None => Err(errors::bad_request()),
+    }
+}
+
+pub async fn stylesheet() -> impl IntoResponse {
+    (
+        [(header::CONTENT_TYPE, mime::TEXT_CSS_UTF_8.essence_str())],
+        include_str!("_resources/style.css"),
+    )
+}
+
+async fn serve_static_file(
+    path: PathBuf,
+    mime: mime::Mime,
+) -> Result<Response<Body>, errors::Error> {
+    let file = tokio::fs::File::open(path)
+        .await
+        .map_err(|_| errors::file_not_found())?;
+    let body = Body::from_stream(ReaderStream::new(file));
+    Ok(([(header::CONTENT_TYPE, mime.essence_str())], body).into_response())
+}
+
+async fn render_book_form(
+    state: &AppState,
+    action: &str,
+    book_context: &Value,
+    errors: &[String],
+) -> Result<Html<String>, errors::Error> {
     let mut context = state.context().await?;
-    context.insert("action", &format!("/book/{code}/edit"));
-
-    let book = state.get(code.into_inner()).await?;
-    context.insert(
-        "book",
-        &to_book_context(book, &state.category_fullname_map, &state.location_name_map),
-    );
-
+    context.insert("action", action);
+    context.insert("errors", errors);
+    context.insert("book", book_context);
     render_html("edit.html", &context)
 }
 
-#[post("/book/{code}/edit")]
-pub async fn edit_book_commit(
-    state: web::Data<AppState>,
-    code: web::Path<String>,
-    form: PutBookForm,
-) -> Result<HttpResponse, errors::Error> {
-    let original = state.get(code.clone()).await?;
-
-    match putbook_to_book(
-        form.into_inner(),
-        &state.category_fullname_map,
-        &state.location_name_map,
-    ) {
-        Ok((mut book, tempfile)) => {
-            book.cover_image_mimetype = book
-                .cover_image_mimetype
-                .or(original.cover_image_mimetype.clone());
-            state.replace(original.clone(), book.clone()).await?;
-            if let Some(tempfile) = tempfile {
-                state.save_cover_image(book.code.clone(), tempfile).await?;
-            }
-
-            let mut context = tera::Context::new();
-            context.insert("message", "The book has been updated.");
-            render_html("notice.html", &context)
-        }
-        Err((partial_book, errors)) => {
-            let mut context = state.context().await?;
-            context.insert("action", &format!("/book/{code}/edit"));
-            context.insert("errors", &errors);
-            context.insert("book", &partial_book);
-            render_html("edit.html", &context)
-        }
-    }
-}
-
-#[get("/style.css")]
-pub async fn stylesheet() -> HttpResponse {
-    HttpResponse::Ok()
-        .content_type(mime::TEXT_CSS_UTF_8)
-        .body(include_str!("_resources/style.css"))
-}
-
-fn serve_static_file(path: PathBuf, mime: Mime) -> Result<NamedFile, errors::Error> {
-    let file = NamedFile::open(path).map_err(|_| errors::file_not_found())?;
-
-    Ok(file
-        .set_content_type(mime)
-        .set_content_disposition(ContentDisposition {
-            disposition: DispositionType::Inline,
-            parameters: vec![],
-        }))
-}
-
-fn render_html(template: &str, context: &tera::Context) -> Result<HttpResponse, errors::Error> {
+fn render_html(template: &str, context: &tera::Context) -> Result<Html<String>, errors::Error> {
     match TEMPLATES.render(template, context) {
-        Ok(rendered) => Ok(HttpResponse::Ok()
-            .content_type(mime::TEXT_HTML_UTF_8)
-            .body(rendered)),
+        Ok(rendered) => Ok(Html(rendered)),
         Err(_) => Err(errors::something_went_wrong()),
     }
-}
-
-fn to_book_context(
-    book: Book,
-    category_fullname_map: &HashMap<Slug, Vec<String>>,
-    location_name_map: &HashMap<Slug, String>,
-) -> Value {
-    let mut holdings = Vec::with_capacity(book.holdings.len());
-    for holding in &book.holdings {
-        let location_name = location_name_map.get(&holding.location).unwrap();
-        holdings.push(json!({
-            "location": location_name,
-            "location_slug": holding.location,
-            "note": holding.note.clone(),
-        }));
-    }
-
-    json!({
-        "has_cover_image": book.cover_image_mimetype.is_some(),
-        "code": book.code,
-        "display_title": book.display_title(),
-        "title": book.title,
-        "subtitle": book.subtitle.unwrap_or_default(),
-        "volume_title": book.volume_title.unwrap_or_default(),
-        "volume_number": book.volume_number.unwrap_or_default(),
-        "fascicle_number": book.fascicle_number.unwrap_or_default(),
-        "authors": book.authors,
-        "translators": book.translators.unwrap_or_default(),
-        "editors": book.editors.unwrap_or_default(),
-        "has_been_read": book.has_been_read,
-        "last_read_date": book.last_read_date,
-        "category": category_fullname_map.get(&book.category).unwrap(),
-        "category_slug": book.category,
-        "holdings": holdings,
-        "bucket": book.bucket,
-    })
 }
 
 impl AppState {
@@ -353,6 +288,14 @@ impl AppState {
         Ok(context)
     }
 
+    fn book_to_context(&self, b: Book) -> Value {
+        self.bookform_to_context(BookForm::from(b))
+    }
+
+    fn bookform_to_context(&self, bf: BookForm) -> Value {
+        bf.to_context(&self.category_fullname_map, &self.location_name_map)
+    }
+
     async fn search(&self, query: FormSearchQuery) -> Result<es::SearchResult, errors::Error> {
         let categories = if let Some(cat) = query.category {
             let mut out = vec![cat.clone()];
@@ -376,20 +319,15 @@ impl AppState {
             people: query.person.into_iter().collect(),
         };
 
-        let client = self
-            .elasticsearch()
-            .map_err(|_| errors::cannot_connect_to_search_server())?;
-        es::search(&client, es_query)
+        self.es_search(es_query)
             .await
             .map_err(|_| errors::cannot_connect_to_search_server())
     }
 
     async fn get(&self, code: String) -> Result<Book, errors::Error> {
         let code: Code = code.parse().map_err(|_| errors::invalid_code(&code))?;
-        let client = self
-            .elasticsearch()
-            .map_err(|_| errors::cannot_connect_to_search_server())?;
-        let result = es::get(&client, code.clone())
+        let result = self
+            .es_get(code.clone())
             .await
             .map_err(|_| errors::cannot_connect_to_search_server())?;
 
@@ -401,124 +339,47 @@ impl AppState {
     }
 
     async fn put(&self, book: Book) -> Result<(), errors::Error> {
-        let client = self
-            .elasticsearch()
-            .map_err(|_| errors::cannot_connect_to_search_server())?;
-
-        es::put(&client, book)
+        self.es_put(book)
             .await
-            .map_err(|_| errors::cannot_connect_to_search_server())?;
-
-        Ok(())
+            .map_err(|_| errors::cannot_connect_to_search_server())
     }
 
     async fn delete(&self, book: Book, delete_files: bool) -> Result<(), errors::Error> {
-        let client = self
-            .elasticsearch()
-            .map_err(|_| errors::cannot_connect_to_search_server())?;
-
-        es::delete(&client, book.code.clone())
-            .await
-            .map_err(|_| errors::cannot_connect_to_search_server())?;
-
         if book.cover_image_mimetype.is_some() && delete_files {
-            fs::remove_file(self.cover_image_path(&book.code))
-                .await
-                .map_err(|_| errors::something_went_wrong())?;
-            fs::remove_file(self.cover_thumb_path(&book.code))
+            self.remove_files(&book.code)
                 .await
                 .map_err(|_| errors::something_went_wrong())?;
         }
-
+        self.es_delete(book.code)
+            .await
+            .map_err(|_| errors::cannot_connect_to_search_server())?;
         Ok(())
     }
 
     async fn replace(&self, from: Book, to: Book) -> Result<(), errors::Error> {
-        let old_images_exist = from.cover_image_mimetype.is_some();
-        let new_images_exist = to.cover_image_mimetype.is_some();
-
-        self.delete(from.clone(), !new_images_exist).await?;
+        self.delete(from.clone(), false).await?;
         self.put(to.clone()).await?;
 
-        if from.code != to.code && old_images_exist && new_images_exist {
-            fs::rename(
-                self.cover_image_path(&from.code),
-                self.cover_image_path(&to.code),
-            )
-            .await
-            .map_err(|_| errors::something_went_wrong())?;
-            fs::rename(
-                self.cover_thumb_path(&from.code),
-                self.cover_thumb_path(&to.code),
-            )
-            .await
-            .map_err(|_| errors::something_went_wrong())?;
+        if from.code != to.code && from.cover_image_mimetype.is_some() {
+            self.rename_files(&from.code, &to.code)
+                .await
+                .map_err(|_| errors::something_went_wrong())?;
         }
 
         Ok(())
     }
 
-    async fn save_cover_image(&self, code: Code, file: TempFile) -> Result<(), errors::Error> {
-        let tmp_path = file.file.path();
-        let cover_path = self.cover_image_path(&code);
-        let thumb_path = self.cover_thumb_path(&code);
-
-        // copy / remove to handle the case where the temporary directory is on
-        // a different mountpoint (e.g. a tmpfs)
-        fs::copy(tmp_path, cover_path.clone())
+    async fn save_cover_image(&self, code: Code, file: NamedTempFile) -> Result<(), errors::Error> {
+        let tmp_path = file.path();
+        self.save_cover_file_and_generate_thumb(&code, tmp_path)
             .await
             .map_err(|_| errors::something_went_wrong())?;
 
-        fs::set_permissions(
-            cover_path.clone(),
-            std::os::unix::fs::PermissionsExt::from_mode(0o644),
-        )
-        .await
-        .map_err(|_| errors::something_went_wrong())?;
-
-        fs::remove_file(tmp_path)
+        tokio::fs::remove_file(tmp_path)
             .await
             .map_err(|_| errors::something_went_wrong())?;
-
-        tokio::spawn(generate_thumbnail_task(
-            cover_path.to_string_lossy().into_owned(),
-            thumb_path.to_string_lossy().into_owned(),
-        ));
 
         Ok(())
-    }
-}
-
-async fn generate_thumbnail_task(cover_path: String, thumb_path: String) {
-    let cmd = process::Command::new("convert")
-        .args([&cover_path, "-resize", "16x24", &thumb_path])
-        .spawn();
-
-    match cmd {
-        Ok(mut imagemagick) => match imagemagick.wait().await {
-            Ok(exit_code) => {
-                if !exit_code.success() {
-                    tracing::warn!(
-                        ?cover_path,
-                        ?thumb_path,
-                        ?exit_code,
-                        "imagemagick process error"
-                    );
-                }
-            }
-            Err(error) => tracing::warn!(
-                ?cover_path,
-                ?thumb_path,
-                ?error,
-                "imagemagick process error"
-            ),
-        },
-        Err(error) => tracing::warn!(
-            ?cover_path,
-            ?thumb_path,
-            ?error,
-            "could not spawn imagemagick process"
-        ),
     }
 }
 
