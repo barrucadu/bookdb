@@ -147,7 +147,7 @@ fn category_fullname_map(
 }
 
 async fn generate_thumbnail_task(cover_path: String, thumb_path: String) {
-    let cmd = tokio::process::Command::new("convert")
+    let cmd = tokio::process::Command::new("magick")
         .args([&cover_path, "-resize", "16x24", &thumb_path])
         .spawn();
 
