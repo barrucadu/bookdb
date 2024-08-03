@@ -1,6 +1,6 @@
-use actix_web::error as actix;
-use actix_web::http::StatusCode;
-use actix_web::HttpResponse;
+use axum::body::Body;
+use axum::http::StatusCode;
+use axum::response::{Html, IntoResponse, Response};
 use std::fmt;
 
 use crate::book::{Book, Code};
@@ -13,39 +13,23 @@ pub struct Error {
     message: String,
 }
 
-impl Error {
-    pub fn html_error_response(&self) -> Result<HttpResponse, tera::Error> {
+impl IntoResponse for Error {
+    fn into_response(self) -> Response<Body> {
         let mut context = tera::Context::new();
         context.insert("status_code", &u16::from(self.status_code));
         context.insert("message", &self.message);
 
-        let rendered = tera::Tera::one_off(TEMPLATE, &context, true)?;
-        Ok(HttpResponse::build(self.status_code)
-            .content_type(mime::TEXT_HTML_UTF_8)
-            .body(rendered))
-    }
-
-    pub fn fallback_error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status_code)
-            .content_type(mime::TEXT_PLAIN_UTF_8)
-            .body(self.message.clone())
+        if let Ok(rendered) = tera::Tera::one_off(TEMPLATE, &context, true) {
+            (self.status_code, Html(rendered)).into_response()
+        } else {
+            (self.status_code, self.message.clone()).into_response()
+        }
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}: {}", u16::from(self.status_code), self.message)
-    }
-}
-
-impl actix::ResponseError for Error {
-    fn status_code(&self) -> StatusCode {
-        self.status_code
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        self.html_error_response()
-            .unwrap_or(self.fallback_error_response())
     }
 }
 
@@ -88,5 +72,12 @@ pub fn something_went_wrong() -> Error {
     Error {
         status_code: StatusCode::INTERNAL_SERVER_ERROR,
         message: "Something went wrong.".to_string(),
+    }
+}
+
+pub fn bad_request() -> Error {
+    Error {
+        status_code: StatusCode::BAD_REQUEST,
+        message: "Bad request.".to_string(),
     }
 }
