@@ -252,6 +252,7 @@ dependencies = [
  "serde_html_form",
  "serde_json",
  "serde_yaml",
+ "sha2",
  "tempfile",
  "tera",
  "time",
