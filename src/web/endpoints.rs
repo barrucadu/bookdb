@@ -1,11 +1,12 @@
 use axum::body::Body;
 use axum::extract::{Multipart, Path, RawQuery, State};
-use axum::http::header;
+use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use lazy_static::lazy_static;
 use mime;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::default::Default;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
@@ -82,22 +83,42 @@ pub async fn search(
     render_html("search.html", &context)
 }
 
-pub async fn cover(Path(code): Path<String>, State(state): State<AppState>) -> impl IntoResponse {
+pub async fn cover(
+    headers: HeaderMap,
+    Path(code): Path<String>,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
     let book = state.get(code).await?;
     if let Some(mime) = book.cover_image_mimetype {
-        serve_static_file(state.cover_image_path(&book.code), mime.parse().unwrap()).await
+        let etag = headers.get(header::IF_NONE_MATCH);
+        serve_static_file(
+            etag,
+            state.cover_image_path(&book.code),
+            mime.parse().unwrap(),
+        )
+        .await
     } else {
         Err(errors::book_does_not_have_cover_image(&book))
     }
 }
 
-pub async fn thumb(Path(code): Path<String>, State(state): State<AppState>) -> impl IntoResponse {
+pub async fn thumb(
+    headers: HeaderMap,
+    Path(code): Path<String>,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
     let book = state.get(code).await?;
 
     if let Some(mime) = book.cover_image_mimetype {
-        serve_static_file(state.cover_thumb_path(&book.code), mime::IMAGE_JPEG)
+        let etag = headers.get(header::IF_NONE_MATCH);
+        serve_static_file(etag, state.cover_thumb_path(&book.code), mime::IMAGE_JPEG)
             .await
-            .or(serve_static_file(state.cover_image_path(&book.code), mime.parse().unwrap()).await)
+            .or(serve_static_file(
+                etag,
+                state.cover_image_path(&book.code),
+                mime.parse().unwrap(),
+            )
+            .await)
     } else {
         Err(errors::book_does_not_have_cover_image(&book))
     }
@@ -225,14 +246,54 @@ pub async fn stylesheet() -> impl IntoResponse {
 }
 
 async fn serve_static_file(
+    expected_etag: Option<&HeaderValue>,
     path: PathBuf,
     mime: mime::Mime,
 ) -> Result<Response<Body>, errors::Error> {
     let file = tokio::fs::File::open(path)
         .await
         .map_err(|_| errors::file_not_found())?;
+    let actual_etag = calculate_etag(&file, &mime).await;
+
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        header::CACHE_CONTROL,
+        HeaderValue::from_str("public, max-age=3600").unwrap(),
+    );
+    headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_str(mime.essence_str()).unwrap(),
+    );
+
+    if let Some(actual) = actual_etag {
+        headers.insert(header::ETAG, HeaderValue::from_str(&actual).unwrap());
+
+        if let Some(Ok(expected)) = expected_etag.map(|e| e.to_str()) {
+            if expected == actual {
+                return Ok((StatusCode::NOT_MODIFIED, headers, "").into_response());
+            }
+        }
+    }
+
     let body = Body::from_stream(ReaderStream::new(file));
-    Ok(([(header::CONTENT_TYPE, mime.essence_str())], body).into_response())
+    Ok((headers, body).into_response())
+}
+
+async fn calculate_etag(file: &tokio::fs::File, mime: &mime::Mime) -> Option<String> {
+    if let Ok(metadata) = file.metadata().await {
+        if let Ok(modified) = metadata.modified() {
+            if let Ok(mtime) = modified.duration_since(std::time::SystemTime::UNIX_EPOCH) {
+                let digest = Sha256::digest(format!(
+                    "{mtime}-{len}-{mime}",
+                    mtime = mtime.as_secs(),
+                    len = metadata.len()
+                ));
+                return Some(format!("\"{digest:X}\""));
+            }
+        }
+    }
+
+    None
 }
 
 async fn render_book_form(
