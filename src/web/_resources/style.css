@@ -31,8 +31,7 @@ body {
 #wrapper {
     background-color: var(--content-bg-color);
     border: 5px solid var(--content-border-color);
-    width: 1280px;
-    margin: 0 auto;
+    margin: 0;
     padding: 25px;
 }
 
@@ -138,6 +137,11 @@ img {
     border: 1px solid var(--bg-color);
     max-width: 333px;
     max-height: 500px;
+}
+
+.row-wrap {
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .form-group {
