@@ -11,47 +11,55 @@
       <header>
         <search>
           <form method="get" action="/search" autocomplete="off">
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="keywords">Title</label>
-                <input class="form-input" type="text" id="keywords" name="keywords" value="{{ query.keywords }}">
+            <div class="row-wrap">
+              <div class="row-wrap">
+                <div class="form-group">
+                  <label class="form-label" for="keywords">Title</label>
+                  <input class="form-input" type="text" id="keywords" name="keywords" value="{{ query.keywords }}">
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="person">Person</label>
-                <input class="form-input" type="text" id="person" name="person" list="datalist-people" value="{{ query.person }}">
+              <div class="row-wrap">
+                <div class="form-group">
+                  <label class="form-label" for="person">Person</label>
+                  <input class="form-input" type="text" id="person" name="person" list="datalist-people" value="{{ query.person }}">
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="location">Location</label>
-                <select class="form-input form-input--narrow" id="location" name="location">
-                  <option></option>
-                  {% for location in locations %}
-                  <option value="{{ location.slug }}" {% if query.location == location.slug %}selected{% endif %}>{{ location.name }}</option>
-                  {% endfor %}
-                </select>
+              <div class="row-wrap">
+                <div class="form-group">
+                  <label class="form-label" for="location">Location</label>
+                  <select class="form-input form-input--narrow" id="location" name="location">
+                    <option></option>
+                    {% for location in locations %}
+                    <option value="{{ location.slug }}" {% if query.location == location.slug %}selected{% endif %}>{{ location.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="match">Show</label>
+                  <select class="form-input form-input--narrow" id="match" name="match">
+                    <option></option>
+                    <option value="only-read" {% if query.match == "only-read" %}selected{% endif %}>Only read books</option>
+                    <option value="only-unread" {% if query.match == "only-unread" %}selected{% endif %}>Only unread books</option>
+                  </select>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="match">Show</label>
-                <select class="form-input form-input--narrow" id="match" name="match">
-                  <option></option>
-                  <option value="only-read" {% if query.match == "only-read" %}selected{% endif %}>Only read books</option>
-                  <option value="only-unread" {% if query.match == "only-unread" %}selected{% endif %}>Only unread books</option>
-                </select>
+              <div class="row-wrap">
+                <div class="form-group">
+                  <label class="form-label" for="category">Category</label>
+                  <select class="form-input" id="category" name="category">
+                    <option></option>
+                    {% for category in categories %}
+                    <option value="{{ category.slug }}" {% if query.category == category.slug %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="category">Category</label>
-                <select class="form-input" id="category" name="category">
-                  <option></option>
-                  {% for category in categories %}
-                  <option value="{{ category.slug }}" {% if query.category == category.slug %}selected{% endif %}>{{ category.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <input class="form-button form-button--submit" type="submit" value="Search">
+            <div class="row-wrap">
+              <div class="form-row">
+                <div class="form-group">
+                  <input class="form-button form-button--submit" type="submit" value="Search">
+                </div>
               </div>
             </div>
           </form>
@@ -70,7 +78,7 @@
           of which {{ num_read }} ({{ percent_read }}%) {% if num_read == 1 %}has{% else %}have{% endif %} been read.
         </p>
 
-        <table>
+        <table id="search-results">
           <thead>
             <th></th>
             <th>Code</th>
@@ -84,29 +92,29 @@
           <tbody>
             {% for book in books %}
             <tr>
-              <td>{% if book.has_cover_image %}<a href="/book/{{ book.code }}/cover" class="preview" name="preview[]" title="{{ book.display_title }}"><img src="/book/{{ book.code }}/thumb" alt="{{book.display_title }}" loading="lazy"></a>{% endif %}</td>
+              <td class="cover">{% if book.has_cover_image %}<a href="/book/{{ book.code }}/cover" class="preview" name="preview[]" title="{{ book.display_title }}"><img src="/book/{{ book.code }}/thumb" alt="{{book.display_title }}" loading="lazy"></a>{% endif %}</td>
               <td class="code">{{ book.code }}</td>
-              <td>{{ book.display_title }}</td>
-              <td>
+              <td class="title">{{ book.display_title }}</td>
+              <td class="people">
                 <ol class="detail-list">
-                  {% for name in book.authors %}<li>{{ name }}</li>{% endfor %}
-                  {% for name in book.translators %}<li>(trans. {{ name }})</li>{% endfor %}
+                  {% for name in book.authors %}<li>{{ name }}</li>{% endfor -%}
+                  {% for name in book.translators %}<li>(trans. {{ name }})</li>{% endfor -%}
                   {% for name in book.editors %}<li>(edit. {{ name }})</li>{% endfor %}
                 </ol>
               </td>
-              <td>
+              <td class="narrow-hide">
                 {% if book.has_been_read %}
                 ✔{% if book.last_read_date %} ({{ book.last_read_date }}){% endif %}
                 {% else %}
                 ✘
                 {% endif %}
               </td>
-              <td>
+              <td class="category">
                 <ol class="detail-list">
                   {% for category in book.category %}<li>{{ category }}</li>{% endfor %}
                 </ol>
               </td>
-              <td>
+              <td class="narrow-hide">
                 <ol class="detail-list">
                   {% for holding in book.holdings %}
                   <li>{{ holding.location }}{% if holding.note %} ({{ holding.note }}){% endif %}</li>
@@ -114,7 +122,7 @@
                 </ol>
               </td>
               {% if allow_writes %}
-              <td class="meta">
+              <td class="meta narrow-hide">
                 [&nbsp;<a href="/book/{{ book.code }}/edit">e</a>&nbsp;/&nbsp;<a href="/book/{{ book.code }}/delete">d</a>&nbsp;]
               </td>
               {% endif %}
