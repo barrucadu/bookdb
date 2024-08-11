@@ -111,6 +111,10 @@ a:hover {
     text-decoration: none;
 }
 
+header {
+    margin-bottom: 16px;
+}
+
 footer {
     font-size: 0.9em;
     text-align: right;
