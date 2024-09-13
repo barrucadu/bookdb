@@ -12,7 +12,7 @@ jobs:
         run: rustup show
 
       - name: Install nix
-        uses: cachix/install-nix-action@V27
+        uses: cachix/install-nix-action@V28
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
@@ -38,7 +38,7 @@ jobs:
         run: rustup show
 
       - name: Install nix
-        uses: cachix/install-nix-action@V27
+        uses: cachix/install-nix-action@V28
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
