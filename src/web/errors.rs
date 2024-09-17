@@ -43,7 +43,10 @@ pub fn cannot_connect_to_search_server() -> Error {
 pub fn book_does_not_have_cover_image(book: &Book) -> Error {
     Error {
         status_code: StatusCode::NOT_FOUND,
-        message: format!("The book '{}' does not have a cover image set.", book.code),
+        message: format!(
+            "The book '{}' does not have a cover image set.",
+            book.inner.code
+        ),
     }
 }
 

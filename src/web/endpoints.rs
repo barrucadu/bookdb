@@ -89,11 +89,11 @@ pub async fn cover(
     State(state): State<AppState>,
 ) -> impl IntoResponse {
     let book = state.get(code).await?;
-    if let Some(mime) = book.cover_image_mimetype {
+    if let Some(mime) = book.inner.cover_image_mimetype {
         let etag = headers.get(header::IF_NONE_MATCH);
         serve_static_file(
             etag,
-            state.cover_image_path(&book.code),
+            state.cover_image_path(&book.inner.code),
             mime.parse().unwrap(),
         )
         .await
@@ -109,16 +109,20 @@ pub async fn thumb(
 ) -> impl IntoResponse {
     let book = state.get(code).await?;
 
-    if let Some(mime) = book.cover_image_mimetype {
+    if let Some(mime) = book.inner.cover_image_mimetype {
         let etag = headers.get(header::IF_NONE_MATCH);
-        serve_static_file(etag, state.cover_thumb_path(&book.code), mime::IMAGE_JPEG)
-            .await
-            .or(serve_static_file(
-                etag,
-                state.cover_image_path(&book.code),
-                mime.parse().unwrap(),
-            )
-            .await)
+        serve_static_file(
+            etag,
+            state.cover_thumb_path(&book.inner.code),
+            mime::IMAGE_JPEG,
+        )
+        .await
+        .or(serve_static_file(
+            etag,
+            state.cover_image_path(&book.inner.code),
+            mime.parse().unwrap(),
+        )
+        .await)
     } else {
         Err(errors::book_does_not_have_cover_image(&book))
     }
@@ -142,7 +146,7 @@ pub async fn new_book_commit(
         Some((bookform, tempfile)) => {
             match bookform.to_book(&state.category_fullname_map, &state.location_name_map) {
                 Ok(book) => {
-                    let code = book.code.clone();
+                    let code = book.inner.code.clone();
                     state.put(book).await?;
                     if let Some(tempfile) = tempfile {
                         state.save_cover_image(code, tempfile).await?;
@@ -211,12 +215,15 @@ pub async fn edit_book_commit(
         Some((bookform, tempfile)) => {
             match bookform.to_book(&state.category_fullname_map, &state.location_name_map) {
                 Ok(mut book) => {
-                    book.cover_image_mimetype = book
+                    book.inner.cover_image_mimetype = book
+                        .inner
                         .cover_image_mimetype
-                        .or(original.cover_image_mimetype.clone());
+                        .or(original.inner.cover_image_mimetype.clone());
                     state.replace(original.clone(), book.clone()).await?;
                     if let Some(tempfile) = tempfile {
-                        state.save_cover_image(book.code.clone(), tempfile).await?;
+                        state
+                            .save_cover_image(book.inner.code.clone(), tempfile)
+                            .await?;
                     }
 
                     let mut context = tera::Context::new();
@@ -406,12 +413,12 @@ impl AppState {
     }
 
     async fn delete(&self, book: Book, delete_files: bool) -> Result<(), errors::Error> {
-        if book.cover_image_mimetype.is_some() && delete_files {
-            self.remove_files(&book.code)
+        if book.inner.cover_image_mimetype.is_some() && delete_files {
+            self.remove_files(&book.inner.code)
                 .await
                 .map_err(|_| errors::something_went_wrong())?;
         }
-        self.es_delete(book.code)
+        self.es_delete(book.inner.code)
             .await
             .map_err(|_| errors::cannot_connect_to_search_server())?;
         Ok(())
@@ -421,8 +428,8 @@ impl AppState {
         self.delete(from.clone(), false).await?;
         self.put(to.clone()).await?;
 
-        if from.code != to.code && from.cover_image_mimetype.is_some() {
-            self.rename_files(&from.code, &to.code)
+        if from.inner.code != to.inner.code && from.inner.cover_image_mimetype.is_some() {
+            self.rename_files(&from.inner.code, &to.inner.code)
                 .await
                 .map_err(|_| errors::something_went_wrong())?;
         }

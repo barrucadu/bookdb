@@ -8,7 +8,7 @@ use time::Date;
 use tokio::fs::File as AsyncFile;
 use tokio::io::AsyncWriteExt;
 
-use crate::book::{Book, BookDisplayTitle, Code, Holding};
+use crate::book::{Book, BookDisplayTitle, BookV1, Code, Holding};
 use crate::config::Slug;
 
 #[derive(Debug, Default)]
@@ -34,25 +34,26 @@ pub struct BookForm {
 impl std::convert::From<Book> for BookForm {
     fn from(book: Book) -> Self {
         Self {
-            code: Some(book.code),
-            cover_image_mimetype: book.cover_image_mimetype,
-            category_slug: Some(book.category),
-            title: Some(book.title),
-            subtitle: book.subtitle,
-            volume_title: book.volume_title,
-            volume_number: book.volume_number,
-            fascicle_number: book.fascicle_number,
-            has_been_read: book.has_been_read,
-            last_read_date: book.last_read_date,
-            authors: book.authors,
-            editors: book.editors.unwrap_or_default(),
-            translators: book.translators.unwrap_or_default(),
+            code: Some(book.inner.code),
+            cover_image_mimetype: book.inner.cover_image_mimetype,
+            category_slug: Some(book.inner.category),
+            title: Some(book.inner.title),
+            subtitle: book.inner.subtitle,
+            volume_title: book.inner.volume_title,
+            volume_number: book.inner.volume_number,
+            fascicle_number: book.inner.fascicle_number,
+            has_been_read: book.inner.has_been_read,
+            last_read_date: book.inner.last_read_date,
+            authors: book.inner.authors,
+            editors: book.inner.editors.unwrap_or_default(),
+            translators: book.inner.translators.unwrap_or_default(),
             holdings: book
+                .inner
                 .holdings
                 .into_iter()
                 .map(|h| (h.location, h.note.unwrap_or_default()))
                 .collect(),
-            bucket: Some(book.bucket),
+            bucket: Some(book.inner.bucket),
             form_errors: Vec::new(),
         }
     }
@@ -159,28 +160,30 @@ impl BookForm {
         };
 
         Ok(Book {
-            code: self.code.unwrap(),
-            title: self.title.unwrap(),
-            subtitle: self.subtitle,
-            volume_title: self.volume_title,
-            volume_number: self.volume_number,
-            fascicle_number: self.fascicle_number,
-            authors: self.authors,
-            editors: Some(self.editors),
-            translators: Some(self.translators),
-            has_been_read: self.has_been_read,
-            last_read_date: self.last_read_date,
-            cover_image_mimetype: self.cover_image_mimetype,
-            holdings: self
-                .holdings
-                .into_iter()
-                .map(|(location, n)| Holding {
-                    location,
-                    note: if n.is_empty() { None } else { Some(n) },
-                })
-                .collect(),
-            bucket: self.bucket.unwrap_or(default_bucket),
-            category: self.category_slug.unwrap(),
+            inner: BookV1 {
+                code: self.code.unwrap(),
+                title: self.title.unwrap(),
+                subtitle: self.subtitle,
+                volume_title: self.volume_title,
+                volume_number: self.volume_number,
+                fascicle_number: self.fascicle_number,
+                authors: self.authors,
+                editors: Some(self.editors),
+                translators: Some(self.translators),
+                has_been_read: self.has_been_read,
+                last_read_date: self.last_read_date,
+                cover_image_mimetype: self.cover_image_mimetype,
+                holdings: self
+                    .holdings
+                    .into_iter()
+                    .map(|(location, n)| Holding {
+                        location,
+                        note: if n.is_empty() { None } else { Some(n) },
+                    })
+                    .collect(),
+                bucket: self.bucket.unwrap_or(default_bucket),
+                category: self.category_slug.unwrap(),
+            },
         })
     }
 

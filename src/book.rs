@@ -11,8 +11,34 @@ static ISBN13_WEIGHTS: [u32; 13] = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1];
 static EAN8_WEIGHTS: [u32; 8] = [3, 1, 3, 1, 3, 1, 3, 1];
 static EAN13_WEIGHTS: [u32; 13] = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1];
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Book {
+    pub inner: BookV1,
+}
+
+impl<'de> Deserialize<'de> for Book {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        match BookV1::deserialize(deserializer) {
+            Ok(inner) => Ok(Book { inner }),
+            Err(err) => Err(err),
+        }
+    }
+}
+
+impl Serialize for Book {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        BookV1::serialize(&self.inner, serializer)
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub struct BookV1 {
     pub code: Code,
     pub title: String,
     pub subtitle: Option<String>,
@@ -178,11 +204,11 @@ pub struct BookDisplayTitle {
 impl From<&Book> for BookDisplayTitle {
     fn from(book: &Book) -> Self {
         Self {
-            title: book.title.clone(),
-            subtitle: book.subtitle.clone(),
-            volume_title: book.volume_title.clone(),
-            volume_number: book.volume_number.clone(),
-            fascicle_number: book.fascicle_number.clone(),
+            title: book.inner.title.clone(),
+            subtitle: book.inner.subtitle.clone(),
+            volume_title: book.inner.volume_title.clone(),
+            volume_number: book.inner.volume_number.clone(),
+            fascicle_number: book.inner.fascicle_number.clone(),
         }
     }
 }
@@ -238,12 +264,12 @@ struct BookSortKey {
 impl From<&Book> for BookSortKey {
     fn from(book: &Book) -> Self {
         Self {
-            bucket: book.bucket.to_lowercase(),
-            title: book.title.to_lowercase(),
-            volume_number_bits: book.volume_number.as_deref().map(alphanum_to_bits),
-            fascicle_number_bits: book.fascicle_number.as_deref().map(alphanum_to_bits),
-            subtitle: book.subtitle.clone(),
-            volume_title: book.volume_title.clone(),
+            bucket: book.inner.bucket.to_lowercase(),
+            title: book.inner.title.to_lowercase(),
+            volume_number_bits: book.inner.volume_number.as_deref().map(alphanum_to_bits),
+            fascicle_number_bits: book.inner.fascicle_number.as_deref().map(alphanum_to_bits),
+            subtitle: book.inner.subtitle.clone(),
+            volume_title: book.inner.volume_title.clone(),
         }
     }
 }
@@ -312,7 +338,7 @@ mod tests {
         let book1 = fixture_taocp_1();
 
         let mut book2 = fixture_taocp_1();
-        book2.title = "The AAAArt of Computer Programming".to_string();
+        book2.inner.title = "The AAAArt of Computer Programming".to_string();
 
         assert!(book2 < book1);
     }
@@ -555,7 +581,7 @@ mod tests {
 
     fn fixture_taocp_1_1() -> Book {
         let mut book = fixture_taocp("MMIX A RISC Computer for the New Millenium", "1");
-        book.fascicle_number = Some("1".to_string());
+        book.inner.fascicle_number = Some("1".to_string());
         book
     }
 
@@ -573,21 +599,23 @@ mod tests {
 
     fn fixture_taocp(volume_title: &str, volume_number: &str) -> Book {
         Book {
-            code: Code::Nonstandard("fixture".to_string()),
-            title: "The Art of Computer Programming".to_string(),
-            subtitle: None,
-            volume_title: Some(volume_title.to_string()),
-            volume_number: Some(volume_number.to_string()),
-            fascicle_number: None,
-            authors: vec!["Donald E. Knuth".to_string()],
-            translators: None,
-            editors: None,
-            has_been_read: false,
-            last_read_date: None,
-            cover_image_mimetype: None,
-            holdings: Vec::new(),
-            bucket: "Knuth".to_string(),
-            category: Slug("computer-science".to_string()),
+            inner: BookV1 {
+                code: Code::Nonstandard("fixture".to_string()),
+                title: "The Art of Computer Programming".to_string(),
+                subtitle: None,
+                volume_title: Some(volume_title.to_string()),
+                volume_number: Some(volume_number.to_string()),
+                fascicle_number: None,
+                authors: vec!["Donald E. Knuth".to_string()],
+                translators: None,
+                editors: None,
+                has_been_read: false,
+                last_read_date: None,
+                cover_image_mimetype: None,
+                holdings: Vec::new(),
+                bucket: "Knuth".to_string(),
+                category: Slug("computer-science".to_string()),
+            },
         }
     }
 }
@@ -617,21 +645,23 @@ pub mod test_helpers {
             category in arbitrary_slug()
         ) -> Book {
             Book {
-                code,
-                title,
-                subtitle,
-                volume_title,
-                volume_number,
-                fascicle_number,
-                authors,
-                translators,
-                editors,
-                has_been_read,
-                last_read_date,
-                cover_image_mimetype,
-                holdings,
-                bucket,
-                category
+                inner: BookV1 {
+                    code,
+                    title,
+                    subtitle,
+                    volume_title,
+                    volume_number,
+                    fascicle_number,
+                    authors,
+                    translators,
+                    editors,
+                    has_been_read,
+                    last_read_date,
+                    cover_image_mimetype,
+                    holdings,
+                    bucket,
+                    category
+                }
             }
         }
     }

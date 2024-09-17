@@ -73,7 +73,10 @@ pub async fn get(client: &Elasticsearch, code: Code) -> Result<Option<Book>, Err
 pub async fn put(client: &Elasticsearch, book: Book) -> Result<(), Error> {
     let source = &serialise(&book)["_source"];
     client
-        .index(IndexParts::IndexId(INDEX_NAME, &book.code.to_string()))
+        .index(IndexParts::IndexId(
+            INDEX_NAME,
+            &book.inner.code.to_string(),
+        ))
         .op_type(OpType::Create)
         .body(source)
         .send()
@@ -240,7 +243,7 @@ pub fn serialise(book: &Book) -> Value {
         Value::String(book.display_title()),
     );
     map.remove("code");
-    json!({ "_id": book.code.to_string(), "_source": source })
+    json!({ "_id": book.inner.code.to_string(), "_source": source })
 }
 
 pub fn try_deserialise(hit: &Value) -> Result<Book, DeserialiseBookError> {
