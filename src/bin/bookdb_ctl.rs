@@ -4,6 +4,8 @@ use elasticsearch::Elasticsearch;
 use std::io;
 use std::process;
 
+use bookdb::book::Book;
+
 /// A database and web app to keep track of my books.
 #[derive(Clone, Debug, Parser)]
 struct Args {
@@ -98,7 +100,7 @@ async fn import_index(client: &Elasticsearch, args: CreateIndexArgs) {
     }
     match io::read_to_string(io::stdin()) {
         Ok(stdin) => match serde_json::from_str(&stdin) {
-            Ok(books) => match bookdb::es::import(client, books).await {
+            Ok(books) => match bookdb::es::import(client, values_to_books(books)).await {
                 Ok(Some(num)) => println!("imported {num} records"),
                 Ok(None) => {
                     eprintln!("could not import records: bulk index failed");
@@ -118,5 +120,27 @@ async fn import_index(client: &Elasticsearch, args: CreateIndexArgs) {
             eprintln!("could not read stdin: {error}");
             process::exit(1);
         }
+    }
+}
+
+fn values_to_books(values: Vec<serde_json::Value>) -> Vec<Book> {
+    let mut books = Vec::with_capacity(values.len());
+    let mut errs = Vec::new();
+
+    for value in &values {
+        match Book::deserialize(value) {
+            Ok(book) => books.push(book),
+            Err(err) => errs.push(err),
+        }
+    }
+
+    if errs.is_empty() {
+        books
+    } else {
+        eprintln!("could not deserialise records from stdin:");
+        for err in errs {
+            eprintln!("  {err}");
+        }
+        process::exit(1);
     }
 }

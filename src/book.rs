@@ -16,10 +16,11 @@ pub struct Book {
     pub inner: BookV1,
 }
 
-impl<'de> Deserialize<'de> for Book {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+impl Book {
+    // cannot implement serde::Deserialize because of the need to copy
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: serde::Deserializer<'de> + Copy,
     {
         match BookV1::deserialize(deserializer) {
             Ok(inner) => Ok(Book { inner }),

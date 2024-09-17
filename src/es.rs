@@ -5,7 +5,6 @@ use elasticsearch::{
     BulkParts, ClearScrollParts, DeleteParts, Elasticsearch, Error, GetParts, IndexParts,
     ScrollParts, SearchParts,
 };
-use serde::Deserialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::default::Default;
