@@ -65,7 +65,12 @@
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="has_been_read">Has Been Read</label>
-              <input class="form-input form-input--zerowidth" type="checkbox" id="has_been_read" name="has_been_read"{% if book.has_been_read %} checked{% endif %}>
+              <select class="form-input form-input--narrow" id="has_been_read" name="has_been_read">
+                <option></option>
+                <option value="read" {% if book.has_been_read == "read" %}selected{% endif %}>Yes</option>
+                <option value="unread" {% if book.has_been_read == "unread" %}selected{% endif %}>No</option>
+                <option value="not-applicable" {% if book.has_been_read == "not-applicable" %}selected{% endif %}>Not Applicable</option>
+              </select>
             </div>
             <div class="form-group">
               <label class="form-label" for="last_read_date">Last Read Date</label>

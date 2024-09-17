@@ -11,8 +11,111 @@ static ISBN13_WEIGHTS: [u32; 13] = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1];
 static EAN8_WEIGHTS: [u32; 8] = [3, 1, 3, 1, 3, 1, 3, 1];
 static EAN13_WEIGHTS: [u32; 13] = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1];
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Book {
+    pub inner: BookV2,
+}
+
+impl Book {
+    // cannot implement serde::Deserialize because of the need to copy
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de> + Copy,
+    {
+        match BookV2::deserialize(deserializer) {
+            Ok(inner) => Ok(Book { inner }),
+            Err(err) => match BookV1::deserialize(deserializer) {
+                Ok(old) => Ok(Book { inner: old.into() }),
+                // propagate the top-level error on failure
+                Err(_) => Err(err),
+            },
+        }
+    }
+}
+
+impl Serialize for Book {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        BookV2::serialize(&self.inner, serializer)
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub struct BookV2 {
+    pub code: Code,
+    pub title: String,
+    pub subtitle: Option<String>,
+    pub volume_title: Option<String>,
+    pub volume_number: Option<String>,
+    pub fascicle_number: Option<String>,
+    pub authors: Vec<String>,
+    pub translators: Option<Vec<String>>,
+    pub editors: Option<Vec<String>>,
+    pub has_been_read: HasBeenRead,
+    pub last_read_date: Option<Date>,
+    pub cover_image_mimetype: Option<String>,
+    pub holdings: Vec<Holding>,
+    pub bucket: String,
+    pub category: Slug,
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub enum HasBeenRead {
+    #[serde(rename = "read")]
+    Read,
+    #[serde(rename = "unread")]
+    Unread,
+    #[serde(rename = "not-applicable")]
+    NotApplicable,
+}
+
+impl std::fmt::Display for HasBeenRead {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match serde_json::to_string(self) {
+            Ok(s) => write!(f, "{}", &s[1..s.len() - 1]),
+            Err(_) => unreachable!(),
+        }
+    }
+}
+
+impl std::str::FromStr for HasBeenRead {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(&format!("\"{s}\""))
+    }
+}
+
+impl From<BookV1> for BookV2 {
+    fn from(old: BookV1) -> Self {
+        Self {
+            code: old.code,
+            title: old.title,
+            subtitle: old.subtitle,
+            volume_title: old.volume_title,
+            volume_number: old.volume_number,
+            fascicle_number: old.fascicle_number,
+            authors: old.authors,
+            translators: old.translators,
+            editors: old.editors,
+            has_been_read: if old.has_been_read {
+                HasBeenRead::Read
+            } else {
+                HasBeenRead::Unread
+            },
+            last_read_date: old.last_read_date,
+            cover_image_mimetype: old.cover_image_mimetype,
+            holdings: old.holdings,
+            bucket: old.bucket,
+            category: old.category,
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub struct BookV1 {
     pub code: Code,
     pub title: String,
     pub subtitle: Option<String>,
@@ -178,11 +281,11 @@ pub struct BookDisplayTitle {
 impl From<&Book> for BookDisplayTitle {
     fn from(book: &Book) -> Self {
         Self {
-            title: book.title.clone(),
-            subtitle: book.subtitle.clone(),
-            volume_title: book.volume_title.clone(),
-            volume_number: book.volume_number.clone(),
-            fascicle_number: book.fascicle_number.clone(),
+            title: book.inner.title.clone(),
+            subtitle: book.inner.subtitle.clone(),
+            volume_title: book.inner.volume_title.clone(),
+            volume_number: book.inner.volume_number.clone(),
+            fascicle_number: book.inner.fascicle_number.clone(),
         }
     }
 }
@@ -238,12 +341,12 @@ struct BookSortKey {
 impl From<&Book> for BookSortKey {
     fn from(book: &Book) -> Self {
         Self {
-            bucket: book.bucket.to_lowercase(),
-            title: book.title.to_lowercase(),
-            volume_number_bits: book.volume_number.as_deref().map(alphanum_to_bits),
-            fascicle_number_bits: book.fascicle_number.as_deref().map(alphanum_to_bits),
-            subtitle: book.subtitle.clone(),
-            volume_title: book.volume_title.clone(),
+            bucket: book.inner.bucket.to_lowercase(),
+            title: book.inner.title.to_lowercase(),
+            volume_number_bits: book.inner.volume_number.as_deref().map(alphanum_to_bits),
+            fascicle_number_bits: book.inner.fascicle_number.as_deref().map(alphanum_to_bits),
+            subtitle: book.inner.subtitle.clone(),
+            volume_title: book.inner.volume_title.clone(),
         }
     }
 }
@@ -312,7 +415,7 @@ mod tests {
         let book1 = fixture_taocp_1();
 
         let mut book2 = fixture_taocp_1();
-        book2.title = "The AAAArt of Computer Programming".to_string();
+        book2.inner.title = "The AAAArt of Computer Programming".to_string();
 
         assert!(book2 < book1);
     }
@@ -555,7 +658,7 @@ mod tests {
 
     fn fixture_taocp_1_1() -> Book {
         let mut book = fixture_taocp("MMIX A RISC Computer for the New Millenium", "1");
-        book.fascicle_number = Some("1".to_string());
+        book.inner.fascicle_number = Some("1".to_string());
         book
     }
 
@@ -573,21 +676,23 @@ mod tests {
 
     fn fixture_taocp(volume_title: &str, volume_number: &str) -> Book {
         Book {
-            code: Code::Nonstandard("fixture".to_string()),
-            title: "The Art of Computer Programming".to_string(),
-            subtitle: None,
-            volume_title: Some(volume_title.to_string()),
-            volume_number: Some(volume_number.to_string()),
-            fascicle_number: None,
-            authors: vec!["Donald E. Knuth".to_string()],
-            translators: None,
-            editors: None,
-            has_been_read: false,
-            last_read_date: None,
-            cover_image_mimetype: None,
-            holdings: Vec::new(),
-            bucket: "Knuth".to_string(),
-            category: Slug("computer-science".to_string()),
+            inner: BookV2 {
+                code: Code::Nonstandard("fixture".to_string()),
+                title: "The Art of Computer Programming".to_string(),
+                subtitle: None,
+                volume_title: Some(volume_title.to_string()),
+                volume_number: Some(volume_number.to_string()),
+                fascicle_number: None,
+                authors: vec!["Donald E. Knuth".to_string()],
+                translators: None,
+                editors: None,
+                has_been_read: HasBeenRead::NotApplicable,
+                last_read_date: None,
+                cover_image_mimetype: None,
+                holdings: Vec::new(),
+                bucket: "Knuth".to_string(),
+                category: Slug("computer-science".to_string()),
+            },
         }
     }
 }
@@ -609,7 +714,7 @@ pub mod test_helpers {
             authors in proptest::collection::vec("[\\d\\s\\w]+", 1..3),
             translators in proptest::option::of(proptest::collection::vec("[\\d\\s\\w]+", 1..3)),
             editors in proptest::option::of(proptest::collection::vec("[\\d\\s\\w]+", 1..3)),
-            has_been_read in proptest::bool::ANY,
+            has_been_read in arbitrary_has_been_read(),
             last_read_date in proptest::option::of(arbitrary_date()),
             cover_image_mimetype in proptest::option::of("[a-z]+/[a-z]+"),
             holdings in proptest::collection::vec(arbitrary_holding(), 1..3),
@@ -617,21 +722,23 @@ pub mod test_helpers {
             category in arbitrary_slug()
         ) -> Book {
             Book {
-                code,
-                title,
-                subtitle,
-                volume_title,
-                volume_number,
-                fascicle_number,
-                authors,
-                translators,
-                editors,
-                has_been_read,
-                last_read_date,
-                cover_image_mimetype,
-                holdings,
-                bucket,
-                category
+                inner: BookV2 {
+                    code,
+                    title,
+                    subtitle,
+                    volume_title,
+                    volume_number,
+                    fascicle_number,
+                    authors,
+                    translators,
+                    editors,
+                    has_been_read,
+                    last_read_date,
+                    cover_image_mimetype,
+                    holdings,
+                    bucket,
+                    category
+                }
             }
         }
     }
@@ -643,6 +750,15 @@ pub mod test_helpers {
             arbitrary_ean8_code(),
             arbitrary_ean13_code(),
             arbitrary_nonstandard_code(),
+        ]
+        .boxed()
+    }
+
+    fn arbitrary_has_been_read() -> BoxedStrategy<HasBeenRead> {
+        prop_oneof![
+            Just(HasBeenRead::Read),
+            Just(HasBeenRead::Unread),
+            Just(HasBeenRead::NotApplicable),
         ]
         .boxed()
     }
