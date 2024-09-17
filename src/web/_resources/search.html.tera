@@ -38,8 +38,9 @@
                   <label class="form-label" for="match">Show</label>
                   <select class="form-input form-input--narrow" id="match" name="match">
                     <option></option>
-                    <option value="only-read" {% if query.match == "only-read" %}selected{% endif %}>Only read books</option>
-                    <option value="only-unread" {% if query.match == "only-unread" %}selected{% endif %}>Only unread books</option>
+                    <option value="read" {% if query.match == "read" %}selected{% endif %}>Only read books</option>
+                    <option value="unread" {% if query.match == "unread" %}selected{% endif %}>Only unread books</option>
+                    <option value="not-applicable" {% if query.match == "not-applicable" %}selected{% endif %}>Only reference books</option>
                   </select>
                 </div>
               </div>
@@ -74,8 +75,7 @@
         {% else %}
         <p>
           Showing {{ num_books }} {% if num_books == 1 %}book{% else %}books{% endif %}
-          by {{ num_authors }} {% if num_authors == 1 %}author{% else %}authors{% endif %},
-          of which {{ num_read }} ({{ percent_read }}%) {% if num_read == 1 %}has{% else %}have{% endif %} been read.
+          by {{ num_authors }} {% if num_authors == 1 %}author{% else %}authors{% endif %}.
         </p>
 
         <table id="search-results">
@@ -103,11 +103,9 @@
                 </ol>
               </td>
               <td class="narrow-hide">
-                {% if book.has_been_read %}
-                ✔{% if book.last_read_date %} ({{ book.last_read_date }}){% endif %}
-                {% else %}
-                ✘
-                {% endif %}
+                {% if book.has_been_read == "read" %}✔{% if book.last_read_date %} ({{ book.last_read_date }}){% endif %}{% endif %}
+                {% if book.has_been_read == "unread" %}✘{% endif %}
+                {% if book.has_been_read == "not-applicable" %}&mdash;{% endif %}
               </td>
               <td class="category">
                 <ol class="detail-list">

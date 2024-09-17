@@ -13,7 +13,7 @@ static EAN13_WEIGHTS: [u32; 13] = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1];
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Book {
-    pub inner: BookV1,
+    pub inner: BookV2,
 }
 
 impl Book {
@@ -22,9 +22,13 @@ impl Book {
     where
         D: serde::Deserializer<'de> + Copy,
     {
-        match BookV1::deserialize(deserializer) {
+        match BookV2::deserialize(deserializer) {
             Ok(inner) => Ok(Book { inner }),
-            Err(err) => Err(err),
+            Err(err) => match BookV1::deserialize(deserializer) {
+                Ok(old) => Ok(Book { inner: old.into() }),
+                // propagate the top-level error on failure
+                Err(_) => Err(err),
+            },
         }
     }
 }
@@ -34,7 +38,79 @@ impl Serialize for Book {
     where
         S: serde::Serializer,
     {
-        BookV1::serialize(&self.inner, serializer)
+        BookV2::serialize(&self.inner, serializer)
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub struct BookV2 {
+    pub code: Code,
+    pub title: String,
+    pub subtitle: Option<String>,
+    pub volume_title: Option<String>,
+    pub volume_number: Option<String>,
+    pub fascicle_number: Option<String>,
+    pub authors: Vec<String>,
+    pub translators: Option<Vec<String>>,
+    pub editors: Option<Vec<String>>,
+    pub has_been_read: HasBeenRead,
+    pub last_read_date: Option<Date>,
+    pub cover_image_mimetype: Option<String>,
+    pub holdings: Vec<Holding>,
+    pub bucket: String,
+    pub category: Slug,
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub enum HasBeenRead {
+    #[serde(rename = "read")]
+    Read,
+    #[serde(rename = "unread")]
+    Unread,
+    #[serde(rename = "not-applicable")]
+    NotApplicable,
+}
+
+impl std::fmt::Display for HasBeenRead {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match serde_json::to_string(self) {
+            Ok(s) => write!(f, "{}", &s[1..s.len() - 1]),
+            Err(_) => unreachable!(),
+        }
+    }
+}
+
+impl std::str::FromStr for HasBeenRead {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(&format!("\"{s}\""))
+    }
+}
+
+impl From<BookV1> for BookV2 {
+    fn from(old: BookV1) -> Self {
+        Self {
+            code: old.code,
+            title: old.title,
+            subtitle: old.subtitle,
+            volume_title: old.volume_title,
+            volume_number: old.volume_number,
+            fascicle_number: old.fascicle_number,
+            authors: old.authors,
+            translators: old.translators,
+            editors: old.editors,
+            has_been_read: if old.has_been_read {
+                HasBeenRead::Read
+            } else {
+                HasBeenRead::Unread
+            },
+            last_read_date: old.last_read_date,
+            cover_image_mimetype: old.cover_image_mimetype,
+            holdings: old.holdings,
+            bucket: old.bucket,
+            category: old.category,
+        }
     }
 }
 
@@ -600,7 +676,7 @@ mod tests {
 
     fn fixture_taocp(volume_title: &str, volume_number: &str) -> Book {
         Book {
-            inner: BookV1 {
+            inner: BookV2 {
                 code: Code::Nonstandard("fixture".to_string()),
                 title: "The Art of Computer Programming".to_string(),
                 subtitle: None,
@@ -610,7 +686,7 @@ mod tests {
                 authors: vec!["Donald E. Knuth".to_string()],
                 translators: None,
                 editors: None,
-                has_been_read: false,
+                has_been_read: HasBeenRead::NotApplicable,
                 last_read_date: None,
                 cover_image_mimetype: None,
                 holdings: Vec::new(),
@@ -638,7 +714,7 @@ pub mod test_helpers {
             authors in proptest::collection::vec("[\\d\\s\\w]+", 1..3),
             translators in proptest::option::of(proptest::collection::vec("[\\d\\s\\w]+", 1..3)),
             editors in proptest::option::of(proptest::collection::vec("[\\d\\s\\w]+", 1..3)),
-            has_been_read in proptest::bool::ANY,
+            has_been_read in arbitrary_has_been_read(),
             last_read_date in proptest::option::of(arbitrary_date()),
             cover_image_mimetype in proptest::option::of("[a-z]+/[a-z]+"),
             holdings in proptest::collection::vec(arbitrary_holding(), 1..3),
@@ -646,7 +722,7 @@ pub mod test_helpers {
             category in arbitrary_slug()
         ) -> Book {
             Book {
-                inner: BookV1 {
+                inner: BookV2 {
                     code,
                     title,
                     subtitle,
@@ -674,6 +750,15 @@ pub mod test_helpers {
             arbitrary_ean8_code(),
             arbitrary_ean13_code(),
             arbitrary_nonstandard_code(),
+        ]
+        .boxed()
+    }
+
+    fn arbitrary_has_been_read() -> BoxedStrategy<HasBeenRead> {
+        prop_oneof![
+            Just(HasBeenRead::Read),
+            Just(HasBeenRead::Unread),
+            Just(HasBeenRead::NotApplicable),
         ]
         .boxed()
     }

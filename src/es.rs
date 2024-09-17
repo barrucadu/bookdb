@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::default::Default;
 
-use crate::book::{Book, Code, ParseCodeError};
+use crate::book::{Book, Code, HasBeenRead, ParseCodeError};
 use crate::config::Slug;
 
 static INDEX_NAME: &str = "bookdb";
@@ -30,7 +30,7 @@ pub async fn create(client: &Elasticsearch) -> Result<(), Error> {
                     "authors": { "type": "keyword" },
                     "translators": { "type": "keyword" },
                     "editors": { "type": "keyword" },
-                    "has_been_read": { "type": "boolean" },
+                    "has_been_read": { "type": "keyword" },
                     "last_read_date": { "type": "date", "format": "yyyy-MM-dd" },
                     "cover_image_mimetype": { "type": "keyword" },
                     "holdings": {
@@ -94,7 +94,7 @@ pub async fn delete(client: &Elasticsearch, code: Code) -> Result<(), Error> {
 #[derive(Default)]
 pub struct SearchQuery {
     pub keywords: Option<String>,
-    pub read: Option<bool>,
+    pub read: Option<HasBeenRead>,
     pub location: Option<Slug>,
     pub categories: Vec<Slug>,
     pub people: Vec<String>,
@@ -149,54 +149,30 @@ pub struct SearchResultAggs {
     pub author: HashMap<String, u64>,
     pub translator: HashMap<String, u64>,
     pub editor: HashMap<String, u64>,
-    pub read: u64,
-    pub unread: u64,
-    pub category: HashMap<Slug, u64>,
-    pub location: HashMap<Slug, u64>,
 }
 
 pub async fn search(client: &Elasticsearch, query: SearchQuery) -> Result<SearchResult, Error> {
-    let res = scroll(client, json!({
-        "query": query.build_query_json(),
-        "aggs": {
-            "author": {"terms": {"field": "authors", "size": 1000}},
-            "editor": {"terms": {"field": "editors", "size": 500}},
-            "translator": {"terms": {"field": "translators", "size": 500}},
-            "has_been_read": {"terms": {"field": "has_been_read", "size": 500}},
-            "category": {"terms": {"field": "category", "size": 500}},
-            "holdings": {"nested": {"path": "holdings"}, "aggs": {"location": {"terms": {"field": "holdings.location", "size": 500}}}},
-        },
-    })).await?;
-
-    let mut aggs = SearchResultAggs {
-        author: agg_buckets_to_hashmap(&res.aggs["author"]["buckets"]),
-        editor: agg_buckets_to_hashmap(&res.aggs["editor"]["buckets"]),
-        translator: agg_buckets_to_hashmap(&res.aggs["translator"]["buckets"]),
-        read: 0,
-        unread: 0,
-        category: HashMap::new(),
-        location: HashMap::new(),
-    };
-    for (key, doc_count) in agg_buckets_to_hashmap(&res.aggs["has_been_read"]["buckets"]).drain() {
-        if key == "true" {
-            aggs.read = doc_count;
-        } else {
-            aggs.unread = doc_count;
-        }
-    }
-    for (key, doc_count) in agg_buckets_to_hashmap(&res.aggs["category"]["buckets"]).drain() {
-        aggs.category.insert(Slug(key), doc_count);
-    }
-    for (key, doc_count) in
-        agg_buckets_to_hashmap(&res.aggs["holdings"]["location"]["buckets"]).drain()
-    {
-        aggs.location.insert(Slug(key), doc_count);
-    }
+    let res = scroll(
+        client,
+        json!({
+            "query": query.build_query_json(),
+            "aggs": {
+                "author": {"terms": {"field": "authors", "size": 1000}},
+                "editor": {"terms": {"field": "editors", "size": 500}},
+                "translator": {"terms": {"field": "translators", "size": 500}},
+            },
+        }),
+    )
+    .await?;
 
     Ok(SearchResult {
         count: res.hits.len(),
         hits: res.hits,
-        aggs,
+        aggs: SearchResultAggs {
+            author: agg_buckets_to_hashmap(&res.aggs["author"]["buckets"]),
+            editor: agg_buckets_to_hashmap(&res.aggs["editor"]["buckets"]),
+            translator: agg_buckets_to_hashmap(&res.aggs["translator"]["buckets"]),
+        },
     })
 }
 
