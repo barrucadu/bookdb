@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.7.5", features = ["multipart"] }
+axum = { version = "0.7.6", features = ["multipart"] }
 clap = { version = "4", features = ["derive", "env"] }
 elasticsearch = "8.15.0-alpha.1"
 lazy_static = "1"
