@@ -241,10 +241,10 @@ impl BookForm {
         if self.title.is_none() {
             errors.push("The title cannot be blank.".to_string());
         }
-        if !self.volume_number.as_deref().map_or(true, is_alnum) {
+        if !self.volume_number.as_deref().is_none_or(is_alnum) {
             errors.push("The volume number can only contain letters and numbers.".to_string());
         }
-        if !self.fascicle_number.as_deref().map_or(true, is_alnum) {
+        if !self.fascicle_number.as_deref().is_none_or(is_alnum) {
             errors.push("The fascicle number can only contain letters and numbers.".to_string());
         }
         if self.authors.is_empty() {
@@ -268,7 +268,7 @@ impl BookForm {
         if !self
             .cover_image_mimetype
             .as_deref()
-            .map_or(true, is_allowed_image_mimetype)
+            .is_none_or(is_allowed_image_mimetype)
         {
             errors.push("Cover image must be a JPEG or PNG.".to_string());
         }
