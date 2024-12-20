@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 axum = { version = "0.7.9", features = ["multipart"] }
 clap = { version = "4", features = ["derive", "env"] }
-elasticsearch = "8.16.0-alpha.1"
+elasticsearch = "8.17.0-alpha.1"
 lazy_static = "1"
 mime = "0.3"
 serde = { version = "1.0", features = ["derive"] }
