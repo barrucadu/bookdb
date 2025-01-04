@@ -33,22 +33,22 @@ fn routes(allow_writes: bool) -> Router<state::AppState> {
     let ro_app = Router::new()
         .route("/", routing::get(endpoints::index))
         .route("/search", routing::get(endpoints::search))
-        .route("/book/:code/cover", routing::get(endpoints::cover))
-        .route("/book/:code/thumb", routing::get(endpoints::thumb))
+        .route("/book/{code}/cover", routing::get(endpoints::cover))
+        .route("/book/{code}/thumb", routing::get(endpoints::thumb))
         .route("/style.css", routing::get(endpoints::stylesheet));
 
     if allow_writes {
         ro_app
             .route("/new", routing::get(endpoints::new_book))
             .route("/new", routing::post(endpoints::new_book_commit))
-            .route("/book/:code/delete", routing::get(endpoints::delete_book))
+            .route("/book/{code}/delete", routing::get(endpoints::delete_book))
             .route(
-                "/book/:code/delete",
+                "/book/{code}/delete",
                 routing::post(endpoints::delete_book_commit),
             )
-            .route("/book/:code/edit", routing::get(endpoints::edit_book))
+            .route("/book/{code}/edit", routing::get(endpoints::edit_book))
             .route(
-                "/book/:code/edit",
+                "/book/{code}/edit",
                 routing::post(endpoints::edit_book_commit),
             )
     } else {
