@@ -2,7 +2,6 @@ use axum::body::Body;
 use axum::extract::{Multipart, Path, RawQuery, State};
 use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
-use lazy_static::lazy_static;
 use mime;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -20,21 +19,19 @@ use crate::web::errors;
 use crate::web::model::BookForm;
 use crate::web::state::AppState;
 
-lazy_static! {
-    static ref TEMPLATES: Tera = {
-        let mut tera = Tera::default();
-        let res = tera.add_raw_templates(vec![
-            ("delete.html", include_str!("_resources/delete.html.tera")),
-            ("edit.html", include_str!("_resources/edit.html.tera")),
-            ("notice.html", include_str!("_resources/notice.html.tera")),
-            ("search.html", include_str!("_resources/search.html.tera")),
-        ]);
-        if let Err(error) = res {
-            panic!("could not parse templates: {error}");
-        }
-        tera
-    };
-}
+static TEMPLATES: std::sync::LazyLock<Tera> = std::sync::LazyLock::new(|| {
+    let mut tera = Tera::default();
+    let res = tera.add_raw_templates(vec![
+        ("delete.html", include_str!("_resources/delete.html.tera")),
+        ("edit.html", include_str!("_resources/edit.html.tera")),
+        ("notice.html", include_str!("_resources/notice.html.tera")),
+        ("search.html", include_str!("_resources/search.html.tera")),
+    ]);
+    if let Err(error) = res {
+        panic!("could not parse templates: {error}");
+    }
+    tera
+});
 
 pub async fn index() -> Redirect {
     Redirect::permanent("/search")
