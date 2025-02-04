@@ -233,7 +233,6 @@ dependencies = [
  "axum",
  "clap",
  "elasticsearch",
- "lazy_static",
  "mime",
  "proptest",
  "serde",
