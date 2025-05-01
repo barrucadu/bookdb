@@ -14,7 +14,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_html_form = "0.2.7"
 serde_json = "1"
 serde_yaml = "0.9"
-sha2 = "0.10.8"
+sha2 = "0.10.9"
 tempfile = "3"
 tera = "1"
 time = { version = "0.3", features = ["macros", "parsing", "serde", "serde-human-readable"] }
