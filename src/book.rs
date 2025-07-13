@@ -261,7 +261,7 @@ fn validate_weight_sum(code: &str, weights: &[u32], x_is_ten: bool, modulus: u32
         }
     }
 
-    weight_sum % modulus == 0
+    weight_sum.is_multiple_of(modulus)
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
