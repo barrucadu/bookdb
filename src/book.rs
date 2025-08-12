@@ -559,7 +559,7 @@ mod tests {
 
         #[test]
         fn valid_nonstandard(s in "[a-zA-Z0-9-]+") {
-            let code = Code::Nonstandard(s.to_string());
+            let code = Code::Nonstandard(s.clone());
             assert!(code.is_valid());
 
             let serialised = serde_json::to_string(&code).unwrap();
@@ -572,7 +572,7 @@ mod tests {
 
         #[test]
         fn invalid_nonstandard(s in ".*[^a-zA-Z0-9-].+") {
-            let code = Code::Nonstandard(s.to_string());
+            let code = Code::Nonstandard(s.clone());
             assert!(!code.is_valid());
 
             let display = format!("x-{s}");
