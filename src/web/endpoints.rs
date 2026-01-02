@@ -39,10 +39,15 @@ pub async fn index() -> Redirect {
 
 #[derive(Default, Deserialize, Serialize)]
 struct FormSearchQuery {
+    #[serde(deserialize_with = "serde_html_form::de::empty_as_none")]
     pub keywords: Option<String>,
+    #[serde(deserialize_with = "serde_html_form::de::empty_as_none")]
     pub r#match: Option<HasBeenRead>,
+    #[serde(deserialize_with = "serde_html_form::de::empty_as_none")]
     pub location: Option<Slug>,
+    #[serde(deserialize_with = "serde_html_form::de::empty_as_none")]
     pub category: Option<Slug>,
+    #[serde(deserialize_with = "serde_html_form::de::empty_as_none")]
     pub person: Option<String>,
 }
 
