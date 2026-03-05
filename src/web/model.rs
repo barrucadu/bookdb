@@ -135,7 +135,7 @@ impl BookForm {
                 }
             }
         }
-        bf.holdings = std::iter::zip(locations.into_iter(), notes.into_iter())
+        bf.holdings = std::iter::zip(locations, notes)
             .map(|(l, n)| (Slug(l), n))
             .collect();
 
