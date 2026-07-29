@@ -2,6 +2,7 @@ use axum::body::Body;
 use axum::extract::{Multipart, Path, RawQuery, State};
 use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
+use base16ct::HexDisplay;
 use mime;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -288,7 +289,7 @@ async fn calculate_etag(file: &tokio::fs::File, mime: &mime::Mime) -> Option<Str
                     mtime = mtime.as_secs(),
                     len = metadata.len()
                 ));
-                return Some(format!("\"{digest:X}\""));
+                return Some(format!("\"{:X}\"", HexDisplay(&digest)));
             }
         }
     }
