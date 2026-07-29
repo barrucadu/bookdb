@@ -21,6 +21,7 @@ use crate::web::state::AppState;
 
 static TEMPLATES: std::sync::LazyLock<Tera> = std::sync::LazyLock::new(|| {
     let mut tera = Tera::default();
+    tera.register_filter("json_encode", tera_contrib::json::json_encode);
     let res = tera.add_raw_templates(vec![
         ("delete.html", include_str!("_resources/delete.html.tera")),
         ("edit.html", include_str!("_resources/edit.html.tera")),

@@ -78,7 +78,7 @@
             </div>
           </div>
 
-          {% macro render_people(label, field, list, at_least_one=false) %}
+          {% component render_people(label, field, list, at_least_one=false) %}
           <div class="form-row">
             <div class="form-group js-{{ field }}">
               <label class="form-label{% if at_least_one %} form-label--required{% endif %}" for="{{ field }}_0">{{ label }}</label>
@@ -89,13 +89,13 @@
               <input class="form-button js-insert-before" type="button" onclick="add_person_entry('{{ field }}')" value="+">
             </div>
           </div>
-          {% endmacro render_people %}
+          {% endcomponent render_people %}
 
-          {{ self::render_people(label="Authors", field="authors", list=book.authors, at_least_one=true) }}
-          {{ self::render_people(label="Translators", field="translators", list=book.translators) }}
-          {{ self::render_people(label="Editors", field="editors", list=book.editors) }}
+          {{<render_people label="Authors" field="authors" list={book.authors} at_least_one={true}/>}}
+          {{<render_people label="Translators" field="translators" list={book.translators}/>}}
+          {{<render_people label="Editors" field="editors" list={book.editors}/>}}
 
-          {% macro render_holding(index, slug="", note="") %}
+          {% component render_holding(index, locations, slug="", note="") %}
           <div class="form-row">
             <div class="form-group">
               <label class="form-label{% if index == 1 %} form-label--required{% endif %}" for="locations_{{ index }}">Location #{{ index }}</label>
@@ -111,13 +111,13 @@
               <input class="form-input" type="text" id="notes_{{ index }}" name="notes[]" value="{{ note }}">
             </div>
           </div>
-          {% endmacro render_holding %}
+          {% endcomponent render_holding %}
 
           <div class="js-holdings">
             {% for holding in book.holdings %}
-            {{ self::render_holding(index=loop.index, slug=holding.location_slug, note=holding.note) }}
+            {{<render_holding index={loop.index} locations={locations} slug={holding.location_slug} note={holding.note}/>}}
             {% endfor %}
-            {{ self::render_holding(index=book.holdings|length+1) }}
+            {{<render_holding index={book.holdings|length+1} locations={locations}/>}}
             <div class="form-row js-insert-before">
               <div class="form-group">
                 <input class="form-button" type="button" onclick="add_holding_entry({{ book.holdings|length+1 }}, {{ locations|json_encode }})" value="+">
